@@ -62,6 +62,10 @@ export const AppEEG: React.FC = () => {
                     </ErrorBoundary>
                 )}
             </div>
+            <div className="p-4 bg-blue-500 text-white">
+                Hello, Tailwind CSS with Webpack!
+            </div>
+
             <LogContainer logs={logs} />
         </div>
     );

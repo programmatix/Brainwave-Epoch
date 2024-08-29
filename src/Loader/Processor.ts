@@ -20,19 +20,19 @@ export function processEDFData(edfData: EDFData): ProcessedEDFData {
       const milliseconds = Math.round(i / samplingRate * 1000);
       const currentTime = new Date(startTime + milliseconds);
 
-      const formatter = new Intl.DateTimeFormat('en-GB', {
-        timeZone: 'Europe/London',
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
-      });
-      const formattedDate = formatter.format(currentTime);
+      // const formatter = new Intl.DateTimeFormat('en-GB', {
+      //   timeZone: 'Europe/London',
+      //   hour: "2-digit",
+      //   minute: "2-digit",
+      //   second: "2-digit",
+      // });
+      // const formattedDate = formatter.format(currentTime);
 
-      // const formattedTime = `${padZero(currentTime.getHours())}:${padZero(currentTime.getMinutes())}:${padZero(currentTime.getSeconds())}`;
+      const formattedTime = `${padZero(currentTime.getHours())}:${padZero(currentTime.getMinutes())}:${padZero(currentTime.getSeconds())}`;
 
       timeLabels.push({
         timestamp: startTime + milliseconds,
-        formatted: formattedDate
+        formatted: formattedTime
       });
     }
 
