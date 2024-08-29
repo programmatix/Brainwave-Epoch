@@ -6,6 +6,10 @@ import { EDFData, EDFHeader, EDFSignal, ProcessedSleepStageEntry, ProcessedSleep
 import { processEDFData } from '../Loader/Processor';
 import { ProcessedEDFData } from '../Loader/ProcessorTypes';
 
+import { EventEmitter } from 'events';
+
+export const loaderEvents = new EventEmitter();
+
 export async function readEDFPlus(filePath: string): Promise<EDFData> {
     const buffer = await fs.readFile(filePath);
     let offset = 0;
@@ -180,12 +184,31 @@ export function setupFileMenu(onFileLoad: (filePath: string) => Promise<void>) {
 }
 
 export async function loadFiles(edfPath: string): Promise<{ raw: EDFData, processedEDF: ProcessedEDFData, processedStages: ProcessedSleepStages }> {
+    const start = performance.now();
+    loaderEvents.emit('log', `${new Date().toISOString()}: Starting to load files`);
 
     const sleepStagesPath = edfPath.replace('.edf', '.sleep_stages.csv');
+    
+    loaderEvents.emit('log', `${new Date().toISOString()}: Reading sleep stages...`);
+    const stagesStart = performance.now();
     const processedStages = await readSleepStages(sleepStagesPath);
+    const stagesEnd = performance.now();
+    loaderEvents.emit('log', `${new Date().toISOString()}: Sleep stages loaded in ${(stagesEnd - stagesStart).toFixed(2)}ms`);
 
+    loaderEvents.emit('log', `${new Date().toISOString()}: Reading EDF file...`);
+    const edfStart = performance.now();
     const raw = await readEDFPlus(edfPath);
+    const edfEnd = performance.now();
+    loaderEvents.emit('log', `EDF file loaded in ${(edfEnd - edfStart).toFixed(2)}ms`);
+
+    loaderEvents.emit('log', `${new Date().toISOString()}: Processing EDF data...`);
+    const processStart = performance.now();
     const processedEDF = await processEDFData(raw);
+    const processEnd = performance.now();
+    loaderEvents.emit('log', `${new Date().toISOString()}: EDF data processed in ${(processEnd - processStart).toFixed(2)}ms`);
+
+    const end = performance.now();
+    loaderEvents.emit('log', `${new Date().toISOString()}: All files loaded and processed in ${(end - start).toFixed(2)}ms`);
 
     return { raw, processedEDF, processedStages };
 }

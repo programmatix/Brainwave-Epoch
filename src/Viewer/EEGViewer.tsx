@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { ProcessedEDFData } from '../../src/Loader/ProcessorTypes';
 import { ProcessedSleepStages } from '../Loader/LoaderTypes';
 import { EEGCharts } from './EEGCharts';
@@ -12,17 +12,39 @@ const EEGViewer: React.FC<EEGViewerProps> = ({ processedData, sleepStages }) => 
   const [scrollPosition, setScrollPosition] = useState(0);
   const [epochIndex, setEpochIndex] = useState(0);
 
+  const samplesPerSecond = processedData.signals[0]?.samplingRate || 1;
+  const totalSamples = processedData.signals[0]?.samples.length || 0;
+
   const handleScroll = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newPosition = Number(e.target.value);
     setScrollPosition(newPosition);
-    setEpochIndex(Math.floor(newPosition / (processedData.signals[0]?.samplingRate * 30)));
+    setEpochIndex(Math.floor(newPosition / (samplesPerSecond * 30)));
   };
 
-  const handleEpochChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newEpoch = Number(e.target.value);
-    setEpochIndex(newEpoch);
-    setScrollPosition(newEpoch * processedData.signals[0]?.samplingRate * 30);
+  const handleSampleIndexChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newPosition = Number(e.target.value);
+    setScrollPosition(newPosition);
+    setEpochIndex(Math.floor(newPosition / (samplesPerSecond * 30)));
   };
+
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    if (e.key === 'ArrowLeft') {
+      setScrollPosition(prev => Math.max(0, prev - 50));
+    } else if (e.key === 'ArrowRight') {
+      setScrollPosition(prev => Math.min(totalSamples - 1, prev + 50));
+    }
+  }, [totalSamples]);
+
+  useEffect(() => {
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [handleKeyDown]);
+
+  useEffect(() => {
+    setEpochIndex(Math.floor(scrollPosition / (samplesPerSecond * 30)));
+  }, [scrollPosition, samplesPerSecond]);
 
   const currentSleepStage = sleepStages[epochIndex] || 'Unknown';
 
@@ -32,28 +54,24 @@ const EEGViewer: React.FC<EEGViewerProps> = ({ processedData, sleepStages }) => 
         <input
           type="range"
           min="0"
-          max={processedData.signals[0]?.samples.length - processedData.signals[0]?.samplingRate * 30 || 0}
+          max={totalSamples - 1}
           value={scrollPosition}
           onChange={handleScroll}
           className="w-full"
         />
         <div className="ml-4 flex items-center">
-          Epoch:
+          Sample Index:
           <input
             type="number"
-            value={epochIndex}
-            onChange={handleEpochChange}
-            className="w-16 ml-2 input input-bordered input-sm"
+            value={scrollPosition}
+            onChange={handleSampleIndexChange}
+            className="w-24 ml-2 input input-bordered input-sm"
           />
-        </div>
-        <div className="ml-4">
-          Sleep Stage: {JSON.stringify(currentSleepStage)}
         </div>
       </div>
       <EEGCharts
         processedData={processedData}
         scrollPosition={scrollPosition}
-        epochIndex={epochIndex}
         sleepStages={sleepStages}
       />
     </div>

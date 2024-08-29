@@ -5,25 +5,34 @@ import { ProcessedEDFData, SignalData, TimeLabel } from "./ProcessorTypes";
 
 export function processEDFData(edfData: EDFData): ProcessedEDFData {
   const { header, signals, records } = edfData;
-  
+
   const processedSignals: SignalData[] = signals.map(signal => {
     const samplingRate = signal.numSamplesPerDataRecord / header.durationOfDataRecord;
     const totalSamples = signal.numSamplesPerDataRecord * header.numDataRecords;
     const timeLabels: TimeLabel[] = [];
 
     const padZero = (num: number) => num.toString().padStart(2, '0');
-    const startTime = new Date(header.startDate.year, header.startDate.month - 1, header.startDate.day, 
-                               header.startDate.hour, header.startDate.minute, header.startDate.second, 
-                               header.startDate.millisecond).getTime();
+    const startTime = new Date(header.startDate.year, header.startDate.month - 1, header.startDate.day,
+      header.startDate.hour, header.startDate.minute, header.startDate.second,
+      header.startDate.millisecond).getTime();
 
     for (let i = 0; i < totalSamples; i++) {
       const milliseconds = Math.round(i / samplingRate * 1000);
       const currentTime = new Date(startTime + milliseconds);
-      const formattedTime = `${padZero(currentTime.getHours())}:${padZero(currentTime.getMinutes())}:${padZero(currentTime.getSeconds())}.${currentTime.getMilliseconds().toString().padStart(3, '0')}`;
-      
+
+      const formatter = new Intl.DateTimeFormat('en-GB', {
+        timeZone: 'Europe/London',
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+      });
+      const formattedDate = formatter.format(currentTime);
+
+      // const formattedTime = `${padZero(currentTime.getHours())}:${padZero(currentTime.getMinutes())}:${padZero(currentTime.getSeconds())}`;
+
       timeLabels.push({
         timestamp: startTime + milliseconds,
-        formatted: formattedTime
+        formatted: formattedDate
       });
     }
 
