@@ -1,33 +1,33 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { ProcessedEDFData } from '../../src/Loader/ProcessorTypes';
+import { AllData, ProcessedEDFData } from '../../src/Loader/ProcessorTypes';
 import { ProcessedSleepStages } from '../Loader/LoaderTypes';
 import { EEGCharts } from './EEGCharts';
 import { TimelineNavigation } from './Navigation';
+import { SECONDS_PER_EPOCH } from './EEGCharts';
 
 interface EEGViewerProps {
-  processedData: ProcessedEDFData;
-  sleepStages: ProcessedSleepStages;
+  allData: AllData;
 }
 
-const EEGViewer: React.FC<EEGViewerProps> = ({ processedData, sleepStages }) => {
+const EEGViewer: React.FC<EEGViewerProps> = ({ allData }) => {
   const [scrollPosition, setScrollPosition] = useState(0);
 
-  const samplesPerSecond = processedData.signals[0]?.samplingRate || 1;
-  const totalSamples = processedData.signals[0]?.samples.length || 0;
-
+    const samplesPerSecond = allData.processedEDF.signals[0]?.samplingRate || 1;
+  const totalSamples = allData.processedEDF.signals[0]?.samples.length || 0;
+  const samplesPerEpoch = samplesPerSecond * SECONDS_PER_EPOCH;
   return (
     <div className="h-full overflow-hidden">
       <TimelineNavigation
-        sleepStages={sleepStages}
+        samplesPerEpoch={samplesPerEpoch}
+        allData={allData}
         scrollPosition={scrollPosition}
         setScrollPosition={setScrollPosition}
         totalSamples={totalSamples}
         samplesPerSecond={samplesPerSecond}
       />
       <EEGCharts
-        processedData={processedData}
+        allData={allData}
         scrollPosition={scrollPosition}
-        sleepStages={sleepStages}
       />
     </div>
   );

@@ -1,28 +1,29 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { Chart, ChartConfiguration, registerables } from 'chart.js';
 import annotationPlugin from 'chartjs-plugin-annotation';
-import { ProcessedEDFData } from '../Loader/ProcessorTypes';
+import { AllData, ProcessedEDFData } from '../Loader/ProcessorTypes';
 import { ProcessedSleepStages } from '../Loader/LoaderTypes';
 
 Chart.register(...registerables, annotationPlugin);
 
-const SECONDS_PER_EPOCH = 30;
-const SECONDS_TO_SHOW = 30;
+export const SECONDS_PER_EPOCH = 30;
+export const SECONDS_TO_SHOW = 30;
 
 interface EEGChartsProps {
-  processedData: ProcessedEDFData;
-  scrollPosition: number;
-  sleepStages: ProcessedSleepStages;
-}
+    allData: AllData;
+    scrollPosition: number;
+}   
 
-export const EEGCharts: React.FC<EEGChartsProps> = ({ processedData, scrollPosition, sleepStages }) => {
+export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition }) => {
   const chartRefs = useRef<(HTMLCanvasElement | null)[]>([]);
   const [charts, setCharts] = useState<(Chart | null)[]>([]);
 
   useEffect(() => {
-    const samplesPerSecond = processedData.signals[0].samplingRate;
+    console.time('EEGCharts useEffect');
+    
+    const samplesPerSecond = allData.processedEDF.signals[0].samplingRate;
     const samplesToShow = samplesPerSecond * SECONDS_TO_SHOW;
-    const signalsToShow = processedData.signals.filter(signal => signal.label !== 'EDF Annotations');
+    const signalsToShow = allData.processedEDF.signals.filter(signal => signal.label !== 'EDF Annotations');
 
     charts.forEach(chart => chart?.destroy());
     setCharts([]);
@@ -33,6 +34,7 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ processedData, scrollPosit
     const yMax = 200;
     const yMin = -200;
 
+    console.time('Creating new charts');
     const newCharts = signalsToShow.map((signal, index) => {
       const ctx = chartRefs.current[index]?.getContext('2d');
       if (!ctx) return null;
@@ -61,7 +63,7 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ processedData, scrollPosit
               ticks: {
                 maxTicksLimit: 10,
                 callback: (value, index, ticks) => {
-                    return processedData.signals[0].timeLabels[scrollPosition + index]?.formatted
+                    return allData.processedEDF.signals[0].timeLabels[scrollPosition + index]?.formatted
                 }
               }
             },
@@ -79,7 +81,7 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ processedData, scrollPosit
                 Array.from({ length: endEpochIndex - startEpochIndex }, (_, i) => {
                   const epochIndex = startEpochIndex + i;
                   const epochStartSample = epochIndex * SECONDS_PER_EPOCH * samplesPerSecond - scrollPosition;
-                  const sleepStage = sleepStages[epochIndex];
+                  const sleepStage = allData.sleepStages[epochIndex];
                   const channelData = sleepStage?.Channels[signal.label];
                   return [
                     [`epoch${epochIndex}`, {
@@ -114,15 +116,20 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ processedData, scrollPosit
 
       return new Chart(ctx, config);
     });
+    console.timeEnd('Creating new charts');
 
     setCharts(newCharts);
 
-    return () => {
-      newCharts.forEach(chart => chart?.destroy());
-    };
-  }, [processedData, scrollPosition, sleepStages]);
+    console.timeEnd('EEGCharts useEffect');
 
-  const signalsToShow = processedData.signals.filter(signal => signal.label !== 'EDF Annotations');
+    return () => {
+      console.time('Cleanup charts');
+      newCharts.forEach(chart => chart?.destroy());
+      console.timeEnd('Cleanup charts');
+    };
+  }, [allData, scrollPosition]);
+
+  const signalsToShow = allData.processedEDF.signals.filter(signal => signal.label !== 'EDF Annotations');
   const chartCount = signalsToShow.length;
 
   return (
@@ -130,7 +137,7 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ processedData, scrollPosit
     <div className="flex-col flex h-full">
       {signalsToShow.map((_, index) => (
         // overflow-hidden	part of the magic needed for Chart.js CSS
-        <div key={index} className="w-full flex-grow overflow-hidden">
+        <div key={index} className="w-full flex-grow" style={{ width: '100%', height: '300px' }}>
             {/* <div>Hello world</div> */}
           <canvas ref={el => chartRefs.current[index] = el} style={{ width: '100%', height: '100%' }} />
         </div>

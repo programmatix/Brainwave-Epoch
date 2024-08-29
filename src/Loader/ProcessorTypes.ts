@@ -1,4 +1,5 @@
 import { Temporal } from "@js-temporal/polyfill";
+import { NightEvents, ProcessedSleepStages, SlowWaveEvent, SlowWaveEvents } from "./LoaderTypes";
 
 export type TimeLabel = {
     timestamp: number;
@@ -24,4 +25,15 @@ export type ProcessedEDFData = {
     startDate: Temporal.ZonedDateTime;
     duration: number;
     signals: SignalData[];
+};
+
+export type GroupedSlowWaveEvents = {
+    [channel: string]: SlowWaveEvent[];
+};
+
+export type AllData = {
+    processedEDF: ProcessedEDFData;
+    sleepStages?: ProcessedSleepStages;
+    slowWaveEvents?: GroupedSlowWaveEvents;
+    nightEvents?: NightEvents;
 };

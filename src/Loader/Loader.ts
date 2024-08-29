@@ -1,10 +1,10 @@
 import { Temporal } from '@js-temporal/polyfill';
 import { parse } from 'csv-parse/sync';
 import { promises as fs } from 'fs';
-import { EDFData, EDFHeader, EDFSignal, ProcessedSleepStageEntry, ProcessedSleepStages, SleepStages } from './LoaderTypes';
+import { EDFData, EDFHeader, EDFSignal, NightEvents, ProcessedSleepStageEntry, ProcessedSleepStages, SleepStages, SlowWaveEvents } from './LoaderTypes';
 
 import { processEDFData } from '../Loader/Processor';
-import { ProcessedEDFData } from '../Loader/ProcessorTypes';
+import { AllData, GroupedSlowWaveEvents, ProcessedEDFData } from '../Loader/ProcessorTypes';
 
 import { EventEmitter } from 'events';
 
@@ -139,7 +139,28 @@ export async function readSleepStages(filePath: string): Promise<ProcessedSleepS
     return result;
 }
 
+
+// 2024-08-26 21:10:07.764000+01:00
 const parseDateString = (dateStr: string): Temporal.ZonedDateTime => {
+    if (dateStr.includes('-')) {
+        const [datePart, timePart] = dateStr.split(' ');
+        const [year, month, day] = datePart.split('-');
+        const [time, offset] = timePart.split('+');
+        const [hour, minute, second] = time.split(':');
+        const [secondPart, millisecond] = second.split('.');
+        
+        return Temporal.ZonedDateTime.from({
+            year: parseInt(year),
+            month: parseInt(month),
+            day: parseInt(day),
+            hour: parseInt(hour),
+            minute: parseInt(minute),
+            second: parseInt(secondPart),
+            millisecond: parseInt(millisecond || '0'),
+            timeZone: Temporal.TimeZone.from(`+${offset}`)
+        });
+    }
+    
     const [day, month, yearAndHour, minute, second] = dateStr.split('.');
     const year = yearAndHour.slice(0, 2);
     const hour = yearAndHour.slice(2);
@@ -183,23 +204,20 @@ export function setupFileMenu(onFileLoad: (filePath: string) => Promise<void>) {
     window.nw.Window.get().menu = menu;
 }
 
-export async function loadFiles(edfPath: string): Promise<{ raw: EDFData, processedEDF: ProcessedEDFData, processedStages: ProcessedSleepStages }> {
+export async function loadFiles(edfPath: string): Promise<AllData> {
     const start = performance.now();
     loaderEvents.emit('log', `${new Date().toISOString()}: Starting to load files`);
 
     const sleepStagesPath = edfPath.replace('.edf', '.sleep_stages.csv');
+    const slowWaveEventsPath = edfPath.replace('.edf', '.sw_summary.csv');
+    const nightEventsPath = edfPath.replace('.edf', '.night_events.csv');
     
-    loaderEvents.emit('log', `${new Date().toISOString()}: Reading sleep stages...`);
-    const stagesStart = performance.now();
-    const processedStages = await readSleepStages(sleepStagesPath);
-    const stagesEnd = performance.now();
-    loaderEvents.emit('log', `${new Date().toISOString()}: Sleep stages loaded in ${(stagesEnd - stagesStart).toFixed(2)}ms`);
-
-    loaderEvents.emit('log', `${new Date().toISOString()}: Reading EDF file...`);
-    const edfStart = performance.now();
-    const raw = await readEDFPlus(edfPath);
-    const edfEnd = performance.now();
-    loaderEvents.emit('log', `EDF file loaded in ${(edfEnd - edfStart).toFixed(2)}ms`);
+    const [processedStages, raw, slowWaveEvents, nightEvents] = await Promise.all([
+        readSleepStages(sleepStagesPath),
+        readEDFPlus(edfPath),
+        readSlowWaveEvents(slowWaveEventsPath),
+        readNightEvents(nightEventsPath)
+    ]);
 
     loaderEvents.emit('log', `${new Date().toISOString()}: Processing EDF data...`);
     const processStart = performance.now();
@@ -210,5 +228,39 @@ export async function loadFiles(edfPath: string): Promise<{ raw: EDFData, proces
     const end = performance.now();
     loaderEvents.emit('log', `${new Date().toISOString()}: All files loaded and processed in ${(end - start).toFixed(2)}ms`);
 
-    return { raw, processedEDF, processedStages };
+    return { processedEDF, sleepStages: processedStages, slowWaveEvents, nightEvents };
+}
+
+export async function readSlowWaveEvents(filePath: string): Promise<GroupedSlowWaveEvents> {
+    console.time('readSlowWaveEvents');
+    const data = await fs.readFile(filePath, 'utf8');
+    const parsedData: SlowWaveEvents = parse(data, {
+        columns: true,
+        skip_empty_lines: true,
+        cast: true
+    });
+    const groupedEvents = parsedData.reduce((acc, event) => {
+        if (!acc[event.Channel]) {
+            acc[event.Channel] = [];
+        }
+        acc[event.Channel].push(event);
+        return acc;
+    }, {} as GroupedSlowWaveEvents);
+    console.timeEnd('readSlowWaveEvents');
+    return groupedEvents;
+}
+
+export async function readNightEvents(filePath: string): Promise<NightEvents> {
+    console.time('readNightEvents');
+    const data = await fs.readFile(filePath, 'utf8');
+    const parsedData = parse(data, {
+        columns: true,
+        skip_empty_lines: true
+    });
+    const nightEvents: NightEvents = parsedData.map(event => ({
+        ...event,
+        timestamp: parseDateString(event.timestamp_uk)
+    }));
+    console.timeEnd('readNightEvents');
+    return nightEvents;
 }

@@ -57,3 +57,28 @@ export type ProcessedSleepStageEntry = {
 };
 
 export type ProcessedSleepStages = ProcessedSleepStageEntry[];
+
+export type SlowWaveEvent = {
+    Start: number;
+    NegPeak: number;
+    MidCrossing: number;
+    PosPeak: number;
+    End: number;
+    Duration: number;
+    ValNegPeak: number;
+    ValPosPeak: number;
+    PTP: number;
+    Slope: number;
+    Frequency: number;
+    Channel: string;
+    IdxChannel: number;
+};
+
+export type NightEvent = {
+    event: string;
+    timestamp: Temporal.ZonedDateTime;
+    source: string;
+};
+
+export type SlowWaveEvents = SlowWaveEvent[];
+export type NightEvents = NightEvent[];

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { ProcessedEDFData } from './Loader/ProcessorTypes';
+import { AllData, ProcessedEDFData } from './Loader/ProcessorTypes';
 import EEGViewer from './Viewer/EEGViewer';
-import { ProcessedSleepStages } from './Loader/LoaderTypes';
+import { NightEvents, ProcessedSleepStages, SlowWaveEvents } from './Loader/LoaderTypes';
 import { setupFileMenu, loadFiles, loaderEvents } from './Loader/Loader';
 import LogContainer from './Logs/LogContainer';
 import ErrorBoundary from './Errors/ErrorBoundary';
@@ -13,8 +13,7 @@ declare global {
 }
 
 export const AppEEG: React.FC = () => {
-    const [edfData, setEdfData] = useState<ProcessedEDFData | null>(null);
-    const [sleepStages, setSleepStages] = useState<ProcessedSleepStages | null>(null);
+    const [allData, setAllData] = useState<AllData | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [logs, setLogs] = useState<string[]>([]);
 
@@ -27,12 +26,9 @@ export const AppEEG: React.FC = () => {
             setIsLoading(true);
             setLogs([]);
             try {
-                const { raw, processedEDF, processedStages } = await loadFiles(filePath);
-                console.log('Raw:', raw);
-                console.log('Processed EDF:', processedEDF);
-                console.log('Processed Stages:', processedStages);
-                setEdfData(processedEDF);
-                setSleepStages(processedStages);
+                const allData = await loadFiles(filePath);
+                console.log('Processed EDF:', allData);
+                setAllData(allData);
             } catch (error) {
                 console.error('Error loading files:', error);
                 setLogs(prevLogs => [...prevLogs, `Error: ${error.message}`]);
@@ -54,11 +50,10 @@ export const AppEEG: React.FC = () => {
                         <div className="flex justify-center items-center h-full">
                             <div className="loading loading-spinner loading-lg"></div>
                         </div>
-                    ) : edfData && (
+                    ) : allData && (
                         <ErrorBoundary>
                             <EEGViewer
-                                processedData={edfData}
-                                sleepStages={sleepStages}
+                                allData={allData}
                             />
                         </ErrorBoundary>
                     )}

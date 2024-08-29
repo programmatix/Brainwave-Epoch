@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { ProcessedSleepStages } from '../Loader/LoaderTypes';
+import { AllData } from '../Loader/ProcessorTypes';
 
 type SleepStage = 'W' | 'N1' | 'N2' | 'N3' | 'R';
 
@@ -12,33 +13,44 @@ const stageColors: Record<SleepStage, string> = {
 };
 
 interface TimelineNavigationProps {
-  sleepStages: ProcessedSleepStages;
+  allData: AllData;
   scrollPosition: number;
-  setScrollPosition: (position: number) => void;
+  setScrollPosition: any;
   totalSamples: number;
   samplesPerSecond: number;
+  samplesPerEpoch: number;
 }
 
 const SECONDS_TO_SHOW = 30;
 
 export const TimelineNavigation: React.FC<TimelineNavigationProps> = ({
-  sleepStages,
+  allData,
   scrollPosition,
   setScrollPosition,
   totalSamples,
   samplesPerSecond,
+  samplesPerEpoch,
 }) => {
   const [isDragging, setIsDragging] = useState(false);
+
+  console.log('scrollPosition', scrollPosition);
 
   const timelineWidth = 1000;
   const viewboxWidth = (SECONDS_TO_SHOW * samplesPerSecond / totalSamples) * timelineWidth;
   const viewboxPosition = (scrollPosition / totalSamples) * timelineWidth;
 
+  const currentEpoch = Math.floor(scrollPosition / samplesPerEpoch);
+
+  const setEpoch = (epoch: number) => {
+    const newPosition = epoch * samplesPerEpoch;
+    setScrollPosition(Math.min(newPosition, totalSamples - 1));
+  };
+
   const handleTimelineClick = (e: React.MouseEvent<SVGSVGElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const newPosition = Math.floor((x / timelineWidth) * totalSamples);
-    setScrollPosition(newPosition);
+    setEpoch(Math.floor(newPosition / samplesPerEpoch));
   };
 
   const handleViewboxDragStart = (e: React.MouseEvent<SVGRectElement>) => {
@@ -51,11 +63,15 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = ({
   
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     if (e.key === 'ArrowLeft') {
-      setScrollPosition(Math.max(0, scrollPosition - 50));
+      setScrollPosition((prev) => Math.max(0, prev - 50));
     } else if (e.key === 'ArrowRight') {
-      setScrollPosition(Math.min(totalSamples - 1, scrollPosition + 50));
+      setScrollPosition((prev) => Math.min(totalSamples - 1, prev + 50));
+    } else if (e.key === 'q') {
+      setEpoch(Math.max(0, currentEpoch - 1));
+    } else if (e.key === 'e') {
+      setEpoch(Math.min(Math.floor((totalSamples - 1) / samplesPerEpoch), currentEpoch + 1));
     }
-  }, [totalSamples]);
+  }, [setScrollPosition, totalSamples, currentEpoch, samplesPerEpoch]);
 
   useEffect(() => {
     window.addEventListener('keydown', handleKeyDown);
@@ -99,12 +115,12 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = ({
         onMouseMove={handleViewboxDrag}
         onClick={handleTimelineClick}
       >
-        {sleepStages.map((stage, index) => (
+        {allData.sleepStages?.map((stage, index) => (
           <rect
             key={index}
-            x={(index / sleepStages.length) * timelineWidth}
+            x={(index / allData.sleepStages.length) * timelineWidth}
             y="0"
-            width={(1 / sleepStages.length) * timelineWidth}
+            width={(1 / allData.sleepStages.length) * timelineWidth}
             height="30"
             fill={stageColorMap[stage.Channels['Aggregated'].Stage as SleepStage] || '#d1d5db'}
           />
