@@ -47,26 +47,24 @@ export const AppEEG: React.FC = () => {
     }, []);
 
     return (
-        <div className="container mx-auto p-4 flex flex-col h-screen">
-            <div className="flex-grow">
-                {isLoading ? (
-                    <div className="flex justify-center items-center h-full">
-                        <div className="loading loading-spinner loading-lg"></div>
-                    </div>
-                ) : edfData && (
-                    <ErrorBoundary>
-                        <EEGViewer
-                            processedData={edfData}
-                            sleepStages={sleepStages}
-                        />
-                    </ErrorBoundary>
-                )}
+        <div className="h-screen">
+            <div className="flex flex-col h-full">
+                <div className="h-full">
+                    {isLoading ? (
+                        <div className="flex justify-center items-center h-full">
+                            <div className="loading loading-spinner loading-lg"></div>
+                        </div>
+                    ) : edfData && (
+                        <ErrorBoundary>
+                            <EEGViewer
+                                processedData={edfData}
+                                sleepStages={sleepStages}
+                            />
+                        </ErrorBoundary>
+                    )}
+                </div>
+                <LogContainer logs={logs} />
             </div>
-            <div className="p-4 bg-blue-500 text-white">
-                Hello, Tailwind CSS with Webpack!
-            </div>
-
-            <LogContainer logs={logs} />
         </div>
     );
 };

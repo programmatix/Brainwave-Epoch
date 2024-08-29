@@ -83,6 +83,14 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = ({
     setScrollPosition(newPosition);
   };
 
+  const stageColorMap: Record<SleepStage, string> = {
+    'W': '#ef4444',
+    'N1': '#93c5fd',
+    'N2': '#3b82f6',
+    'N3': '#1e3a8a',
+    'R': '#22c55e',
+  };
+
   return (
     <div className="flex flex-col gap-4">
       <svg
@@ -98,7 +106,7 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = ({
             y="0"
             width={(1 / sleepStages.length) * timelineWidth}
             height="30"
-            className={stageColors[stage.Channels['Aggregated'].Stage as SleepStage] || 'bg-gray-300'}
+            fill={stageColorMap[stage.Channels['Aggregated'].Stage as SleepStage] || '#d1d5db'}
           />
         ))}
         <rect
@@ -114,7 +122,7 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = ({
           style={{ cursor: 'grab' }}
         />
       </svg>
-      <div className="flex justify-between items-center w-full">
+      <div className="flex justify-between items-center">
         <input
           type="range"
           min="0"

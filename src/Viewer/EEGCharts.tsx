@@ -52,6 +52,7 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ processedData, scrollPosit
         },
         options: {
           responsive: true,
+          maintainAspectRatio: false,
           scales: {
             x: {
               display: index === 0 || index === signalsToShow.length - 1,
@@ -121,11 +122,19 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ processedData, scrollPosit
     };
   }, [processedData, scrollPosition, sleepStages]);
 
+  const signalsToShow = processedData.signals.filter(signal => signal.label !== 'EDF Annotations');
+  const chartCount = signalsToShow.length;
+
   return (
-    <>
-      {processedData.signals.filter(signal => signal.label !== 'EDF Annotations').map((_, index) => (
-        <canvas key={index} ref={el => chartRefs.current[index] = el} className="w-full h-32" />
+    // <div className="flex-grow flex-col flex  gap-1" style={{ gridTemplateRows: `repeat(${chartCount}, 1fr)` }}>
+    <div className="flex-col flex h-full">
+      {signalsToShow.map((_, index) => (
+        // overflow-hidden	part of the magic needed for Chart.js CSS
+        <div key={index} className="w-full flex-grow overflow-hidden">
+            {/* <div>Hello world</div> */}
+          <canvas ref={el => chartRefs.current[index] = el} style={{ width: '100%', height: '100%' }} />
+        </div>
       ))}
-    </>
+    </div>
   );
 };

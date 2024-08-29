@@ -16,7 +16,7 @@ const EEGViewer: React.FC<EEGViewerProps> = ({ processedData, sleepStages }) => 
   const totalSamples = processedData.signals[0]?.samples.length || 0;
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="h-full overflow-hidden">
       <TimelineNavigation
         sleepStages={sleepStages}
         scrollPosition={scrollPosition}
