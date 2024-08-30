@@ -3,6 +3,7 @@ import { AllData } from '../Loader/ProcessorTypes';
 
 interface NightEventsTimelineProps {
   allData: AllData;
+  scrollPosition: number;
   totalSamples: number;
   width: number;
   onTimelineClick: (position: number) => void;
@@ -10,6 +11,7 @@ interface NightEventsTimelineProps {
 
 export const NightEventsTimeline: React.FC<NightEventsTimelineProps> = ({
   allData,
+  scrollPosition,
   totalSamples,
   width,
   onTimelineClick,
@@ -20,6 +22,8 @@ export const NightEventsTimeline: React.FC<NightEventsTimelineProps> = ({
     const newPosition = Math.floor((x / width) * totalSamples);
     onTimelineClick(newPosition);
   };
+
+  const scrollIndicatorPosition = (scrollPosition / totalSamples) * width;
 
   return (
     <div>
@@ -34,6 +38,14 @@ export const NightEventsTimeline: React.FC<NightEventsTimelineProps> = ({
               fill="#9333ea"
             />
         ))}
+        <line
+          x1={scrollIndicatorPosition}
+          y1={0}
+          x2={scrollIndicatorPosition}
+          y2={30}
+          stroke="red"
+          strokeWidth={2}
+        />
       </svg>
     </div>
   );

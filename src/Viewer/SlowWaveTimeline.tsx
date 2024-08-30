@@ -6,6 +6,7 @@ interface SlowWaveTimelineProps {
     allData: AllData;
   channel: string;
   events: SlowWaveEvent[];
+  scrollPosition: number;
   totalSamples: number;
   width: number;
   onTimelineClick: (position: number) => void;
@@ -14,6 +15,7 @@ interface SlowWaveTimelineProps {
 export const SlowWaveTimeline: React.FC<SlowWaveTimelineProps> = ({
   channel,
   events,
+  scrollPosition,
   totalSamples,
   width,
   onTimelineClick,
@@ -29,6 +31,8 @@ export const SlowWaveTimeline: React.FC<SlowWaveTimelineProps> = ({
   const secondsToSamples = (seconds: number) => {
     return Math.floor(seconds * allData.processedEDF.signals[0].samplingRate);
   };
+
+  const scrollIndicatorPosition = (scrollPosition / totalSamples) * width;
 
   return (
     <div>
@@ -47,6 +51,14 @@ export const SlowWaveTimeline: React.FC<SlowWaveTimelineProps> = ({
             />
           );
         })}
+        <line
+          x1={scrollIndicatorPosition}
+          y1={0}
+          x2={scrollIndicatorPosition}
+          y2={30}
+          stroke="red"
+          strokeWidth={2}
+        />
       </svg>
     </div>
   );

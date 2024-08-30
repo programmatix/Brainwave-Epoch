@@ -4,6 +4,7 @@ import { FitbitHypnogram } from '../Loader/LoaderTypes';
 
 interface FitbitHypnogramTimelineProps {
   fitbitHypnogram: FitbitHypnogram;
+  scrollPosition: number;
   totalSamples: number;
   width: number;
   onTimelineClick: (position: number) => void;
@@ -19,6 +20,7 @@ const stateColorMap: Record<string, string> = {
 
 export const FitbitHypnogramTimeline: React.FC<FitbitHypnogramTimelineProps> = ({
   fitbitHypnogram,
+  scrollPosition,
   totalSamples,
   width,
   onTimelineClick,
@@ -33,6 +35,8 @@ export const FitbitHypnogramTimeline: React.FC<FitbitHypnogramTimelineProps> = (
 
   const startDate = allData.processedEDF.startDate.epochSeconds;
   const duration = allData.processedEDF.duration;
+
+  const scrollIndicatorPosition = (scrollPosition / totalSamples) * width;
 
   return (
     <div>
@@ -51,6 +55,14 @@ export const FitbitHypnogramTimeline: React.FC<FitbitHypnogramTimelineProps> = (
             />
           );
         })}
+        <line
+          x1={scrollIndicatorPosition}
+          y1={0}
+          x2={scrollIndicatorPosition}
+          y2={30}
+          stroke="red"
+          strokeWidth={2}
+        />
       </svg>
     </div>
   );

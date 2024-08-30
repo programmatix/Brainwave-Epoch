@@ -73,6 +73,7 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = ({
                     <td>
                         <SlowWaveTimeline
                             key={channel}
+                            scrollPosition={scrollPosition}
                             channel={channel}
                             events={events}
                             totalSamples={totalSamples}
@@ -89,6 +90,7 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = ({
                     {allData.nightEvents && (
                         <NightEventsTimeline
                             allData={allData}
+                            scrollPosition={scrollPosition}
                             totalSamples={totalSamples}
                             width={TIMELINE_WIDTH}
                             onTimelineClick={handleTimelineClick}
@@ -102,6 +104,7 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = ({
                     <td>
                         <FitbitHypnogramTimeline
                             fitbitHypnogram={allData.fitbitHypnogram}
+                            scrollPosition={scrollPosition}
                             totalSamples={totalSamples}
                             width={TIMELINE_WIDTH}
                             onTimelineClick={handleTimelineClick}
