@@ -1,7 +1,7 @@
 import { Temporal } from '@js-temporal/polyfill';
 import { parse } from 'csv-parse/sync';
 import { promises as fs } from 'fs';
-import { EDFData, EDFHeader, EDFSignal, NightEvents, ProcessedSleepStageEntry, ProcessedSleepStages, SleepStages, SlowWaveEvents } from './LoaderTypes';
+import { EDFData, EDFHeader, EDFSignal, NightEvents, ProcessedSleepStageEntry, ProcessedSleepStages, SleepStages, SlowWaveEvents, FitbitHypnogram, FitbitHypnogramEntry } from './LoaderTypes';
 
 import { processEDFData } from '../Loader/Processor';
 import { AllData, GroupedSlowWaveEvents, ProcessedEDFData } from '../Loader/ProcessorTypes';
@@ -211,12 +211,14 @@ export async function loadFiles(edfPath: string): Promise<AllData> {
     const sleepStagesPath = edfPath.replace('.edf', '.sleep_stages.csv');
     const slowWaveEventsPath = edfPath.replace('.edf', '.sw_summary.csv');
     const nightEventsPath = edfPath.replace('.edf', '.night_events.csv');
+    const fitbitHypnogramPath = edfPath.replace('.edf', '.fitbit_hypnogram.csv');
     
-    const [processedStages, raw, slowWaveEvents, nightEvents] = await Promise.all([
+    const [processedStages, raw, slowWaveEvents, nightEvents, fitbitHypnogram] = await Promise.all([
         readSleepStages(sleepStagesPath),
         readEDFPlus(edfPath),
         readSlowWaveEvents(slowWaveEventsPath),
-        readNightEvents(nightEventsPath)
+        readNightEvents(nightEventsPath),
+        readFitbitHypnogram(fitbitHypnogramPath)
     ]);
 
     loaderEvents.emit('log', `${new Date().toISOString()}: Processing EDF data...`);
@@ -228,7 +230,7 @@ export async function loadFiles(edfPath: string): Promise<AllData> {
     const end = performance.now();
     loaderEvents.emit('log', `${new Date().toISOString()}: All files loaded and processed in ${(end - start).toFixed(2)}ms`);
 
-    return { processedEDF, sleepStages: processedStages, slowWaveEvents, nightEvents };
+    return { processedEDF, sleepStages: processedStages, slowWaveEvents, nightEvents, fitbitHypnogram };
 }
 
 export async function readSlowWaveEvents(filePath: string): Promise<GroupedSlowWaveEvents> {
@@ -263,4 +265,22 @@ export async function readNightEvents(filePath: string): Promise<NightEvents> {
     }));
     console.timeEnd('readNightEvents');
     return nightEvents;
+}
+
+export async function readFitbitHypnogram(filePath: string): Promise<FitbitHypnogram> {
+    console.time('readFitbitHypnogram');
+    const data = await fs.readFile(filePath, 'utf8');
+    const parsedData = parse(data, {
+        columns: true,
+        skip_empty_lines: true
+    });
+    
+    const fitbitHypnogram: FitbitHypnogram = parsedData.map((entry: any) => ({
+        startTime: parseDateString(entry.startTime),
+        state: entry.state,
+        endTime: parseDateString(entry.endTime)
+    }));
+
+    console.timeEnd('readFitbitHypnogram');
+    return fitbitHypnogram;
 }

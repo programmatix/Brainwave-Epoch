@@ -1,5 +1,5 @@
 import { Temporal } from "@js-temporal/polyfill";
-import { NightEvents, ProcessedSleepStages, SlowWaveEvent, SlowWaveEvents } from "./LoaderTypes";
+import { FitbitHypnogram, NightEvents, ProcessedSleepStages, SlowWaveEvent, SlowWaveEvents } from "./LoaderTypes";
 
 export type TimeLabel = {
     timestamp: number;
@@ -36,4 +36,6 @@ export type AllData = {
     sleepStages?: ProcessedSleepStages;
     slowWaveEvents?: GroupedSlowWaveEvents;
     nightEvents?: NightEvents;
+    fitbitHypnogram?: FitbitHypnogram;
 };
+

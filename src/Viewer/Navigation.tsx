@@ -3,6 +3,7 @@ import { AllData } from '../Loader/ProcessorTypes';
 import { SleepStageTimeline } from './SleepStageTimeline';
 import { SlowWaveTimeline } from './SlowWaveTimeline';
 import { NightEventsTimeline } from './NightEventsTimeline';
+import { FitbitHypnogramTimeline } from './FitbitHypnogramTimeline';
 
 interface TimelineNavigationProps {
     allData: AllData;
@@ -95,6 +96,20 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = ({
                     )}
                 </td>
             </tr>
+            {allData.fitbitHypnogram && (
+                <tr>
+                    <td>Fitbit Hypnogram</td>
+                    <td>
+                        <FitbitHypnogramTimeline
+                            fitbitHypnogram={allData.fitbitHypnogram}
+                            totalSamples={totalSamples}
+                            width={TIMELINE_WIDTH}
+                            onTimelineClick={handleTimelineClick}
+                            allData={allData}
+                        />
+                    </td>
+                </tr>
+            )}
         </div>
     );
 };

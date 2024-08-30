@@ -2,6 +2,7 @@ import React, { useRef, useEffect, useState } from 'react';
 import { Chart, ChartConfiguration, registerables } from 'chart.js';
 import annotationPlugin from 'chartjs-plugin-annotation';
 import { AllData } from '../Loader/ProcessorTypes';
+import { FitbitHypnogramChart } from './FitbitHypnogramChart';
 
 Chart.register(...registerables, annotationPlugin);
 
@@ -17,8 +18,9 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition })
     const chartRefs = useRef<(HTMLCanvasElement | null)[]>([]);
     const [charts, setCharts] = useState<(Chart | null)[]>([]);
 
+    const samplesPerSecond = allData.processedEDF.signals[0].samplingRate;
+
     useEffect(() => {
-        const samplesPerSecond = allData.processedEDF.signals[0].samplingRate;
         const samplesToShow = samplesPerSecond * SECONDS_TO_SHOW;
         const signalsToShow = allData.processedEDF.signals.filter(signal => signal.label !== 'EDF Annotations');
 
@@ -159,6 +161,14 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition })
 
     return (
         <div className="flex-col flex h-full">
+            {allData.fitbitHypnogram && (
+                <FitbitHypnogramChart
+                    allData={allData}
+                    scrollPosition={scrollPosition}
+                    samplesPerSecond={samplesPerSecond}
+                    secondsToShow={SECONDS_TO_SHOW}
+                />
+            )}
             {signalsToShow.map((_, index) => (
                 <div key={index} className="w-full flex-grow" style={{ width: '100%', height: '300px' }}>
                     <canvas ref={el => chartRefs.current[index] = el} style={{ width: '100%', height: '100%' }} />

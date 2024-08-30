@@ -82,3 +82,12 @@ export type NightEvent = {
 
 export type SlowWaveEvents = SlowWaveEvent[];
 export type NightEvents = NightEvent[];
+
+// Add these new types
+export type FitbitHypnogramEntry = {
+    startTime: Temporal.ZonedDateTime;
+    state: string;
+    endTime: Temporal.ZonedDateTime;
+};
+
+export type FitbitHypnogram = FitbitHypnogramEntry[];
