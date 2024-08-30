@@ -3,6 +3,7 @@ import { Chart, ChartConfiguration, registerables } from 'chart.js';
 import annotationPlugin from 'chartjs-plugin-annotation';
 import { AllData } from '../Loader/ProcessorTypes';
 import { FitbitHypnogramChart } from './FitbitHypnogramChart';
+import { NightEventsChart } from './NightEventsChart';
 
 Chart.register(...registerables, annotationPlugin);
 
@@ -52,9 +53,6 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition })
                 return eventStartSample < scrollPosition + samplesToShow && eventEndSample > scrollPosition;
             });
 
-            console.log(allData.slowWaveEvents?.[signal.label]);
-            console.log(visibleSlowWaveEvents);
-
             const config: ChartConfiguration = {
                 type: 'line',
                 data: {
@@ -80,13 +78,28 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition })
                                 callback: (value, index, ticks) => {
                                     return allData.processedEDF.signals[0].timeLabels[scrollPosition + index]?.formatted
                                 }
+                            },
+                            grid: {
+                                display: true
                             }
                         },
                         y: {
                             title: { display: true, text: `${signal.label} (${signal.physicalDimension})` },
                             min: yMin,
-                            max: yMax
+                            max: yMax,
+                            position: 'left',
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.1)'
+                            }
                         },
+                    },
+                    layout: {
+                        padding: {
+                            left: 50,
+                            right: 20,
+                            // top: 20,
+                            // bottom: index === signalsToShow.length - 1 ? 30 : 0
+                        }
                     },
                     animation: false,
                     plugins: {
@@ -163,6 +176,14 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition })
         <div className="flex-col flex h-full">
             {allData.fitbitHypnogram && (
                 <FitbitHypnogramChart
+                    allData={allData}
+                    scrollPosition={scrollPosition}
+                    samplesPerSecond={samplesPerSecond}
+                    secondsToShow={SECONDS_TO_SHOW}
+                />
+            )}
+            {allData.nightEvents && (
+                <NightEventsChart
                     allData={allData}
                     scrollPosition={scrollPosition}
                     samplesPerSecond={samplesPerSecond}

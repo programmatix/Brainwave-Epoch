@@ -90,6 +90,7 @@ export const FitbitHypnogramChart: React.FC<FitbitHypnogramChartProps> = ({
                         }
                     },
                     y: {
+                        title: { display: true, text: 'Fitbit' },
                         reverse: true,
                         min: -0.5,
                         max: 3.5,
@@ -100,7 +101,13 @@ export const FitbitHypnogramChart: React.FC<FitbitHypnogramChartProps> = ({
                         }
                     }
                 },
-                plugins: {
+                layout: {
+                    padding: {
+                        left: 50,
+                        right: 20,
+                    }
+                },
+            plugins: {
                     legend: { display: false },
                 }
             }
