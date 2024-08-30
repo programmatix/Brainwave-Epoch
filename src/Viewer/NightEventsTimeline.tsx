@@ -23,11 +23,10 @@ export const NightEventsTimeline: React.FC<NightEventsTimelineProps> = ({
 
   return (
     <div>
-      <h3>Night Events</h3>
       <svg width={width} height="30" onClick={handleClick}>
         {allData.nightEvents.map((event, eventIndex) => (
             <rect
-              key={`${eventIndex}`}
+              key={`${eventIndex}`} 
               x={((event.timestamp.epochSeconds - allData.processedEDF.startDate.epochSeconds) / totalSamples) * width}
               y="0"
               width={((event.timestamp.epochSeconds - event.timestamp.epochSeconds) / totalSamples) * width}

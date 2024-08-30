@@ -32,7 +32,6 @@ export const SlowWaveTimeline: React.FC<SlowWaveTimelineProps> = ({
 
   return (
     <div>
-      <h3>{channel}</h3>
       <svg width={width} height="30" onClick={handleClick}>
         {events.map((event, index) => {
           const startSample = secondsToSamples(event.Start);

@@ -46,7 +46,7 @@ export const SleepStageTimeline: React.FC<SleepStageTimelineProps> = ({
   return (
     <svg
       width={width}
-      height="50"
+      height="30"
       onClick={handleTimelineClick}
     >
       {sleepStages?.map((stage, index) => (
