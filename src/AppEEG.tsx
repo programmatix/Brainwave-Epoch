@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { AllData, ProcessedEDFData } from './Loader/ProcessorTypes';
-import EEGViewer from './Viewer/EEGViewer';
-import { NightEvents, ProcessedSleepStages, SlowWaveEvents } from './Loader/LoaderTypes';
-import { setupFileMenu, loadFiles, loaderEvents } from './Loader/Loader';
-import LogContainer from './Logs/LogContainer';
 import ErrorBoundary from './Errors/ErrorBoundary';
+import { loadFiles, loaderEvents, setupFileMenu } from './Loader/Loader';
+import { AllData } from './Loader/LoaderTypes';
+import LogContainer from './Logs/LogContainer';
+import EEGViewer from './Viewer/EEGViewer';
 
 declare global {
     interface Window {

@@ -1,8 +1,7 @@
-import React, { useRef, useEffect } from 'react';
 import { Chart, ChartConfiguration, registerables } from 'chart.js';
 import annotationPlugin from 'chartjs-plugin-annotation';
-import { AllData } from '../Loader/ProcessorTypes';
-import { FitbitHypnogram } from '../Loader/LoaderTypes';
+import React, { useEffect, useRef } from 'react';
+import { AllData } from '../Loader/LoaderTypes';
 
 Chart.register(...registerables, annotationPlugin);
 
@@ -77,6 +76,7 @@ export const FitbitHypnogramChart: React.FC<FitbitHypnogramChartProps> = ({
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                animation: false,
                 scales: {
                     x: {
                         type: 'linear',

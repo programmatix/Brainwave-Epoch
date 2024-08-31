@@ -1,5 +1,5 @@
 import React from 'react';
-import { AllData } from '../Loader/ProcessorTypes';
+import { AllData } from '../Loader/LoaderTypes';
 import { FitbitHypnogram } from '../Loader/LoaderTypes';
 
 interface FitbitHypnogramTimelineProps {

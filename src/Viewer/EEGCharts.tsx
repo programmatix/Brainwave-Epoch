@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { Chart, ChartConfiguration, registerables } from 'chart.js';
 import annotationPlugin from 'chartjs-plugin-annotation';
-import { AllData } from '../Loader/ProcessorTypes';
+import { AllData } from '../Loader/LoaderTypes';
 import { FitbitHypnogramChart } from './FitbitHypnogramChart';
 import { NightEventsChart } from './NightEventsChart';
 
@@ -48,6 +48,13 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition })
 
             const slowWaveEvents = allData.slowWaveEvents?.[signal.label] || [];
             const visibleSlowWaveEvents = slowWaveEvents.filter(event => {
+                const eventStartSample = secondsToSamples(event.Start);
+                const eventEndSample = secondsToSamples(event.End);
+                return eventStartSample < scrollPosition + samplesToShow && eventEndSample > scrollPosition;
+            });
+
+            const spindleEvents = allData.spindleEvents?.[signal.label] || [];
+            const visibleSpindleEvents = spindleEvents.filter(event => {
                 const eventStartSample = secondsToSamples(event.Start);
                 const eventEndSample = secondsToSamples(event.End);
                 return eventStartSample < scrollPosition + samplesToShow && eventEndSample > scrollPosition;
@@ -129,7 +136,11 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition })
                                                     `${sleepStage?.Timestamp}`,
                                                     `Epoch: ${epochIndex}`,
                                                     `Stage: ${channelData?.Stage || 'N/A'}`,
-                                                    `Confidence: ${channelData?.Confidence?.toFixed(2) || 'N/A'}`
+                                                    `Confidence: ${channelData?.Confidence?.toFixed(2) || 'N/A'}`,
+                                                    `EEG AbsPow: ${sleepStage?.eeg_abspow?.toFixed(2) || 'N/A'}`,
+                                                    `EEG Alpha: ${sleepStage?.eeg_alpha?.toFixed(2) || 'N/A'}`,
+                                                    `EEG Beta: ${sleepStage?.eeg_beta?.toFixed(2) || 'N/A'}`,
+                                                    // ... (add more eeg_ fields as needed)
                                                 ],
                                                 font: { size: 10 },
                                                 textAlign: 'left',
@@ -150,6 +161,22 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition })
                                             yMax: yMax,
                                             backgroundColor: 'rgba(54, 162, 235, 0.2)',
                                             borderColor: 'rgba(54, 162, 235, 1)',
+                                            borderWidth: 1,
+                                        }];
+                                    })
+                                ),
+                                ...Object.fromEntries(
+                                    visibleSpindleEvents.map((event, eventIndex) => {
+                                        const eventStartSample = secondsToSamples(event.Start) - scrollPosition;
+                                        const eventEndSample = secondsToSamples(event.End) - scrollPosition;
+                                        return [`spindle${eventIndex}`, {
+                                            type: 'box',
+                                            xMin: eventStartSample,
+                                            xMax: eventEndSample,
+                                            yMin: yMin,
+                                            yMax: yMax,
+                                            backgroundColor: 'rgba(147, 51, 234, 0.2)',
+                                            borderColor: 'rgba(147, 51, 234, 1)',
                                             borderWidth: 1,
                                         }];
                                     })

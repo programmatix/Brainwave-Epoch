@@ -1,6 +1,6 @@
 import React from 'react';
 import { SlowWaveEvent   } from '../Loader/LoaderTypes';
-import { AllData } from '../Loader/ProcessorTypes';
+import { AllData } from '../Loader/LoaderTypes';
 
 interface SlowWaveTimelineProps {
     allData: AllData;

@@ -1,9 +1,7 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { AllData, ProcessedEDFData } from '../../src/Loader/ProcessorTypes';
-import { ProcessedSleepStages } from '../Loader/LoaderTypes';
-import { EEGCharts } from './EEGCharts';
+import React, { useState } from 'react';
+import { AllData } from '../../src/Loader/LoaderTypes';
+import { EEGCharts, SECONDS_PER_EPOCH } from './EEGCharts';
 import { TimelineNavigation } from './Navigation';
-import { SECONDS_PER_EPOCH } from './EEGCharts';
 
 interface EEGViewerProps {
   allData: AllData;

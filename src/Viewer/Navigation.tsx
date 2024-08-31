@@ -1,9 +1,12 @@
 import React, { useCallback, useEffect } from 'react';
-import { AllData } from '../Loader/ProcessorTypes';
+import { AllData } from '../Loader/LoaderTypes';
 import { SleepStageTimeline } from './SleepStageTimeline';
 import { SlowWaveTimeline } from './SlowWaveTimeline';
 import { NightEventsTimeline } from './NightEventsTimeline';
 import { FitbitHypnogramTimeline } from './FitbitHypnogramTimeline';
+import { SpindleTimeline } from './SpindleTimeline';
+import { PredictedAwakeTimeline } from './PredictedAwakeTimeline';
+import { DefiniteAwakeSleepTimeline } from './DefiniteAwakeSleepTimeline';
 
 interface TimelineNavigationProps {
     allData: AllData;
@@ -68,10 +71,27 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = ({
                 </td>
             </tr>
             {allData.slowWaveEvents && Object.entries(allData.slowWaveEvents).map(([channel, events]) => (
-                <tr>
+                <tr key={`slow-${channel}`}>
                     <td>Slow Waves {channel}</td>
                     <td>
                         <SlowWaveTimeline
+                            key={channel}
+                            scrollPosition={scrollPosition}
+                            channel={channel}
+                            events={events}
+                            totalSamples={totalSamples}
+                            width={TIMELINE_WIDTH}
+                            onTimelineClick={handleTimelineClick}
+                            allData={allData}
+                        />
+                    </td>
+                </tr>
+            ))}
+            {allData.spindleEvents && Object.entries(allData.spindleEvents).map(([channel, events]) => (
+                <tr key={`spindle-${channel}`}>
+                    <td>Spindles {channel}</td>
+                    <td>
+                        <SpindleTimeline
                             key={channel}
                             scrollPosition={scrollPosition}
                             channel={channel}
@@ -113,6 +133,30 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = ({
                     </td>
                 </tr>
             )}
+            <tr>
+                <td>Predicted Awake</td>
+                <td>
+                    <PredictedAwakeTimeline
+                        sleepStages={allData.predictedAwakeTimeline}
+                        scrollPosition={scrollPosition}
+                        totalSamples={totalSamples}
+                        width={TIMELINE_WIDTH}
+                        onTimelineClick={handleTimelineClick}
+                    />
+                </td>
+            </tr>
+            <tr>
+                <td>Definite Awake/Sleep</td>
+                <td>
+                    <DefiniteAwakeSleepTimeline
+                        sleepStages={allData.definiteAwakeSleepTimeline}
+                        scrollPosition={scrollPosition}
+                        totalSamples={totalSamples}
+                        width={TIMELINE_WIDTH}
+                        onTimelineClick={handleTimelineClick}
+                    />
+                </td>
+            </tr>
         </div>
     );
 };

@@ -1,10 +1,8 @@
 import { Temporal } from '@js-temporal/polyfill';
 import { parse } from 'csv-parse/sync';
 import { promises as fs } from 'fs';
-import { EDFData, EDFHeader, EDFSignal, NightEvents, ProcessedSleepStageEntry, ProcessedSleepStages, SleepStages, SlowWaveEvents, FitbitHypnogram, FitbitHypnogramEntry } from './LoaderTypes';
+import { AllData, EDFData, EDFHeader, EDFSignal, FitbitHypnogram, GroupedSlowWaveEvents, GroupedSpindleEvents, NightEvents, ProcessedEDFData, ProcessedSleepStageEntry, ProcessedSleepStages, SignalData, SlowWaveEvents, SpindleEvents, TimeLabel } from './LoaderTypes';
 
-import { processEDFData } from '../Loader/Processor';
-import { AllData, GroupedSlowWaveEvents, ProcessedEDFData } from '../Loader/ProcessorTypes';
 
 import { EventEmitter } from 'events';
 
@@ -84,7 +82,7 @@ export async function readSleepStages(filePath: string): Promise<ProcessedSleepS
     const sleepStagesData = await fs.readFile(filePath, 'utf8');
     console.timeLog('readSleepStages', 'File read');
 
-    const parsedSleepStages: SleepStages = parse(sleepStagesData, {
+    const parsedSleepStages: any[] = parse(sleepStagesData, {
         columns: true,
         skip_empty_lines: true
     });
@@ -111,15 +109,88 @@ export async function readSleepStages(filePath: string): Promise<ProcessedSleepS
         const processed: ProcessedSleepStageEntry = {
             Epoch: parseInt(stage.Epoch),
             Timestamp: timestamp,
+            Stage: stage.Stage,
+            Confidence: parseFloat(stage.Confidence),
+            Source: stage.Source,
+            StageInt: parseInt(stage.StageInt),
             Channels: {
                 "Aggregated": {
                     Confidence: parseFloat(stage.Confidence),
                     Stage: stage.Stage,
                     Source: stage.Source
                 }
-            }
+            },
+            eeg_abspow: parseFloat(stage.eeg_abspow),
+            eeg_abspow_c7min_norm: parseFloat(stage.eeg_abspow_c7min_norm),
+            eeg_abspow_p2min_norm: parseFloat(stage.eeg_abspow_p2min_norm),
+            eeg_alpha: parseFloat(stage.eeg_alpha),
+            eeg_alpha_c7min_norm: parseFloat(stage.eeg_alpha_c7min_norm),
+            eeg_alpha_p2min_norm: parseFloat(stage.eeg_alpha_p2min_norm),
+            eeg_at: parseFloat(stage.eeg_at),
+            eeg_at_c7min_norm: parseFloat(stage.eeg_at_c7min_norm),
+            eeg_at_p2min_norm: parseFloat(stage.eeg_at_p2min_norm),
+            eeg_beta: parseFloat(stage.eeg_beta),
+            eeg_beta_c7min_norm: parseFloat(stage.eeg_beta_c7min_norm),
+            eeg_beta_p2min_norm: parseFloat(stage.eeg_beta_p2min_norm),
+            eeg_db: parseFloat(stage.eeg_db),
+            eeg_db_c7min_norm: parseFloat(stage.eeg_db_c7min_norm),
+            eeg_db_p2min_norm: parseFloat(stage.eeg_db_p2min_norm),
+            eeg_ds: parseFloat(stage.eeg_ds),
+            eeg_ds_c7min_norm: parseFloat(stage.eeg_ds_c7min_norm),
+            eeg_ds_p2min_norm: parseFloat(stage.eeg_ds_p2min_norm),
+            eeg_dt: parseFloat(stage.eeg_dt),
+            eeg_dt_c7min_norm: parseFloat(stage.eeg_dt_c7min_norm),
+            eeg_dt_p2min_norm: parseFloat(stage.eeg_dt_p2min_norm),
+            eeg_fdelta: parseFloat(stage.eeg_fdelta),
+            eeg_fdelta_c7min_norm: parseFloat(stage.eeg_fdelta_c7min_norm),
+            eeg_fdelta_p2min_norm: parseFloat(stage.eeg_fdelta_p2min_norm),
+            eeg_hcomp: parseFloat(stage.eeg_hcomp),
+            eeg_hcomp_c7min_norm: parseFloat(stage.eeg_hcomp_c7min_norm),
+            eeg_hcomp_p2min_norm: parseFloat(stage.eeg_hcomp_p2min_norm),
+            eeg_higuchi: parseFloat(stage.eeg_higuchi),
+            eeg_higuchi_c7min_norm: parseFloat(stage.eeg_higuchi_c7min_norm),
+            eeg_higuchi_p2min_norm: parseFloat(stage.eeg_higuchi_p2min_norm),
+            eeg_hmob: parseFloat(stage.eeg_hmob),
+            eeg_hmob_c7min_norm: parseFloat(stage.eeg_hmob_c7min_norm),
+            eeg_hmob_p2min_norm: parseFloat(stage.eeg_hmob_p2min_norm),
+            eeg_iqr: parseFloat(stage.eeg_iqr),
+            eeg_iqr_c7min_norm: parseFloat(stage.eeg_iqr_c7min_norm),
+            eeg_iqr_p2min_norm: parseFloat(stage.eeg_iqr_p2min_norm),
+            eeg_kurt: parseFloat(stage.eeg_kurt),
+            eeg_kurt_c7min_norm: parseFloat(stage.eeg_kurt_c7min_norm),
+            eeg_kurt_p2min_norm: parseFloat(stage.eeg_kurt_p2min_norm),
+            eeg_nzc: parseFloat(stage.eeg_nzc),
+            eeg_nzc_c7min_norm: parseFloat(stage.eeg_nzc_c7min_norm),
+            eeg_nzc_p2min_norm: parseFloat(stage.eeg_nzc_p2min_norm),
+            eeg_perm: parseFloat(stage.eeg_perm),
+            eeg_perm_c7min_norm: parseFloat(stage.eeg_perm_c7min_norm),
+            eeg_perm_p2min_norm: parseFloat(stage.eeg_perm_p2min_norm),
+            eeg_petrosian: parseFloat(stage.eeg_petrosian),
+            eeg_petrosian_c7min_norm: parseFloat(stage.eeg_petrosian_c7min_norm),
+            eeg_petrosian_p2min_norm: parseFloat(stage.eeg_petrosian_p2min_norm),
+            eeg_sdelta: parseFloat(stage.eeg_sdelta),
+            eeg_sdelta_c7min_norm: parseFloat(stage.eeg_sdelta_c7min_norm),
+            eeg_sdelta_p2min_norm: parseFloat(stage.eeg_sdelta_p2min_norm),
+            eeg_sigma: parseFloat(stage.eeg_sigma),
+            eeg_sigma_c7min_norm: parseFloat(stage.eeg_sigma_c7min_norm),
+            eeg_sigma_p2min_norm: parseFloat(stage.eeg_sigma_p2min_norm),
+            eeg_skew: parseFloat(stage.eeg_skew),
+            eeg_skew_c7min_norm: parseFloat(stage.eeg_skew_c7min_norm),
+            eeg_skew_p2min_norm: parseFloat(stage.eeg_skew_p2min_norm),
+            eeg_std: parseFloat(stage.eeg_std),
+            eeg_std_c7min_norm: parseFloat(stage.eeg_std_c7min_norm),
+            eeg_std_p2min_norm: parseFloat(stage.eeg_std_p2min_norm),
+            eeg_theta: parseFloat(stage.eeg_theta),
+            eeg_theta_c7min_norm: parseFloat(stage.eeg_theta_c7min_norm),
+            eeg_theta_p2min_norm: parseFloat(stage.eeg_theta_p2min_norm),
+            ManualStage: stage.ManualStage,
+            DefinitelyAwake: stage.DefinitelyAwake === 'True',
+            DefinitelySleep: stage.DefinitelySleep === 'True',
+            PredictedAwake: parseFloat(stage.PredictedAwake),
+            PredictedAwakeBinary: parseInt(stage.PredictedAwakeBinary)
         };
 
+        
         Object.keys(stage).forEach(key => {
             if (key.endsWith('_Confidence') || key.endsWith('_Stage')) {
                 const channel = key.split('_')[0];
@@ -208,17 +279,19 @@ export async function loadFiles(edfPath: string): Promise<AllData> {
     const start = performance.now();
     loaderEvents.emit('log', `${new Date().toISOString()}: Starting to load files`);
 
-    const sleepStagesPath = edfPath.replace('.edf', '.sleep_stages.csv');
+    const sleepStagesPath = edfPath.replace('.edf', '.with_predictions.csv');
     const slowWaveEventsPath = edfPath.replace('.edf', '.sw_summary.csv');
     const nightEventsPath = edfPath.replace('.edf', '.night_events.csv');
     const fitbitHypnogramPath = edfPath.replace('.edf', '.fitbit_hypnogram.csv');
+    const spindleEventsPath = edfPath.replace('.edf', '.spindle_summary.csv');
     
-    const [processedStages, raw, slowWaveEvents, nightEvents, fitbitHypnogram] = await Promise.all([
+    const [processedStages, raw, slowWaveEvents, nightEvents, fitbitHypnogram, spindleEvents] = await Promise.all([
         readSleepStages(sleepStagesPath),
         readEDFPlus(edfPath),
         readSlowWaveEvents(slowWaveEventsPath),
         readNightEvents(nightEventsPath),
-        readFitbitHypnogram(fitbitHypnogramPath)
+        readFitbitHypnogram(fitbitHypnogramPath),
+        readSpindleEvents(spindleEventsPath)
     ]);
 
     loaderEvents.emit('log', `${new Date().toISOString()}: Processing EDF data...`);
@@ -230,7 +303,18 @@ export async function loadFiles(edfPath: string): Promise<AllData> {
     const end = performance.now();
     loaderEvents.emit('log', `${new Date().toISOString()}: All files loaded and processed in ${(end - start).toFixed(2)}ms`);
 
-    return { processedEDF, sleepStages: processedStages, slowWaveEvents, nightEvents, fitbitHypnogram };
+    const allData: AllData = {
+        processedEDF,
+        sleepStages: processedStages,
+        slowWaveEvents,
+        nightEvents,
+        fitbitHypnogram,
+        spindleEvents,
+        predictedAwakeTimeline: processedStages,
+        definiteAwakeSleepTimeline: processedStages
+    };
+
+    return allData;
 }
 
 export async function readSlowWaveEvents(filePath: string): Promise<GroupedSlowWaveEvents> {
@@ -261,7 +345,9 @@ export async function readNightEvents(filePath: string): Promise<NightEvents> {
     });
     const nightEvents: NightEvents = parsedData.map(event => ({
         ...event,
-        timestamp: parseDateString(event.timestamp_uk)
+        timestamp: parseDateString(event.timestamp_uk),
+        source: event.source,
+        durationSecs: event.duration_secs
     }));
     console.timeEnd('readNightEvents');
     return nightEvents;
@@ -284,3 +370,90 @@ export async function readFitbitHypnogram(filePath: string): Promise<FitbitHypno
     console.timeEnd('readFitbitHypnogram');
     return fitbitHypnogram;
 }
+
+export async function readSpindleEvents(filePath: string): Promise<GroupedSpindleEvents> {
+    console.time('readSpindleEvents');
+    const data = await fs.readFile(filePath, 'utf8');
+    const parsedData: SpindleEvents = parse(data, {
+        columns: true,
+        skip_empty_lines: true,
+        cast: true
+    });
+    const groupedEvents = parsedData.reduce((acc, event) => {
+        if (!acc[event.Channel]) {
+            acc[event.Channel] = [];
+        }
+        acc[event.Channel].push(event);
+        return acc;
+    }, {} as GroupedSpindleEvents);
+    console.timeEnd('readSpindleEvents');
+    return groupedEvents;
+}
+
+
+export function processEDFData(edfData: EDFData): ProcessedEDFData {
+    const { header, signals, records } = edfData;
+  
+    const processedSignals: SignalData[] = signals.map(signal => {
+      const samplingRate = signal.numSamplesPerDataRecord / header.durationOfDataRecord;
+      const totalSamples = signal.numSamplesPerDataRecord * header.numDataRecords;
+      const timeLabels: TimeLabel[] = [];
+  
+      const padZero = (num: number) => num.toString().padStart(2, '0');
+      const startTime = new Date(header.startDate.year, header.startDate.month - 1, header.startDate.day,
+        header.startDate.hour, header.startDate.minute, header.startDate.second,
+        header.startDate.millisecond).getTime();
+  
+      for (let i = 0; i < totalSamples; i++) {
+        const milliseconds = Math.round(i / samplingRate * 1000);
+        const currentTime = new Date(startTime + milliseconds);
+  
+        // const formatter = new Intl.DateTimeFormat('en-GB', {
+        //   timeZone: 'Europe/London',
+        //   hour: "2-digit",
+        //   minute: "2-digit",
+        //   second: "2-digit",
+        // });
+        // const formattedDate = formatter.format(currentTime);
+  
+        const formattedTime = `${padZero(currentTime.getHours())}:${padZero(currentTime.getMinutes())}:${padZero(currentTime.getSeconds())}`;
+  
+        timeLabels.push({
+          timestamp: startTime + milliseconds,
+          formatted: formattedTime
+        });
+      }
+  
+      return {
+        label: signal.label,
+        transducerType: signal.transducerType,
+        physicalDimension: signal.physicalDimension,
+        physicalMin: signal.physicalMin,
+        physicalMax: signal.physicalMax,
+        digitalMin: signal.digitalMin,
+        digitalMax: signal.digitalMax,
+        prefiltering: signal.prefiltering,
+        samplingRate,
+        samples: [],
+        timeLabels
+      };
+    });
+  
+    let sampleIndex = 0;
+    for (let i = 0; i < signals.length; i++) {
+      const totalSamples = signals[i].numSamplesPerDataRecord * header.numDataRecords;
+      processedSignals[i].samples = records.flat().slice(sampleIndex, sampleIndex + totalSamples);
+      sampleIndex += totalSamples;
+    }
+  
+    return {
+      startDate: header.startDate,
+      duration: header.numDataRecords * header.durationOfDataRecord,
+      signals: processedSignals
+    };
+  }
+  
+  export async function readAndProcessEDF(filePath: string): Promise<ProcessedEDFData> {
+    const edfData = await readEDFPlus(filePath);
+    return processEDFData(edfData);
+  }

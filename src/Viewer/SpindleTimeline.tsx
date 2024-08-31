@@ -1,20 +1,25 @@
 import React from 'react';
+import { SpindleEvent } from '../Loader/LoaderTypes';
 import { AllData } from '../Loader/LoaderTypes';
 
-interface NightEventsTimelineProps {
+interface SpindleTimelineProps {
     allData: AllData;
+    channel: string;
+    events: SpindleEvent[];
     scrollPosition: number;
     totalSamples: number;
     width: number;
     onTimelineClick: (position: number) => void;
 }
 
-export const NightEventsTimeline: React.FC<NightEventsTimelineProps> = ({
-    allData,
+export const SpindleTimeline: React.FC<SpindleTimelineProps> = ({
+    channel,
+    events,
     scrollPosition,
     totalSamples,
     width,
     onTimelineClick,
+    allData,
 }) => {
     const handleClick = (e: React.MouseEvent<SVGSVGElement>) => {
         const rect = e.currentTarget.getBoundingClientRect();
@@ -23,23 +28,26 @@ export const NightEventsTimeline: React.FC<NightEventsTimelineProps> = ({
         onTimelineClick(newPosition);
     };
 
+    const secondsToSamples = (seconds: number) => {
+        return Math.floor(seconds * allData.processedEDF.signals[0].samplingRate);
+    };
+
     const scrollIndicatorPosition = (scrollPosition / totalSamples) * width;
-    const totalTimePeriod = allData.processedEDF.duration;
 
     return (
         <div>
             <svg width={width} height="30" onClick={handleClick}>
-                {allData.nightEvents.map((event, eventIndex) => {
-                    console.log(event.timestamp.epochSeconds, allData.processedEDF.startDate.epochSeconds, totalSamples, event.timestamp.epochSeconds - allData.processedEDF.startDate.epochSeconds, totalTimePeriod);
+                {events.map((event, index) => {
+                    const startSample = secondsToSamples(event.Start);
+                    const endSample = secondsToSamples(event.End);
                     return (
                         <rect
-                            key={`${eventIndex}`}
-                            x={((event.timestamp.epochSeconds - allData.processedEDF.startDate.epochSeconds) / totalTimePeriod) * width}
+                            key={index}
+                            x={(startSample / totalSamples) * width}
                             y="0"
-                            //   width={Math.min(1, ((event.timestamp.epochSeconds - event.timestamp.epochSeconds) / totalSamples) * width)}
-                            width={1}
+                            width={Math.max(1, ((endSample - startSample) / totalSamples) * width)}
                             height="30"
-                            fill="red"
+                            fill="#9333ea"
                         />
                     );
                 })}
