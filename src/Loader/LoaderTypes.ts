@@ -48,7 +48,7 @@ export type ChannelData = {
     Confidence: number;
     Stage: string;
     Source?: string;
-};
+} & ProcessedSleepStageEntryFeatures;
 
 
 export type SlowWaveEvent = {
@@ -137,69 +137,7 @@ export type FeatureMinMax = {
 };
 
 export type ProcessedSleepStageEntryFeatures = {
-    eeg_abspow: number;
-    eeg_abspow_c7min_norm: number;
-    eeg_abspow_p2min_norm: number;
-    eeg_alpha: number;
-    eeg_alpha_c7min_norm: number;
-    eeg_alpha_p2min_norm: number;
-    eeg_at: number;
-    eeg_at_c7min_norm: number;
-    eeg_at_p2min_norm: number;
-    eeg_beta: number;
-    eeg_beta_c7min_norm: number;
-    eeg_beta_p2min_norm: number;
-    eeg_db: number;
-    eeg_db_c7min_norm: number;
-    eeg_db_p2min_norm: number;
-    eeg_ds: number;
-    eeg_ds_c7min_norm: number;
-    eeg_ds_p2min_norm: number;
-    eeg_dt: number;
-    eeg_dt_c7min_norm: number;
-    eeg_dt_p2min_norm: number;
-    eeg_fdelta: number;
-    eeg_fdelta_c7min_norm: number;
-    eeg_fdelta_p2min_norm: number;
-    eeg_hcomp: number;
-    eeg_hcomp_c7min_norm: number;
-    eeg_hcomp_p2min_norm: number;
-    eeg_higuchi: number;
-    eeg_higuchi_c7min_norm: number;
-    eeg_higuchi_p2min_norm: number;
-    eeg_hmob: number;
-    eeg_hmob_c7min_norm: number;
-    eeg_hmob_p2min_norm: number;
-    eeg_iqr: number;
-    eeg_iqr_c7min_norm: number;
-    eeg_iqr_p2min_norm: number;
-    eeg_kurt: number;
-    eeg_kurt_c7min_norm: number;
-    eeg_kurt_p2min_norm: number;
-    eeg_nzc: number;
-    eeg_nzc_c7min_norm: number;
-    eeg_nzc_p2min_norm: number;
-    eeg_perm: number;
-    eeg_perm_c7min_norm: number;
-    eeg_perm_p2min_norm: number;
-    eeg_petrosian: number;
-    eeg_petrosian_c7min_norm: number;
-    eeg_petrosian_p2min_norm: number;
-    eeg_sdelta: number;
-    eeg_sdelta_c7min_norm: number;
-    eeg_sdelta_p2min_norm: number;
-    eeg_sigma: number;
-    eeg_sigma_c7min_norm: number;
-    eeg_sigma_p2min_norm: number;
-    eeg_skew: number;
-    eeg_skew_c7min_norm: number;
-    eeg_skew_p2min_norm: number;
-    eeg_std: number;
-    eeg_std_c7min_norm: number;
-    eeg_std_p2min_norm: number;
-    eeg_theta: number;
-    eeg_theta_c7min_norm: number;
-    eeg_theta_p2min_norm: number;
+    [key: string]: number;
 };
 
 export type ProcessedSleepStageEntry = {
@@ -215,7 +153,7 @@ export type ProcessedSleepStageEntry = {
     DefinitelySleep?: boolean;
     PredictedAwake?: number;
     PredictedAwakeBinary?: number;
-} & ProcessedSleepStageEntryFeatures;
+};
 
 export type ProcessedSleepStages = ProcessedSleepStageEntry[];
 

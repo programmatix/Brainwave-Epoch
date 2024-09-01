@@ -89,15 +89,16 @@ export function generateAnnotationsForLeft(
     ];
 
     const orderedKeys = ["eeg_sdelta", "eeg_fdelta", "eeg_theta", "eeg_alpha", "eeg_beta"];
-    const allKeys = new Set([...orderedKeys, ...Object.keys(sleepStage).filter(key => key.startsWith('eeg_'))]);
+    const allKeys = new Set([...orderedKeys, ...Object.keys(channelData).filter(key => key.startsWith('eeg_'))]);
 
     allKeys.forEach(key => {
         if (orderedKeys.includes(key) || !key.includes('p2') && !key.includes('c7') && !key.includes('eeg_db') && !key.includes('eeg_ds') && !key.includes('eeg_dt') && !key.includes('eeg_hcomp') && !key.includes('eeg_hmob') && !key.includes('eeg_sigma') && !key.includes('eeg_std')) {
-            const value = sleepStage[key as keyof ProcessedSleepStageEntryFeatures];
+            const value = channelData[key as keyof ProcessedSleepStageEntryFeatures];
+            console.log(signal.label, channelData, key, value);
             if (typeof value === 'number') {
                 const minMax = allData.sleepStageFeatureMinMax[key as keyof ProcessedSleepStageEntryFeatures];
                 const color = getColorForValue(value, minMax.min, minMax.max);
-                const compValue = compareEpoch !== null ? allData.sleepStages[compareEpoch][key as keyof ProcessedSleepStageEntryFeatures] : undefined;
+                const compValue = compareEpoch !== null ? allData.sleepStages[compareEpoch]?.Channels[signal.label][key as keyof ProcessedSleepStageEntryFeatures] : undefined;
                 const compColor = compValue !== undefined ? getColorForValue(compValue as number, minMax.min, minMax.max) : undefined;
                 const diffPercent = compValue !== undefined ? (((value - compValue) / compValue) * 100) : undefined;
                 const diffPercentColor = diffPercent !== undefined ? getColorForValue(diffPercent, -100, 100) : undefined;

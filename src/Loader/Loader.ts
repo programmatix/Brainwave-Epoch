@@ -1,7 +1,7 @@
 import { Temporal } from '@js-temporal/polyfill';
 import { parse } from 'csv-parse/sync';
 import { promises as fs } from 'fs';
-import { AllData, EDFData, EDFHeader, EDFSignal, FitbitHypnogram, GroupedSlowWaveEvents, GroupedSpindleEvents, NightEvents, ProcessedEDFData, ProcessedSleepStageEntry, ProcessedSleepStages, SignalData, SlowWaveEvents, SpindleEvents, TimeLabel, SleepStageFeatureMinMax, ProcessedSleepStageEntryFeatures } from './LoaderTypes';
+import { AllData, EDFData, EDFHeader, EDFSignal, FitbitHypnogram, GroupedSlowWaveEvents, GroupedSpindleEvents, NightEvents, ProcessedEDFData, ProcessedSleepStageEntry, ProcessedSleepStages, SignalData, SlowWaveEvents, SpindleEvents, TimeLabel, SleepStageFeatureMinMax, ProcessedSleepStageEntryFeatures, ChannelData } from './LoaderTypes';
 
 
 import { EventEmitter } from 'events';
@@ -89,13 +89,33 @@ export async function readSleepStages(filePath: string): Promise<ProcessedSleepS
         });
         console.timeLog('readSleepStages', 'CSV parsed');
 
+        const getChannelNames = (stage: any): string[] => {
+            return [...new Set(Object.keys(stage)
+                .filter(key => key.includes('_'))
+                .map(key => key.split('_')[0]))];
+        };
+        
+        const getChannelData = (stage: any, channel: string): ChannelData => {
+            return Object.keys(stage)
+                .filter(key => key.startsWith(channel))
+                .reduce((data, key) => {
+                    const feature = key.replace(`${channel}_`, '');
+                    if (feature === 'Stage') {
+                        data[feature] = stage[key];
+                    } else {
+                        data[feature] = parseFloat(stage[key]);
+                    }
+                    return data;
+                }, {} as ChannelData);
+        };
+        
         const result = parsedSleepStages.map(stage => {
             const [datePart, timePart] = stage.Timestamp.split(' ');
             const [timeWithNanos, offset] = timePart.split('+');
             const [time, nanos] = timeWithNanos.split('.');
             const [year, month, day] = datePart.split('-');
             const [hour, minute, second] = time.split(':');
-
+        
             const timestamp = Temporal.ZonedDateTime.from({
                 year: parseInt(year),
                 month: parseInt(month),
@@ -106,7 +126,19 @@ export async function readSleepStages(filePath: string): Promise<ProcessedSleepS
                 nanosecond: parseInt(nanos || '0'),
                 timeZone: Temporal.TimeZone.from(`+${offset}`)
             });
-
+        
+            const channels = {
+                "Aggregated": {
+                    Confidence: parseFloat(stage.Confidence),
+                    Stage: stage.Stage,
+                    Source: stage.Source
+                },
+                ...getChannelNames(stage).reduce((acc, channel) => {
+                    acc[channel] = getChannelData(stage, channel);
+                    return acc;
+                }, {} as { [key: string]: ChannelData })
+            };
+        
             const processed: ProcessedSleepStageEntry = {
                 Epoch: parseInt(stage.Epoch),
                 Timestamp: timestamp,
@@ -114,96 +146,14 @@ export async function readSleepStages(filePath: string): Promise<ProcessedSleepS
                 Confidence: parseFloat(stage.Confidence),
                 Source: stage.Source,
                 StageInt: parseInt(stage.StageInt),
-                Channels: {
-                    "Aggregated": {
-                        Confidence: parseFloat(stage.Confidence),
-                        Stage: stage.Stage,
-                        Source: stage.Source
-                    }
-                },
-                eeg_abspow: parseFloat(stage.eeg_abspow),
-                eeg_abspow_c7min_norm: parseFloat(stage.eeg_abspow_c7min_norm),
-                eeg_abspow_p2min_norm: parseFloat(stage.eeg_abspow_p2min_norm),
-                eeg_alpha: parseFloat(stage.eeg_alpha),
-                eeg_alpha_c7min_norm: parseFloat(stage.eeg_alpha_c7min_norm),
-                eeg_alpha_p2min_norm: parseFloat(stage.eeg_alpha_p2min_norm),
-                eeg_at: parseFloat(stage.eeg_at),
-                eeg_at_c7min_norm: parseFloat(stage.eeg_at_c7min_norm),
-                eeg_at_p2min_norm: parseFloat(stage.eeg_at_p2min_norm),
-                eeg_beta: parseFloat(stage.eeg_beta),
-                eeg_beta_c7min_norm: parseFloat(stage.eeg_beta_c7min_norm),
-                eeg_beta_p2min_norm: parseFloat(stage.eeg_beta_p2min_norm),
-                eeg_db: parseFloat(stage.eeg_db),
-                eeg_db_c7min_norm: parseFloat(stage.eeg_db_c7min_norm),
-                eeg_db_p2min_norm: parseFloat(stage.eeg_db_p2min_norm),
-                eeg_ds: parseFloat(stage.eeg_ds),
-                eeg_ds_c7min_norm: parseFloat(stage.eeg_ds_c7min_norm),
-                eeg_ds_p2min_norm: parseFloat(stage.eeg_ds_p2min_norm),
-                eeg_dt: parseFloat(stage.eeg_dt),
-                eeg_dt_c7min_norm: parseFloat(stage.eeg_dt_c7min_norm),
-                eeg_dt_p2min_norm: parseFloat(stage.eeg_dt_p2min_norm),
-                eeg_fdelta: parseFloat(stage.eeg_fdelta),
-                eeg_fdelta_c7min_norm: parseFloat(stage.eeg_fdelta_c7min_norm),
-                eeg_fdelta_p2min_norm: parseFloat(stage.eeg_fdelta_p2min_norm),
-                eeg_hcomp: parseFloat(stage.eeg_hcomp),
-                eeg_hcomp_c7min_norm: parseFloat(stage.eeg_hcomp_c7min_norm),
-                eeg_hcomp_p2min_norm: parseFloat(stage.eeg_hcomp_p2min_norm),
-                eeg_higuchi: parseFloat(stage.eeg_higuchi),
-                eeg_higuchi_c7min_norm: parseFloat(stage.eeg_higuchi_c7min_norm),
-                eeg_higuchi_p2min_norm: parseFloat(stage.eeg_higuchi_p2min_norm),
-                eeg_hmob: parseFloat(stage.eeg_hmob),
-                eeg_hmob_c7min_norm: parseFloat(stage.eeg_hmob_c7min_norm),
-                eeg_hmob_p2min_norm: parseFloat(stage.eeg_hmob_p2min_norm),
-                eeg_iqr: parseFloat(stage.eeg_iqr),
-                eeg_iqr_c7min_norm: parseFloat(stage.eeg_iqr_c7min_norm),
-                eeg_iqr_p2min_norm: parseFloat(stage.eeg_iqr_p2min_norm),
-                eeg_kurt: parseFloat(stage.eeg_kurt),
-                eeg_kurt_c7min_norm: parseFloat(stage.eeg_kurt_c7min_norm),
-                eeg_kurt_p2min_norm: parseFloat(stage.eeg_kurt_p2min_norm),
-                eeg_nzc: parseFloat(stage.eeg_nzc),
-                eeg_nzc_c7min_norm: parseFloat(stage.eeg_nzc_c7min_norm),
-                eeg_nzc_p2min_norm: parseFloat(stage.eeg_nzc_p2min_norm),
-                eeg_perm: parseFloat(stage.eeg_perm),
-                eeg_perm_c7min_norm: parseFloat(stage.eeg_perm_c7min_norm),
-                eeg_perm_p2min_norm: parseFloat(stage.eeg_perm_p2min_norm),
-                eeg_petrosian: parseFloat(stage.eeg_petrosian),
-                eeg_petrosian_c7min_norm: parseFloat(stage.eeg_petrosian_c7min_norm),
-                eeg_petrosian_p2min_norm: parseFloat(stage.eeg_petrosian_p2min_norm),
-                eeg_sdelta: parseFloat(stage.eeg_sdelta),
-                eeg_sdelta_c7min_norm: parseFloat(stage.eeg_sdelta_c7min_norm),
-                eeg_sdelta_p2min_norm: parseFloat(stage.eeg_sdelta_p2min_norm),
-                eeg_sigma: parseFloat(stage.eeg_sigma),
-                eeg_sigma_c7min_norm: parseFloat(stage.eeg_sigma_c7min_norm),
-                eeg_sigma_p2min_norm: parseFloat(stage.eeg_sigma_p2min_norm),
-                eeg_skew: parseFloat(stage.eeg_skew),
-                eeg_skew_c7min_norm: parseFloat(stage.eeg_skew_c7min_norm),
-                eeg_skew_p2min_norm: parseFloat(stage.eeg_skew_p2min_norm),
-                eeg_std: parseFloat(stage.eeg_std),
-                eeg_std_c7min_norm: parseFloat(stage.eeg_std_c7min_norm),
-                eeg_std_p2min_norm: parseFloat(stage.eeg_std_p2min_norm),
-                eeg_theta: parseFloat(stage.eeg_theta),
-                eeg_theta_c7min_norm: parseFloat(stage.eeg_theta_c7min_norm),
-                eeg_theta_p2min_norm: parseFloat(stage.eeg_theta_p2min_norm),
+                Channels: channels,
                 ManualStage: stage.ManualStage,
                 DefinitelyAwake: stage.DefinitelyAwake === 'True',
                 DefinitelySleep: stage.DefinitelySleep === 'True',
                 PredictedAwake: parseFloat(stage.PredictedAwake),
                 PredictedAwakeBinary: parseInt(stage.PredictedAwakeBinary)
             };
-
-
-            Object.keys(stage).forEach(key => {
-                if (key.endsWith('_Confidence') || key.endsWith('_Stage')) {
-                    const channel = key.split('_')[0];
-                    if (!processed.Channels[channel]) {
-                        processed.Channels[channel] = {
-                            Confidence: parseFloat(stage[`${channel}_Confidence`]),
-                            Stage: stage[`${channel}_Stage`]
-                        };
-                    }
-                }
-            });
-
+        
             return processed;
         });
 
@@ -488,8 +438,10 @@ function calculateSleepStageFeatureMinMax(sleepStages: ProcessedSleepStages): Sl
     if (!sleepStages || sleepStages.length === 0) {
         return undefined;
     }
-    const featureKeys = Object.keys(sleepStages[0]).filter(key =>
-        key.startsWith('eeg_') && typeof sleepStages[0][key] === 'number'
+    const channels = Object.keys(sleepStages[0].Channels)
+    const lastChannel = channels[channels.length - 1];
+    const featureKeys = Object.keys(sleepStages[0].Channels[lastChannel]).filter(key =>
+        key.startsWith('eeg_') && typeof sleepStages[0].Channels[lastChannel][key] === 'number'
     ) as (keyof ProcessedSleepStageEntryFeatures)[];
 
     const initialMinMax: SleepStageFeatureMinMax = {} as SleepStageFeatureMinMax;

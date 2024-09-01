@@ -27,6 +27,7 @@ export const AppEEG: React.FC = () => {
             try {
                 const allData = await loadFiles(filePath);
                 console.log('Processed EDF:', allData);
+                console.log('MinMax:', allData.sleepStageFeatureMinMax);
                 setAllData(allData);
             } catch (error) {
                 console.error('Error loading files:', error);
