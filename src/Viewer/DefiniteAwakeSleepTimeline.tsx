@@ -35,7 +35,7 @@ export const DefiniteAwakeSleepTimeline: React.FC<DefiniteAwakeSleepTimelineProp
                         y="0"
                         width={(1 / sleepStages.length) * width}
                         height="30"
-                        fill={stage.DefinitelyAwake ? 'red' : (stage.DefinitelySleep ? 'blue' : 'gray')}
+                        fill={stage.DefinitelyAwake ? 'red' : (stage.ProbablySleep ? 'blue' : 'gray')}
                     />
                 ))}
                 <line

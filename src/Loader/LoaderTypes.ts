@@ -151,6 +151,7 @@ export type ProcessedSleepStageEntry = {
     ManualStage?: string;
     DefinitelyAwake?: boolean;
     DefinitelySleep?: boolean;
+    ProbablySleep?: boolean;
     PredictedAwake?: number;
     PredictedAwakeBinary?: number;
 };

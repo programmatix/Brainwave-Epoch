@@ -150,6 +150,7 @@ export async function readSleepStages(filePath: string): Promise<ProcessedSleepS
                 ManualStage: stage.ManualStage,
                 DefinitelyAwake: stage.DefinitelyAwake === 'True',
                 DefinitelySleep: stage.DefinitelySleep === 'True',
+                ProbablySleep: stage.ProbablySleep === 'True',
                 PredictedAwake: parseFloat(stage.PredictedAwake),
                 PredictedAwakeBinary: parseInt(stage.PredictedAwakeBinary)
             };
@@ -444,16 +445,24 @@ function calculateSleepStageFeatureMinMax(sleepStages: ProcessedSleepStages): Sl
         key.startsWith('eeg_') && typeof sleepStages[0].Channels[lastChannel][key] === 'number'
     ) as (keyof ProcessedSleepStageEntryFeatures)[];
 
+    console.log(featureKeys);
+
     const initialMinMax: SleepStageFeatureMinMax = {} as SleepStageFeatureMinMax;
     featureKeys.forEach(key => {
         initialMinMax[key] = { min: Infinity, max: -Infinity };
     });
 
+    console.log(initialMinMax);
+
     return sleepStages.reduce((minMax, stage) => {
         featureKeys.forEach(key => {
-            const value = stage[key];
-            if (value < minMax[key].min) minMax[key].min = value;
-            if (value > minMax[key].max) minMax[key].max = value;
+            Object.keys(stage.Channels).forEach(channel => {
+                const value = stage.Channels[channel][key];
+                if (value !== undefined) {
+                    if (value < minMax[key].min) minMax[key].min = value;
+                    if (value > minMax[key].max) minMax[key].max = value;
+                }
+            });
         });
         return minMax;
     }, initialMinMax);

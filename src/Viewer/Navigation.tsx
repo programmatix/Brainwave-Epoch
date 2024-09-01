@@ -169,7 +169,7 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = ({
             )}
             {allData.definiteAwakeSleepTimeline && (
             <tr>
-                <td>Definite Awake/Sleep</td>
+                <td>Definite Awake/Probably Sleep</td>
                 <td>
                     <DefiniteAwakeSleepTimeline
                         sleepStages={allData.definiteAwakeSleepTimeline}

@@ -23,8 +23,8 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition })
     const [charts, setCharts] = useState<(Chart | null)[]>([]);
     const [compareEpoch, setCompareEpoch] = useState<number | null>(null);
     const [compareEpochInput, setCompareEpochInput] = useState('');
-    const [showSlowWaveEvents, setShowSlowWaveEvents] = useState(true);
-    const [showSpindleEvents, setShowSpindleEvents] = useState(true);
+    const [showSlowWaveEvents, setShowSlowWaveEvents] = useState(false);
+    const [showSpindleEvents, setShowSpindleEvents] = useState(false);
     const [showEpochInfo, setShowEpochInfo] = useState(true);
     const [showTable, setShowTable] = useState(true);
 

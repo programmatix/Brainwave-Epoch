@@ -100,6 +100,7 @@ export function generateAnnotationsForLeft(
                 const color = getColorForValue(value, minMax.min, minMax.max);
                 const compValue = compareEpoch !== null ? allData.sleepStages[compareEpoch]?.Channels[signal.label][key as keyof ProcessedSleepStageEntryFeatures] : undefined;
                 const compColor = compValue !== undefined ? getColorForValue(compValue as number, minMax.min, minMax.max) : undefined;
+                console.log(key, minMax, value, allData.sleepStageFeatureMinMax, compValue, compColor);
                 const diffPercent = compValue !== undefined ? (((value - compValue) / compValue) * 100) : undefined;
                 const diffPercentColor = diffPercent !== undefined ? getColorForValue(diffPercent, -100, 100) : undefined;
                 const v = key.includes("petrosian") ? value.toFixed(4) : key.includes("nzc") ? value.toFixed(0) : value.toFixed(2);
