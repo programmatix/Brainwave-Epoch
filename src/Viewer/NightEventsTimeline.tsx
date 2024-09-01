@@ -39,7 +39,7 @@ export const NightEventsTimeline: React.FC<NightEventsTimelineProps> = ({
                     const startX = convertToScreenSpace(event.timestamp.epochSeconds);
                     const endX = convertToScreenSpace(event.timestamp.epochSeconds + durationSecs);
                     const w = Math.max(1, endX - startX)
-                    console.log(event.source, startX, endX, event.timestamp.epochSeconds, event.timestamp.epochSeconds + durationSecs, allData.processedEDF.startDate.epochSeconds, durationSecs, totalTimePeriod, width, w);
+                    //console.log(event.source, startX, endX, event.timestamp.epochSeconds, event.timestamp.epochSeconds + durationSecs, allData.processedEDF.startDate.epochSeconds, durationSecs, totalTimePeriod, width, w);
                     return (
                         <rect
                             key={`${eventIndex}`}

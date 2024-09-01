@@ -1,7 +1,7 @@
 import { Temporal } from '@js-temporal/polyfill';
 import { parse } from 'csv-parse/sync';
 import { promises as fs } from 'fs';
-import { AllData, EDFData, EDFHeader, EDFSignal, FitbitHypnogram, GroupedSlowWaveEvents, GroupedSpindleEvents, NightEvents, ProcessedEDFData, ProcessedSleepStageEntry, ProcessedSleepStages, SignalData, SlowWaveEvents, SpindleEvents, TimeLabel } from './LoaderTypes';
+import { AllData, EDFData, EDFHeader, EDFSignal, FitbitHypnogram, GroupedSlowWaveEvents, GroupedSpindleEvents, NightEvents, ProcessedEDFData, ProcessedSleepStageEntry, ProcessedSleepStages, SignalData, SlowWaveEvents, SpindleEvents, TimeLabel, SleepStageFeatureMinMax, ProcessedSleepStageEntryFeatures } from './LoaderTypes';
 
 
 import { EventEmitter } from 'events';
@@ -303,6 +303,8 @@ export async function loadFiles(edfPath: string): Promise<AllData> {
     const end = performance.now();
     loaderEvents.emit('log', `${new Date().toISOString()}: All files loaded and processed in ${(end - start).toFixed(2)}ms`);
 
+    const sleepStageFeatureMinMax = calculateSleepStageFeatureMinMax(processedStages);
+
     const allData: AllData = {
         processedEDF,
         sleepStages: processedStages,
@@ -311,7 +313,8 @@ export async function loadFiles(edfPath: string): Promise<AllData> {
         fitbitHypnogram,
         spindleEvents,
         predictedAwakeTimeline: processedStages,
-        definiteAwakeSleepTimeline: processedStages
+        definiteAwakeSleepTimeline: processedStages,
+        sleepStageFeatureMinMax
     };
 
     return allData;
@@ -457,3 +460,23 @@ export function processEDFData(edfData: EDFData): ProcessedEDFData {
     const edfData = await readEDFPlus(filePath);
     return processEDFData(edfData);
   }
+
+function calculateSleepStageFeatureMinMax(sleepStages: ProcessedSleepStages): SleepStageFeatureMinMax {
+    const featureKeys = Object.keys(sleepStages[0]).filter(key => 
+        key.startsWith('eeg_') && typeof sleepStages[0][key] === 'number'
+    ) as (keyof ProcessedSleepStageEntryFeatures)[];
+
+    const initialMinMax: SleepStageFeatureMinMax = {} as SleepStageFeatureMinMax;
+    featureKeys.forEach(key => {
+        initialMinMax[key] = { min: Infinity, max: -Infinity };
+    });
+
+    return sleepStages.reduce((minMax, stage) => {
+        featureKeys.forEach(key => {
+            const value = stage[key];
+            if (value < minMax[key].min) minMax[key].min = value;
+            if (value > minMax[key].max) minMax[key].max = value;
+        });
+        return minMax;
+    }, initialMinMax);
+}

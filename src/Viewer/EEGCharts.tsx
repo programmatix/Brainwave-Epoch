@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { Chart, ChartConfiguration, registerables } from 'chart.js';
 import annotationPlugin from 'chartjs-plugin-annotation';
-import { AllData } from '../Loader/LoaderTypes';
+import { AllData, ProcessedSleepStageEntryFeatures } from '../Loader/LoaderTypes';
 import { FitbitHypnogramChart } from './FitbitHypnogramChart';
 import { NightEventsChart } from './NightEventsChart';
 
@@ -13,6 +13,43 @@ export const SECONDS_TO_SHOW = 30;
 interface EEGChartsProps {
     allData: AllData;
     scrollPosition: number;
+}
+
+function getColorForValue(value: number, min: number, max: number): string {
+    const normalizedValue = (value - min) / (max - min);
+    const hue = normalizedValue * 120; // 0 (red) to 120 (green)
+    return `hsl(${hue}, 100%, 50%)`;
+}
+
+type LabelContent = [string, string | number, string?][];
+
+function createLabelCanvas(content: LabelContent, width: number, height: number): HTMLCanvasElement {
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return canvas;
+
+    ctx.clearRect(0, 0, width, height);
+    ctx.font = '12px Arial';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+
+    // Find the maximum width of the keys for alignment
+    const keyWidth = Math.max(...content.map(([key]) => ctx.measureText(key + ':').width));
+
+    let y = 5;
+    content.forEach(([key, value, color]) => {
+        ctx.fillStyle = 'black';
+        ctx.fillText(key, 5, y);
+
+        ctx.fillStyle = color || 'black';
+        ctx.fillText(value.toString(), keyWidth + 10, y);
+
+        y += 15;
+    });
+
+    return canvas;
 }
 
 export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition }) => {
@@ -119,41 +156,62 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition })
                                         const epochStartSample = epochIndex * SECONDS_PER_EPOCH * samplesPerSecond - scrollPosition;
                                         const sleepStage = allData.sleepStages[epochIndex];
                                         const channelData = sleepStage?.Channels[signal.label];
+
+                                        const content: LabelContent = [
+                                            ['Epoch', `${epochIndex} (${sleepStage?.Timestamp.toString()})`],
+                                            ['Stage', `${channelData?.Stage || 'N/A'} (${((channelData?.Confidence || 0) * 100).toFixed(0)}% confidence)`],
+                                        ];
+
+                                        const orderedKeys = [
+                                            "eeg_sdelta", "eeg_fdelta", "eeg_theta", "eeg_alpha", "eeg_beta"
+                                        ];
+    
+                                        orderedKeys.forEach(key => {
+                                            const value = sleepStage[key as keyof ProcessedSleepStageEntryFeatures];
+                                            if (typeof value === 'number') {
+                                                const minMax = allData.sleepStageFeatureMinMax[key as keyof ProcessedSleepStageEntryFeatures];
+                                                const color = getColorForValue(value, minMax.min, minMax.max);
+                                                content.push([key, value.toFixed(2), color]);
+                                            }
+                                        });
+    
+
+                                        Object.entries(sleepStage)
+                                            .filter(([key]) => key.startsWith('eeg_')
+                                                && content.find(c => c[0] == key) == undefined
+                                                // Removing the rolling averages
+                                                && !key.includes('p2')
+                                                && !key.includes('c7')
+                                                // EDA suggests they are not very useful
+                                                && !key.includes('eeg_at')
+                                                && !key.includes('eeg_db')
+                                                && !key.includes('eeg_ds')
+                                                && !key.includes('eeg_dt')
+                                                && !key.includes('eeg_hcomp')
+                                                && !key.includes('eeg_hmob')
+                                                && !key.includes('eeg_sigma')
+                                                && !key.includes('eeg_sigma')
+                                                && !key.includes('eeg_std')
+                                            )
+                                            .forEach(([key, value]) => {
+                                                const minMax = allData.sleepStageFeatureMinMax[key as keyof ProcessedSleepStageEntryFeatures];
+                                                const color = getColorForValue(value as number, minMax.min, minMax.max);
+                                                const v = key.includes("petrosian") ? (value as number).toFixed(4) 
+                                                : key.includes("nzc") ? (value as number).toFixed(0) 
+                                                : (value as number).toFixed(2);
+                                                content.push([key, v, color]);
+                                            });
+
+                                        const labelCanvas = createLabelCanvas(content, 300, (content.length + 1) * 15);
+
                                         return [
-                                            [`epoch${epochIndex}`, {
-                                                type: 'line',
-                                                xMin: epochStartSample,
-                                                xMax: epochStartSample,
-                                                borderColor: 'rgba(128, 128, 128, 0.5)',
-                                                borderWidth: 1,
-                                            }],
                                             [`epochInfo${epochIndex}`, {
                                                 type: 'label',
                                                 position: 'start',
                                                 xValue: epochStartSample + 1,
                                                 yValue: yMax,
-                                                content: [
-                                                    `${sleepStage?.Timestamp}`,
-                                                    `Epoch: ${epochIndex}`,
-                                                    `Stage: ${channelData?.Stage || 'N/A'}`,
-                                                    `Confidence: ${channelData?.Confidence?.toFixed(2) || 'N/A'}`,
-                                                    `EEG AbsPow: ${sleepStage?.eeg_abspow?.toFixed(2) || 'N/A'}`,
-                                                    `EEG SDelta: ${sleepStage?.eeg_sdelta?.toFixed(2) || 'N/A'}`,
-                                                    `EEG FDelta: ${sleepStage?.eeg_fdelta?.toFixed(2) || 'N/A'}`,
-                                                    `EEG Theta: ${sleepStage?.eeg_theta?.toFixed(2) || 'N/A'}`,
-                                                    `EEG Alpha: ${sleepStage?.eeg_alpha?.toFixed(2) || 'N/A'}`,
-                                                    `EEG Beta: ${sleepStage?.eeg_beta?.toFixed(2) || 'N/A'}`,
-                                                    `EEG PermEnt: ${sleepStage?.eeg_perm?.toFixed(2) || 'N/A'}`,
-                                                    `EEG Skew: ${sleepStage?.eeg_skew?.toFixed(2) || 'N/A'}`,
-                                                    `EEG Sigma: ${sleepStage?.eeg_sigma?.toFixed(2) || 'N/A'}`,
-                                                    `EEG Kurt: ${sleepStage?.eeg_kurt?.toFixed(2) || 'N/A'}`,
-                                                    `EEG Higuchi: ${sleepStage?.eeg_higuchi?.toFixed(2) || 'N/A'}`,
-                                                    `EEG IQR: ${sleepStage?.eeg_iqr?.toFixed(2) || 'N/A'}`,
-                                                    // This varies between 1.001 and 1.009
-                                                    `EEG Petrosian: ${sleepStage?.eeg_petrosian?.toFixed(4) || 'N/A'}`,
-                                                ],
-                                                font: { size: 10 },
-                                                textAlign: 'left',
+                                                content: labelCanvas,
+                                                backgroundColor: 'rgba(255, 255, 255, 0.5)',
                                                 padding: { top: 5, left: 5 }
                                             }]
                                         ];

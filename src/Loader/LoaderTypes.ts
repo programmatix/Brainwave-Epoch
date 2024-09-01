@@ -131,25 +131,12 @@ export type GroupedSpindleEvents = {
     [channel: string]: SpindleEvent[];
 };
 
-export type AllData = {
-    processedEDF: ProcessedEDFData;
-    sleepStages?: ProcessedSleepStages;
-    slowWaveEvents?: GroupedSlowWaveEvents;
-    nightEvents?: NightEvents;
-    fitbitHypnogram?: FitbitHypnogram;
-    spindleEvents?: GroupedSpindleEvents;
-    predictedAwakeTimeline?: ProcessedSleepStages;
-    definiteAwakeSleepTimeline?: ProcessedSleepStages;
+export type FeatureMinMax = {
+    min: number;
+    max: number;
 };
 
-export type ProcessedSleepStageEntry = {
-    Epoch: number;
-    Timestamp: Temporal.ZonedDateTime;
-    Channels: { [key: string]: ChannelData };
-    Stage: string;
-    Confidence: number;
-    Source: string;
-    StageInt: number;
+export type ProcessedSleepStageEntryFeatures = {
     eeg_abspow: number;
     eeg_abspow_c7min_norm: number;
     eeg_abspow_p2min_norm: number;
@@ -213,12 +200,37 @@ export type ProcessedSleepStageEntry = {
     eeg_theta: number;
     eeg_theta_c7min_norm: number;
     eeg_theta_p2min_norm: number;
+};
+
+export type ProcessedSleepStageEntry = {
+    Epoch: number;
+    Timestamp: Temporal.ZonedDateTime;
+    Channels: { [key: string]: ChannelData };
+    Stage: string;
+    Confidence: number;
+    Source: string;
+    StageInt: number;
     ManualStage: string;
     DefinitelyAwake: boolean;
     DefinitelySleep: boolean;
     PredictedAwake: number;
     PredictedAwakeBinary: number;
-};
-
+} & ProcessedSleepStageEntryFeatures;
 
 export type ProcessedSleepStages = ProcessedSleepStageEntry[];
+
+export type SleepStageFeatureMinMax = {
+    [K in keyof ProcessedSleepStageEntryFeatures]: FeatureMinMax;
+};
+
+export type AllData = {
+    processedEDF: ProcessedEDFData;
+    sleepStages?: ProcessedSleepStages;
+    slowWaveEvents?: GroupedSlowWaveEvents;
+    nightEvents?: NightEvents;
+    fitbitHypnogram?: FitbitHypnogram;
+    spindleEvents?: GroupedSpindleEvents;
+    predictedAwakeTimeline?: ProcessedSleepStages;
+    definiteAwakeSleepTimeline?: ProcessedSleepStages;
+    sleepStageFeatureMinMax?: SleepStageFeatureMinMax;
+};
