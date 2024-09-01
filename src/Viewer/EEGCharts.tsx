@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { Chart, ChartConfiguration, registerables } from 'chart.js';
 import annotationPlugin from 'chartjs-plugin-annotation';
 import { AllData } from '../Loader/LoaderTypes';
@@ -26,6 +26,7 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition })
     const [showSlowWaveEvents, setShowSlowWaveEvents] = useState(true);
     const [showSpindleEvents, setShowSpindleEvents] = useState(true);
     const [showEpochInfo, setShowEpochInfo] = useState(true);
+    const [showTable, setShowTable] = useState(true);
 
     const samplesPerSecond = allData.processedEDF.signals[0].samplingRate;
 
@@ -221,6 +222,21 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition })
 
     const signalsToShow = allData.processedEDF.signals.filter(signal => signal.label !== 'EDF Annotations');
 
+    const handleKeyDown = useCallback((e: KeyboardEvent) => {
+        if (e.key === 'i') {
+            setShowEpochInfo(prev => !prev)
+        } else if (e.key === 't') {
+            setShowTable(prev => !prev)
+        }
+    }, []);
+
+    useEffect(() => {
+        window.addEventListener('keydown', handleKeyDown);
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+        };
+    }, [handleKeyDown]);
+
     return (
         <div className="flex-col flex h-full">
             <ComparisonControls
@@ -256,7 +272,16 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition })
                         onChange={() => setShowEpochInfo(!showEpochInfo)}
                         className="toggle toggle-primary"
                     />
-                    <span>Show Epoch Info</span>
+                    <span>Show Epoch Info (i)</span>
+                </label>
+                <label className="flex items-center space-x-2">
+                    <input
+                        type="checkbox"
+                        checked={showTable}
+                        onChange={() => setShowTable(!showTable)}
+                        className="toggle toggle-primary"
+                    />
+                    <span>Show Table (t)</span>
                 </label>
             </div>
             {allData.fitbitHypnogram && (
@@ -289,8 +314,8 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition })
                 );
                 return (
                     <div key={index} className="w-full flex-grow flex" style={{ width: '100%', height: '300px' }}>
+                            {showTable && (
                         <div className="w-1/4 p-2">
-                            {showEpochInfo && (
                                 <div className="overflow-auto h-full">
                                     <table>
                                         {annotations.map((annotation, i) => (
@@ -311,8 +336,8 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition })
                                         ))}
                                     </table>
                                 </div>
+                                </div>
                             )}
-                        </div>
                         <div className="w-3/4" style={{ width: '100%', height: '100%' }}>
                             <canvas ref={el => chartRefs.current[index] = el} style={{ width: '100%', height: '100%' }} />
                         </div>

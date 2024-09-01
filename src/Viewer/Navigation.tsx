@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { AllData } from '../Loader/LoaderTypes';
 import { SleepStageTimeline } from './SleepStageTimeline';
 import { SlowWaveTimeline } from './SlowWaveTimeline';
@@ -28,17 +28,19 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = ({
     samplesPerSecond,
     samplesPerEpoch,
 }) => {
+    const [epochInput, setEpochInput] = useState('');
+
     const handleKeyDown = useCallback((e: KeyboardEvent) => {
         if (e.key === 'ArrowLeft') {
             setScrollPosition((prev) => Math.max(0, prev - 50));
         } else if (e.key === 'ArrowRight') {
             setScrollPosition((prev) => Math.min(totalSamples - 1, prev + 50));
         } else if (e.key === 'q') {
-            const currentEpoch = Math.floor(scrollPosition / samplesPerEpoch);
-            setScrollPosition(Math.max(0, (currentEpoch - 1) * samplesPerEpoch));
+            handlePrevEpoch()
         } else if (e.key === 'e') {
-            const currentEpoch = Math.floor(scrollPosition / samplesPerEpoch);
-            setScrollPosition(Math.min(totalSamples - 1, (currentEpoch + 1) * samplesPerEpoch));
+            handleNextEpoch()
+        } else if (e.key === 'r') {
+            handleRandomEpoch()
         }
     }, [setScrollPosition, totalSamples, scrollPosition, samplesPerEpoch]);
 
@@ -53,10 +55,45 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = ({
         setScrollPosition(Math.min(totalSamples - 1, Math.max(0, newPosition)));
     };
 
+    const handlePrevEpoch = () => {
+        const currentEpoch = Math.floor(scrollPosition / samplesPerEpoch);
+        setScrollPosition(Math.max(0, (currentEpoch - 1) * samplesPerEpoch));
+    };
+
+    const handleNextEpoch = () => {
+        const currentEpoch = Math.floor(scrollPosition / samplesPerEpoch);
+        setScrollPosition(Math.min(totalSamples - 1, (currentEpoch + 1) * samplesPerEpoch));
+    };
+
+    const handleSetEpoch = () => {
+        const epochIndex = parseInt(epochInput);
+        if (!isNaN(epochIndex) && epochIndex >= 0 && epochIndex < Math.floor(totalSamples / samplesPerEpoch)) {
+            setScrollPosition(epochIndex * samplesPerEpoch);
+        }
+    };
+
+    const handleRandomEpoch = () => {
+        const randomEpoch = Math.floor(Math.random() * Math.floor(totalSamples / samplesPerEpoch));
+        setScrollPosition(randomEpoch * samplesPerEpoch);
+    };
+
     const startDate = allData.processedEDF.startDate.epochSeconds;
 
     return (
         <div className="table">
+            <div className="flex items-center space-x-2 mb-2">
+                <input
+                    type="text"
+                    value={epochInput}
+                    onChange={(e) => setEpochInput(e.target.value)}
+                    placeholder="Enter epoch index"
+                    className="border p-1"
+                />
+                <button onClick={handleSetEpoch} className="bg-blue-500 text-white p-1 rounded">Set Epoch</button>
+                <button onClick={handlePrevEpoch} className="bg-blue-500 text-white p-1 rounded">Prev Epoch (q)</button>
+                <button onClick={handleNextEpoch} className="bg-blue-500 text-white p-1 rounded">Next Epoch (e)</button>
+                <button onClick={handleRandomEpoch} className="bg-green-500 text-white p-1 rounded">Random Epoch (r)</button>
+            </div>
             {allData.slowWaveEvents && allData.spindleEvents && Object.keys(allData.slowWaveEvents).map(channel => (
                 <tr key={`combined-${channel}`}>
                     <td>Slow Waves & Spindles {channel}</td>
