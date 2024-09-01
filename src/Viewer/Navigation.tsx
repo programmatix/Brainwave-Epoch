@@ -153,9 +153,10 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = ({
                     </td>
                 </tr>
             )}
-            <tr>
-                <td>Predicted Awake</td>
-                <td>
+            {allData.predictedAwakeTimeline && (
+                <tr>
+                    <td>Predicted Awake</td>
+                    <td>
                     <PredictedAwakeTimeline
                         sleepStages={allData.predictedAwakeTimeline}
                         scrollPosition={scrollPosition}
@@ -165,6 +166,8 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = ({
                     />
                 </td>
             </tr>
+            )}
+            {allData.definiteAwakeSleepTimeline && (
             <tr>
                 <td>Definite Awake/Sleep</td>
                 <td>
@@ -177,6 +180,7 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = ({
                     />
                 </td>
             </tr>
+            )}
         </div>
     );
 };

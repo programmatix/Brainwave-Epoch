@@ -209,12 +209,12 @@ export type ProcessedSleepStageEntry = {
     Stage: string;
     Confidence: number;
     Source: string;
-    StageInt: number;
-    ManualStage: string;
-    DefinitelyAwake: boolean;
-    DefinitelySleep: boolean;
-    PredictedAwake: number;
-    PredictedAwakeBinary: number;
+    StageInt?: number;
+    ManualStage?: string;
+    DefinitelyAwake?: boolean;
+    DefinitelySleep?: boolean;
+    PredictedAwake?: number;
+    PredictedAwakeBinary?: number;
 } & ProcessedSleepStageEntryFeatures;
 
 export type ProcessedSleepStages = ProcessedSleepStageEntry[];

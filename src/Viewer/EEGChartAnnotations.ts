@@ -10,6 +10,10 @@ export function generateAnnotations(
     compareEpoch: number | null,
     signal: { label: string }
 ) {
+    if (!allData.sleepStages) {
+        return [];
+    }
+
     return Object.fromEntries(
         Array.from({ length: endEpochIndex - startEpochIndex }, (_, i) => {
             const epochIndex = startEpochIndex + i;
@@ -70,6 +74,10 @@ export function generateAnnotationsForLeft(
     compareEpoch: number | null,
     signal: { label: string }
 ): LabelContent {
+    if (!allData.sleepStages) {
+        return [];
+    }
+
     // return Array.from({ length: endEpochIndex - startEpochIndex }, (_, i) => {
     const epochIndex = startEpochIndex;
     const sleepStage = allData.sleepStages[epochIndex];
@@ -84,7 +92,7 @@ export function generateAnnotationsForLeft(
     const allKeys = new Set([...orderedKeys, ...Object.keys(sleepStage).filter(key => key.startsWith('eeg_'))]);
 
     allKeys.forEach(key => {
-        if (orderedKeys.includes(key) || !key.includes('p2') && !key.includes('c7') && !key.includes('eeg_at') && !key.includes('eeg_db') && !key.includes('eeg_ds') && !key.includes('eeg_dt') && !key.includes('eeg_hcomp') && !key.includes('eeg_hmob') && !key.includes('eeg_sigma') && !key.includes('eeg_std')) {
+        if (orderedKeys.includes(key) || !key.includes('p2') && !key.includes('c7') && !key.includes('eeg_db') && !key.includes('eeg_ds') && !key.includes('eeg_dt') && !key.includes('eeg_hcomp') && !key.includes('eeg_hmob') && !key.includes('eeg_sigma') && !key.includes('eeg_std')) {
             const value = sleepStage[key as keyof ProcessedSleepStageEntryFeatures];
             if (typeof value === 'number') {
                 const minMax = allData.sleepStageFeatureMinMax[key as keyof ProcessedSleepStageEntryFeatures];
