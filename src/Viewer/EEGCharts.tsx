@@ -1,9 +1,11 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { Chart, ChartConfiguration, registerables } from 'chart.js';
 import annotationPlugin from 'chartjs-plugin-annotation';
-import { AllData, ProcessedSleepStageEntryFeatures } from '../Loader/LoaderTypes';
+import { AllData } from '../Loader/LoaderTypes';
 import { FitbitHypnogramChart } from './FitbitHypnogramChart';
 import { NightEventsChart } from './NightEventsChart';
+import { ComparisonControls } from './ComparisonControls';
+import { generateAnnotations } from './EEGChartAnnotations';
 
 Chart.register(...registerables, annotationPlugin);
 
@@ -15,48 +17,43 @@ interface EEGChartsProps {
     scrollPosition: number;
 }
 
-function getColorForValue(value: number, min: number, max: number): string {
-    const normalizedValue = (value - min) / (max - min);
-    const hue = normalizedValue * 120; // 0 (red) to 120 (green)
-    return `hsl(${hue}, 100%, 50%)`;
-}
-
-type LabelContent = [string, string | number, string?][];
-
-function createLabelCanvas(content: LabelContent, width: number, height: number): HTMLCanvasElement {
-    const canvas = document.createElement('canvas');
-    canvas.width = width;
-    canvas.height = height;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return canvas;
-
-    ctx.clearRect(0, 0, width, height);
-    ctx.font = '12px Arial';
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'top';
-
-    // Find the maximum width of the keys for alignment
-    const keyWidth = Math.max(...content.map(([key]) => ctx.measureText(key + ':').width));
-
-    let y = 5;
-    content.forEach(([key, value, color]) => {
-        ctx.fillStyle = 'black';
-        ctx.fillText(key, 5, y);
-
-        ctx.fillStyle = color || 'black';
-        ctx.fillText(value.toString(), keyWidth + 10, y);
-
-        y += 15;
-    });
-
-    return canvas;
-}
-
 export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition }) => {
     const chartRefs = useRef<(HTMLCanvasElement | null)[]>([]);
     const [charts, setCharts] = useState<(Chart | null)[]>([]);
+    const [compareEpoch, setCompareEpoch] = useState<number | null>(null);
+    const [compareEpochInput, setCompareEpochInput] = useState('');
+    const [showSlowWaveEvents, setShowSlowWaveEvents] = useState(true);
+    const [showSpindleEvents, setShowSpindleEvents] = useState(true);
+    const [showEpochInfo, setShowEpochInfo] = useState(true);
 
     const samplesPerSecond = allData.processedEDF.signals[0].samplingRate;
+
+    const handleCompare = () => {
+        const epochIndex = parseInt(compareEpochInput);
+        if (!isNaN(epochIndex) && epochIndex >= 0 && epochIndex < allData.sleepStages.length) {
+            setCompareEpoch(epochIndex);
+        }
+    };
+
+    const handleRandomCompare = (stage: string) => {
+        const stageEpochs = allData.sleepStages.filter(s => s.Stage === stage);
+        if (stageEpochs.length > 0) {
+            const randomEpoch = stageEpochs[Math.floor(Math.random() * stageEpochs.length)];
+            setCompareEpoch(randomEpoch.Epoch);
+            setCompareEpochInput(randomEpoch.Epoch.toString());
+        }
+    };
+
+    const clearCompare = () => {
+        setCompareEpoch(null);
+        setCompareEpochInput('');
+    };
+
+    useEffect(() => {
+        if (compareEpochInput === '') {
+            clearCompare();
+        }
+    }, [compareEpochInput]);
 
     useEffect(() => {
         const samplesToShow = samplesPerSecond * SECONDS_TO_SHOW;
@@ -68,8 +65,8 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition })
         const startEpochIndex = Math.floor(scrollPosition / (samplesPerSecond * SECONDS_PER_EPOCH));
         const endEpochIndex = Math.ceil((scrollPosition + samplesToShow) / (samplesPerSecond * SECONDS_PER_EPOCH));
 
-        const yMax = 200;
-        const yMin = -200;
+        const yMax = 100;
+        const yMin = -100;
 
         const secondsToSamples = (seconds: number) => {
             return Math.floor(seconds * samplesPerSecond);
@@ -83,31 +80,46 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition })
 
             const data = signal.samples.slice(scrollPosition, scrollPosition + samplesToShow);
 
+            const datasets = [{
+                label: signal.label,
+                data: data,
+                borderColor: `hsl(${index * 360 / signalsToShow.length}, 100%, 50%)`,
+                pointRadius: 0,
+                borderWidth: 1.5,
+            }];
+
+            if (compareEpoch !== null) {
+                const compareStartSample = compareEpoch * SECONDS_PER_EPOCH * samplesPerSecond;
+                const compareData = signal.samples.slice(compareStartSample, compareStartSample + samplesToShow);
+                datasets.push({
+                    label: `${signal.label} (Compare)`,
+                    data: compareData,
+                    borderColor: `hsla(${index * 360 / signalsToShow.length}, 100%, 50%, 0.5)`,
+                    pointRadius: 0,
+                    borderWidth: 1.5,
+                    //borderDash: [5, 5],
+                });
+            }
+
             const slowWaveEvents = allData.slowWaveEvents?.[signal.label] || [];
-            const visibleSlowWaveEvents = slowWaveEvents.filter(event => {
+            const visibleSlowWaveEvents = showSlowWaveEvents ? slowWaveEvents.filter(event => {
                 const eventStartSample = secondsToSamples(event.Start);
                 const eventEndSample = secondsToSamples(event.End);
                 return eventStartSample < scrollPosition + samplesToShow && eventEndSample > scrollPosition;
-            });
+            }) : [];
 
             const spindleEvents = allData.spindleEvents?.[signal.label] || [];
-            const visibleSpindleEvents = spindleEvents.filter(event => {
+            const visibleSpindleEvents = showSpindleEvents ? spindleEvents.filter(event => {
                 const eventStartSample = secondsToSamples(event.Start);
                 const eventEndSample = secondsToSamples(event.End);
                 return eventStartSample < scrollPosition + samplesToShow && eventEndSample > scrollPosition;
-            });
+            }) : [];
 
             const config: ChartConfiguration = {
                 type: 'line',
                 data: {
                     labels: Array(samplesToShow).fill(''),
-                    datasets: [{
-                        label: signal.label,
-                        data: data,
-                        borderColor: `hsl(${index * 360 / signalsToShow.length}, 100%, 50%)`,
-                        pointRadius: 0,
-                        borderWidth: 1.5,
-                    }]
+                    datasets: datasets
                 },
                 options: {
                     responsive: true,
@@ -141,8 +153,6 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition })
                         padding: {
                             left: 50,
                             right: 20,
-                            // top: 20,
-                            // bottom: index === signalsToShow.length - 1 ? 30 : 0
                         }
                     },
                     animation: false,
@@ -150,74 +160,16 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition })
                         legend: { display: false },
                         annotation: {
                             annotations: {
-                                ...Object.fromEntries(
-                                    Array.from({ length: endEpochIndex - startEpochIndex }, (_, i) => {
-                                        const epochIndex = startEpochIndex + i;
-                                        const epochStartSample = epochIndex * SECONDS_PER_EPOCH * samplesPerSecond - scrollPosition;
-                                        const sleepStage = allData.sleepStages[epochIndex];
-                                        const channelData = sleepStage?.Channels[signal.label];
-
-                                        const content: LabelContent = [
-                                            ['Epoch', `${epochIndex} (${sleepStage?.Timestamp.toString()})`],
-                                            ['Stage', `${channelData?.Stage || 'N/A'} (${((channelData?.Confidence || 0) * 100).toFixed(0)}% confidence)`],
-                                        ];
-
-                                        const orderedKeys = [
-                                            "eeg_sdelta", "eeg_fdelta", "eeg_theta", "eeg_alpha", "eeg_beta"
-                                        ];
-    
-                                        orderedKeys.forEach(key => {
-                                            const value = sleepStage[key as keyof ProcessedSleepStageEntryFeatures];
-                                            if (typeof value === 'number') {
-                                                const minMax = allData.sleepStageFeatureMinMax[key as keyof ProcessedSleepStageEntryFeatures];
-                                                const color = getColorForValue(value, minMax.min, minMax.max);
-                                                content.push([key, value.toFixed(2), color]);
-                                            }
-                                        });
-    
-
-                                        Object.entries(sleepStage)
-                                            .filter(([key]) => key.startsWith('eeg_')
-                                                && content.find(c => c[0] == key) == undefined
-                                                // Removing the rolling averages
-                                                && !key.includes('p2')
-                                                && !key.includes('c7')
-                                                // EDA suggests they are not very useful
-                                                && !key.includes('eeg_at')
-                                                && !key.includes('eeg_db')
-                                                && !key.includes('eeg_ds')
-                                                && !key.includes('eeg_dt')
-                                                && !key.includes('eeg_hcomp')
-                                                && !key.includes('eeg_hmob')
-                                                && !key.includes('eeg_sigma')
-                                                && !key.includes('eeg_sigma')
-                                                && !key.includes('eeg_std')
-                                            )
-                                            .forEach(([key, value]) => {
-                                                const minMax = allData.sleepStageFeatureMinMax[key as keyof ProcessedSleepStageEntryFeatures];
-                                                const color = getColorForValue(value as number, minMax.min, minMax.max);
-                                                const v = key.includes("petrosian") ? (value as number).toFixed(4) 
-                                                : key.includes("nzc") ? (value as number).toFixed(0) 
-                                                : (value as number).toFixed(2);
-                                                content.push([key, v, color]);
-                                            });
-
-                                        const labelCanvas = createLabelCanvas(content, 300, (content.length + 1) * 15);
-
-                                        return [
-                                            [`epochInfo${epochIndex}`, {
-                                                type: 'label',
-                                                position: 'start',
-                                                xValue: epochStartSample + 1,
-                                                yValue: yMax,
-                                                content: labelCanvas,
-                                                backgroundColor: 'rgba(255, 255, 255, 0.5)',
-                                                padding: { top: 5, left: 5 }
-                                            }]
-                                        ];
-                                    }).flat()
-                                ),
-                                ...Object.fromEntries(
+                                ...(showEpochInfo ? generateAnnotations(
+                                    allData,
+                                    startEpochIndex,
+                                    endEpochIndex,
+                                    scrollPosition,
+                                    samplesPerSecond,
+                                    compareEpoch,
+                                    signal
+                                ) : []),
+                                ...(showSlowWaveEvents ? Object.fromEntries(
                                     visibleSlowWaveEvents.map((event, eventIndex) => {
                                         const eventStartSample = secondsToSamples(event.Start) - scrollPosition;
                                         const eventEndSample = secondsToSamples(event.End) - scrollPosition;
@@ -232,8 +184,8 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition })
                                             borderWidth: 1,
                                         }];
                                     })
-                                ),
-                                ...Object.fromEntries(
+                                ) : []),
+                                ...(showSpindleEvents ? Object.fromEntries(
                                     visibleSpindleEvents.map((event, eventIndex) => {
                                         const eventStartSample = secondsToSamples(event.Start) - scrollPosition;
                                         const eventEndSample = secondsToSamples(event.End) - scrollPosition;
@@ -248,7 +200,7 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition })
                                             borderWidth: 1,
                                         }];
                                     })
-                                ),
+                                ) : []),
                             },
                         }
                     },
@@ -263,12 +215,48 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition })
         return () => {
             newCharts.forEach(chart => chart?.destroy());
         };
-    }, [allData, scrollPosition]);
+    }, [allData, scrollPosition, compareEpoch, showSlowWaveEvents, showSpindleEvents, showEpochInfo]);
 
     const signalsToShow = allData.processedEDF.signals.filter(signal => signal.label !== 'EDF Annotations');
 
     return (
         <div className="flex-col flex h-full">
+            <ComparisonControls
+                compareEpochInput={compareEpochInput}
+                setCompareEpochInput={setCompareEpochInput}
+                handleCompare={handleCompare}
+                handleRandomCompare={handleRandomCompare}
+                clearCompare={clearCompare}
+            />
+            <div className="flex space-x-4 p-4">
+                <label className="flex items-center space-x-2">
+                    <input
+                        type="checkbox"
+                        checked={showSlowWaveEvents}
+                        onChange={() => setShowSlowWaveEvents(!showSlowWaveEvents)}
+                        className="toggle toggle-primary"
+                    />
+                    <span>Show Slow Wave Events</span>
+                </label>
+                <label className="flex items-center space-x-2">
+                    <input
+                        type="checkbox"
+                        checked={showSpindleEvents}
+                        onChange={() => setShowSpindleEvents(!showSpindleEvents)}
+                        className="toggle toggle-primary"
+                    />
+                    <span>Show Spindle Events</span>
+                </label>
+                <label className="flex items-center space-x-2">
+                    <input
+                        type="checkbox"
+                        checked={showEpochInfo}
+                        onChange={() => setShowEpochInfo(!showEpochInfo)}
+                        className="toggle toggle-primary"
+                    />
+                    <span>Show Epoch Info</span>
+                </label>
+            </div>
             {allData.fitbitHypnogram && (
                 <FitbitHypnogramChart
                     allData={allData}
