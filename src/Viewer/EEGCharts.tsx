@@ -5,7 +5,8 @@ import { AllData } from '../Loader/LoaderTypes';
 import { FitbitHypnogramChart } from './FitbitHypnogramChart';
 import { NightEventsChart } from './NightEventsChart';
 import { ComparisonControls } from './ComparisonControls';
-import { generateAnnotations } from './EEGChartAnnotations';
+import { generateAnnotations, generateAnnotationsForLeft } from './EEGChartAnnotations';
+import { LabelContent } from './ChartUtils';
 
 Chart.register(...registerables, annotationPlugin);
 
@@ -71,6 +72,7 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition })
         const secondsToSamples = (seconds: number) => {
             return Math.floor(seconds * samplesPerSecond);
         };
+
 
         const startDate = allData.processedEDF.startDate.epochSeconds;
 
@@ -273,11 +275,50 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition })
                     secondsToShow={SECONDS_TO_SHOW}
                 />
             )}
-            {signalsToShow.map((_, index) => (
-                <div key={index} className="w-full flex-grow" style={{ width: '100%', height: '300px' }}>
-                    <canvas ref={el => chartRefs.current[index] = el} style={{ width: '100%', height: '100%' }} />
-                </div>
-            ))}
+            {signalsToShow.map((signal, index) => {
+                const startEpochIndex = Math.floor(scrollPosition / (samplesPerSecond * SECONDS_PER_EPOCH));
+                const endEpochIndex = Math.ceil((scrollPosition + samplesPerSecond * SECONDS_TO_SHOW) / (samplesPerSecond * SECONDS_PER_EPOCH));
+                const annotations: LabelContent = generateAnnotationsForLeft(
+                    allData,
+                    startEpochIndex,
+                    endEpochIndex,
+                    scrollPosition,
+                    samplesPerSecond,
+                    compareEpoch,
+                    signal
+                );
+                return (
+                    <div key={index} className="w-full flex-grow flex" style={{ width: '100%', height: '300px' }}>
+                        <div className="w-1/4 p-2">
+                            {showEpochInfo && (
+                                <div className="overflow-auto h-full">
+                                    <table>
+                                        {annotations.map((annotation, i) => (
+                                            <tr key={i}>
+                                                <td>
+                                                    {annotation.key}
+                                                </td>
+                                                <td>
+                                                    {<p style={{ color: annotation.color }}>{annotation.value}</p>}
+                                                </td>
+                                                <td>
+                                                    {<p style={{ color: annotation.compColor }}>{annotation.compValue}</p>}
+                                                </td>
+                                                <td>
+                                                    {<p style={{ color: annotation.diffPercentColor }}>{annotation.diffPercent?.toFixed(0)}%</p>}
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </table>
+                                </div>
+                            )}
+                        </div>
+                        <div className="w-3/4" style={{ width: '100%', height: '100%' }}>
+                            <canvas ref={el => chartRefs.current[index] = el} style={{ width: '100%', height: '100%' }} />
+                        </div>
+                    </div>
+                );
+            })}
         </div>
     );
 };

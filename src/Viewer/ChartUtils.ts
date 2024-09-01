@@ -1,4 +1,14 @@
-export type LabelContent = [string, string | number, string?, (string | number)?, string?, number?][];
+export type LabelContentItem = {
+    key: string;
+    value: string | number;
+    color?: string;
+    compValue?: string | number;
+    compColor?: string;
+    diffPercent?: number;
+    diffPercentColor?: string;
+};
+
+export type LabelContent = LabelContentItem[];
 
 export function getColorForValue(value: number, min: number, max: number): string {
     const normalizedValue = (value - min) / (max - min);
@@ -19,10 +29,10 @@ export function createLabelCanvas(content: LabelContent, width: number, height: 
     ctx.textBaseline = 'top';
 
     // Find the maximum width of the keys for alignment
-    const keyWidth = Math.max(...content.map(([key]) => ctx.measureText(key + ':').width));
+    const keyWidth = Math.max(...content.map(({ key }) => ctx.measureText(key + ':').width));
 
     let y = 5;
-    content.forEach(([key, value, color, compValue, compColor, diffPercent]) => {
+    content.forEach(({ key, value, color, compValue, compColor, diffPercent, diffPercentColor }) => {
         ctx.fillStyle = 'black';
         ctx.fillText(key, 5, y);
 
@@ -35,7 +45,7 @@ export function createLabelCanvas(content: LabelContent, width: number, height: 
         }
 
         if (diffPercent !== undefined) {
-            ctx.fillStyle = getColorForValue(diffPercent, -100, 100);
+            ctx.fillStyle = diffPercentColor || 'black';
             ctx.fillText(diffPercent.toFixed(0) + '%', keyWidth + 200, y);
         }
 
