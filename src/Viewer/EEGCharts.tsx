@@ -319,7 +319,7 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition })
                                 <div className="overflow-auto h-full">
                                     <table>
                                         {annotations.map((annotation, i) => (
-                                            <tr key={i}>
+                                            <tr key={i} style={{ fontSize: '12px', backgroundColor: 'black', color: 'white' }}>
                                                 <td>
                                                     {annotation.key}
                                                 </td>

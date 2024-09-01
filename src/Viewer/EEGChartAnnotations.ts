@@ -76,8 +76,8 @@ export function generateAnnotationsForLeft(
     const channelData = sleepStage?.Channels[signal.label];
 
     const content: LabelContent = [
-        { key: 'Epoch', value: `${epochIndex}`, compValue: compareEpoch !== null ? `${compareEpoch}` : undefined },
-        { key: 'Stage', value: `${channelData?.Stage || 'N/A'} (${((channelData?.Confidence || 0) * 100).toFixed(0)}%)`, compValue: compareEpoch !== null ? `${allData.sleepStages[compareEpoch]?.Channels[signal.label]?.Stage || 'N/A'} (${((allData.sleepStages[compareEpoch]?.Channels[signal.label]?.Confidence || 0) * 100).toFixed(0)}%)` : undefined },
+        // { key: 'Epoch', value: `${epochIndex}`, compValue: compareEpoch !== null ? `${compareEpoch}` : undefined },
+        // { key: 'Stage', value: `${channelData?.Stage || 'N/A'} (${((channelData?.Confidence || 0) * 100).toFixed(0)}%)`, compValue: compareEpoch !== null ? `${allData.sleepStages[compareEpoch]?.Channels[signal.label]?.Stage || 'N/A'} (${((allData.sleepStages[compareEpoch]?.Channels[signal.label]?.Confidence || 0) * 100).toFixed(0)}%)` : undefined },
     ];
 
     const orderedKeys = ["eeg_sdelta", "eeg_fdelta", "eeg_theta", "eeg_alpha", "eeg_beta"];
