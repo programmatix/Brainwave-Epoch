@@ -27,22 +27,22 @@ export const PredictedAwakeTimeline: React.FC<PredictedAwakeTimelineProps> = ({
 
     return (
         <div>
-            <svg width={width} height="30" onClick={handleClick}>
+            <svg width={width} height="15" onClick={handleClick}>
                 {sleepStages.map((stage, index) => (
                     <rect
                         key={index}
                         x={(index / sleepStages.length) * width}
                         y="0"
                         width={(1 / sleepStages.length) * width}
-                        height="30"
+                        height="15"
                         fill={`rgb(${255 * stage.PredictedAwake}, 0, ${255 * (1 - stage.PredictedAwake)})`}
                     />
                 ))}
                 <line
                     x1={scrollIndicatorPosition}
-                    y1={0}
+                    y1="0"
                     x2={scrollIndicatorPosition}
-                    y2={30}
+                    y2="15"
                     stroke="black"
                     strokeWidth={2}
                 />

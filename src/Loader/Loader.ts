@@ -347,7 +347,7 @@ export async function readNightEvents(filePath: string): Promise<NightEvents> {
         ...event,
         timestamp: parseDateString(event.timestamp_uk),
         source: event.source,
-        durationSecs: event.duration_secs
+        durationSecs: parseFloat(event.duration_secs)
     }));
     console.timeEnd('readNightEvents');
     return nightEvents;

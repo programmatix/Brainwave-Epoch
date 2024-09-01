@@ -7,6 +7,7 @@ import { FitbitHypnogramTimeline } from './FitbitHypnogramTimeline';
 import { SpindleTimeline } from './SpindleTimeline';
 import { PredictedAwakeTimeline } from './PredictedAwakeTimeline';
 import { DefiniteAwakeSleepTimeline } from './DefiniteAwakeSleepTimeline';
+import { CombinedSlowWaveSpindleTimeline } from './CombinedSlowWaveSpindleTimeline';
 
 interface TimelineNavigationProps {
     allData: AllData;
@@ -55,55 +56,23 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = ({
     const startDate = allData.processedEDF.startDate.epochSeconds;
 
     return (
-        <div className="table gap-4">
-            <tr>
-                <td>Aggregated EEG Hypnogram</td>
-                <td>
-                    <SleepStageTimeline
-                        sleepStages={allData.sleepStages}
-                        scrollPosition={scrollPosition}
-                        totalSamples={totalSamples}
-                        samplesPerSecond={samplesPerSecond}
-                        samplesPerEpoch={samplesPerEpoch}
-                        width={TIMELINE_WIDTH}
-                        onTimelineClick={handleTimelineClick}
-                    />
-                </td>
-            </tr>
-            {allData.slowWaveEvents && Object.entries(allData.slowWaveEvents).map(([channel, events]) => (
-                <tr key={`slow-${channel}`}>
-                    <td>Slow Waves {channel}</td>
+        <div className="table">
+            {allData.slowWaveEvents && allData.spindleEvents && Object.keys(allData.slowWaveEvents).map(channel => (
+                <tr key={`combined-${channel}`}>
+                    <td>Slow Waves & Spindles {channel}</td>
                     <td>
-                        <SlowWaveTimeline
+                        <CombinedSlowWaveSpindleTimeline
                             key={channel}
-                            scrollPosition={scrollPosition}
+                            allData={allData}
                             channel={channel}
-                            events={events}
+                            scrollPosition={scrollPosition}
                             totalSamples={totalSamples}
                             width={TIMELINE_WIDTH}
                             onTimelineClick={handleTimelineClick}
-                            allData={allData}
                         />
                     </td>
                 </tr>
-            ))}
-            {allData.spindleEvents && Object.entries(allData.spindleEvents).map(([channel, events]) => (
-                <tr key={`spindle-${channel}`}>
-                    <td>Spindles {channel}</td>
-                    <td>
-                        <SpindleTimeline
-                            key={channel}
-                            scrollPosition={scrollPosition}
-                            channel={channel}
-                            events={events}
-                            totalSamples={totalSamples}
-                            width={TIMELINE_WIDTH}
-                            onTimelineClick={handleTimelineClick}
-                            allData={allData}
-                        />
-                    </td>
-                </tr>
-            ))}
+            ))}            
             <tr>
                 <td>Night Events</td>
                 <td>
@@ -116,6 +85,20 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = ({
                             onTimelineClick={handleTimelineClick}
                         />
                     )}
+                </td>
+            </tr>
+            <tr>
+                <td>Aggregated YASA Hypnogram</td>
+                <td>
+                    <SleepStageTimeline
+                        sleepStages={allData.sleepStages}
+                        scrollPosition={scrollPosition}
+                        totalSamples={totalSamples}
+                        samplesPerSecond={samplesPerSecond}
+                        samplesPerEpoch={samplesPerEpoch}
+                        width={TIMELINE_WIDTH}
+                        onTimelineClick={handleTimelineClick}
+                    />
                 </td>
             </tr>
             {allData.fitbitHypnogram && (

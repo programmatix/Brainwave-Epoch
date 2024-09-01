@@ -27,7 +27,7 @@ export const DefiniteAwakeSleepTimeline: React.FC<DefiniteAwakeSleepTimelineProp
 
     return (
         <div>
-            <svg width={width} height="30" onClick={handleClick}>
+            <svg width={width} height="15" onClick={handleClick}>
                 {sleepStages.map((stage, index) => (
                     <rect
                         key={index}

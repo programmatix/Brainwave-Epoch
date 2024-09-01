@@ -46,7 +46,7 @@ export const SleepStageTimeline: React.FC<SleepStageTimelineProps> = ({
   return (
     <svg
       width={width}
-      height="30"
+      height="15"
       onClick={handleTimelineClick}
     >
       {sleepStages?.map((stage, index) => (
@@ -55,7 +55,7 @@ export const SleepStageTimeline: React.FC<SleepStageTimelineProps> = ({
           x={(index / sleepStages.length) * width}
           y="0"
           width={(1 / sleepStages.length) * width}
-          height="30"
+          height="15"
           fill={stageColorMap[stage.Channels['Aggregated'].Stage as SleepStage] || '#d1d5db'}
         />
       ))}
@@ -63,7 +63,7 @@ export const SleepStageTimeline: React.FC<SleepStageTimelineProps> = ({
         x={viewboxPosition}
         y="0"
         width={viewboxWidth}
-        height="30"
+        height="15"
         fill="none"
         stroke="black"
         strokeWidth="2"

@@ -40,7 +40,7 @@ export const FitbitHypnogramTimeline: React.FC<FitbitHypnogramTimelineProps> = (
 
   return (
     <div>
-      <svg width={width} height="30" onClick={handleClick}>
+      <svg width={width} height="15" onClick={handleClick}>
         {fitbitHypnogram.map((entry, index) => {
           const startX = ((entry.startTime.epochSeconds - startDate) / duration) * width;
           const endX = ((entry.endTime.epochSeconds - startDate) / duration) * width;
