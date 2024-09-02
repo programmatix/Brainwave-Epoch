@@ -78,12 +78,18 @@
   },
   "dependencies": {
     "@js-temporal/polyfill": "^0.4.4",
+    "assert": "^2.1.0",
+    "buffer": "^6.0.3",
     "chartjs-plugin-annotation": "^3.0.1",
     "chartjs-plugin-crosshair": "^2.0.0",
     "chartjs-plugin-datalabels": "^2.2.0",
     "chartjs-plugin-style": "^0.5.0",
     "chartjs-plugin-zoom": "^2.0.1",
     "csv-parse": "^5.5.6",
-    "react-chartjs-2": "^5.2.0"
+    "plotly": "^1.0.6",
+    "plotly.js": "^2.35.0",
+    "react-chartjs-2": "^5.2.0",
+    "react-plotly.js": "^2.6.0",
+    "stream-browserify": "^3.0.0"
   }
 }

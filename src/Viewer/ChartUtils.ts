@@ -1,3 +1,5 @@
+import { FeatureMinMax } from "../Loader/LoaderTypes";
+
 export type LabelContentItem = {
     key: string;
     value: string | number;
@@ -14,6 +16,10 @@ export function getColorForValue(value: number, min: number, max: number): strin
     const normalizedValue = (value - min) / (max - min);
     const hue = normalizedValue * 120; // 0 (red) to 120 (green)
     return `hsl(${hue}, 100%, 50%)`;
+}
+
+export function getColorForValueFromMinMax(value: number, minMax: FeatureMinMax): string {
+    return getColorForValue(value, minMax.p10, minMax.p90);
 }
 
 export function createLabelCanvas(content: LabelContent, width: number, height: number): HTMLCanvasElement {
@@ -54,3 +60,4 @@ export function createLabelCanvas(content: LabelContent, width: number, height: 
 
     return canvas;
 }
+

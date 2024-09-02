@@ -436,34 +436,49 @@ export async function readAndProcessEDF(filePath: string): Promise<ProcessedEDFD
 }
 
 function calculateSleepStageFeatureMinMax(sleepStages: ProcessedSleepStages): SleepStageFeatureMinMax | undefined {
-    if (!sleepStages || sleepStages.length === 0) {
-        return undefined;
-    }
-    const channels = Object.keys(sleepStages[0].Channels)
-    const lastChannel = channels[channels.length - 1];
-    const featureKeys = Object.keys(sleepStages[0].Channels[lastChannel]).filter(key =>
-        key.startsWith('eeg_') && typeof sleepStages[0].Channels[lastChannel][key] === 'number'
-    ) as (keyof ProcessedSleepStageEntryFeatures)[];
+	if (!sleepStages || sleepStages.length === 0) {
+		return undefined;
+	}
+	const channels = Object.keys(sleepStages[0].Channels);
+	const lastChannel = channels[channels.length - 1];
+	const featureKeys = Object.keys(sleepStages[0].Channels[lastChannel]).filter(key =>
+		key.startsWith('eeg_') && typeof sleepStages[0].Channels[lastChannel][key] === 'number'
+	) as (keyof ProcessedSleepStageEntryFeatures)[];
 
-    console.log(featureKeys);
+	const initialMinMax: SleepStageFeatureMinMax = {} as SleepStageFeatureMinMax;
+	featureKeys.forEach(key => {
+		initialMinMax[key] = { min: Infinity, max: -Infinity, stdDev: 0, p10: 0, p25: 0, p50: 0, p75: 0, p90: 0 };
+	});
 
-    const initialMinMax: SleepStageFeatureMinMax = {} as SleepStageFeatureMinMax;
-    featureKeys.forEach(key => {
-        initialMinMax[key] = { min: Infinity, max: -Infinity };
-    });
+	const values: { [key: string]: number[] } = {};
+	featureKeys.forEach(key => {
+		values[key] = [];
+	});
 
-    console.log(initialMinMax);
+	sleepStages.forEach(stage => {
+		featureKeys.forEach(key => {
+			Object.keys(stage.Channels).forEach(channel => {
+				const value = stage.Channels[channel][key];
+				if (value !== undefined) {
+					values[key].push(value);
+					if (value < initialMinMax[key].min) initialMinMax[key].min = value;
+					if (value > initialMinMax[key].max) initialMinMax[key].max = value;
+				}
+			});
+		});
+	});
 
-    return sleepStages.reduce((minMax, stage) => {
-        featureKeys.forEach(key => {
-            Object.keys(stage.Channels).forEach(channel => {
-                const value = stage.Channels[channel][key];
-                if (value !== undefined) {
-                    if (value < minMax[key].min) minMax[key].min = value;
-                    if (value > minMax[key].max) minMax[key].max = value;
-                }
-            });
-        });
-        return minMax;
-    }, initialMinMax);
+	featureKeys.forEach(key => {
+		const sortedValues = values[key].sort((a, b) => a - b);
+		const len = sortedValues.length;
+		initialMinMax[key].p10 = sortedValues[Math.floor(len * 0.1)];
+		initialMinMax[key].p25 = sortedValues[Math.floor(len * 0.25)];
+		initialMinMax[key].p50 = sortedValues[Math.floor(len * 0.5)];
+		initialMinMax[key].p75 = sortedValues[Math.floor(len * 0.75)];
+		initialMinMax[key].p90 = sortedValues[Math.floor(len * 0.9)];
+		const mean = sortedValues.reduce((sum, val) => sum + val, 0) / len;
+		initialMinMax[key].stdDev = Math.sqrt(sortedValues.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / len);
+	});
+
+	return initialMinMax;
 }

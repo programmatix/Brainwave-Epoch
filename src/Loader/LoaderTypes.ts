@@ -134,6 +134,12 @@ export type GroupedSpindleEvents = {
 export type FeatureMinMax = {
     min: number;
     max: number;
+    stdDev: number;
+    p10: number;
+    p25: number;
+    p50: number;
+    p75: number;
+    p90: number;
 };
 
 export type ProcessedSleepStageEntryFeatures = {

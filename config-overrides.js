@@ -1,10 +1,24 @@
 const { override, addWebpackExternals } = require('customize-cra');
+const webpack = require('webpack')
 
-module.exports = override(
-  addWebpackExternals({
-    // Specify your Node.js built-in modules here
+module.exports = function override(config) {
+  config.resolve.fallback = {
+    buffer: require.resolve('buffer/'),
+    stream: require.resolve('stream-browserify'),
+    assert: require.resolve('assert/'),
+  };
+
+  config.plugins.push(
+    new webpack.ProvidePlugin({
+      Buffer: ['buffer', 'Buffer'],
+    })
+  );
+
+  config = addWebpackExternals({
     'os': 'commonjs os',
     'fs': 'commonjs fs',
-    // Add other Node.js modules as needed
-  })
-);
+  })(config);
+
+
+  return config;
+}

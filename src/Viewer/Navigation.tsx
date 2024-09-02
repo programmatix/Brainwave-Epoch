@@ -8,6 +8,9 @@ import { SpindleTimeline } from './SpindleTimeline';
 import { PredictedAwakeTimeline } from './PredictedAwakeTimeline';
 import { DefiniteAwakeSleepTimeline } from './DefiniteAwakeSleepTimeline';
 import { CombinedSlowWaveSpindleTimeline } from './CombinedSlowWaveSpindleTimeline';
+import { FeatureTimeline } from './FeatureTimeline';
+import { getFirstNonAggregatedChannel, getOrderedKeys } from './EEGChartAnnotations';
+import { SpectrogramTimeline } from './SpectrogramTimeline'; // Add import
 
 interface TimelineNavigationProps {
     allData: AllData;
@@ -29,6 +32,7 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = ({
     samplesPerEpoch,
 }) => {
     const [epochInput, setEpochInput] = useState('');
+    const [selectedFeature, setSelectedFeature] = useState<string>('');
 
     const handleKeyDown = useCallback((e: KeyboardEvent) => {
         if (e.key === 'ArrowLeft') {
@@ -109,7 +113,7 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = ({
                         />
                     </td>
                 </tr>
-            ))}            
+            ))}
             <tr>
                 <td>Night Events</td>
                 <td>
@@ -124,6 +128,38 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = ({
                     )}
                 </td>
             </tr>
+            {Object.keys(allData.sleepStages?.[0]?.Channels || {}).map((channel, index) => (
+                <tr key={`feature-${channel}`}>
+                    <td>Feature Timeline {channel}
+
+                        {index == 0 && <div className="flex items-center space-x-2 mb-2">
+                            <select
+                                value={selectedFeature}
+                                onChange={(e) => setSelectedFeature(e.target.value)}
+                                className="select select-bordered w-full max-w-xs"
+                            >
+                                {getOrderedKeys(getFirstNonAggregatedChannel(allData)).map((feature) => (
+                                    <option key={feature} value={feature}>
+                                        {feature}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>}
+
+                    </td>
+                    <td>
+                        <FeatureTimeline
+                            allData={allData}
+                            scrollPosition={scrollPosition}
+                            totalSamples={totalSamples}
+                            width={TIMELINE_WIDTH}
+                            onTimelineClick={handleTimelineClick}
+                            selectedFeature={selectedFeature}
+                            channel={channel}
+                        />
+                    </td>
+                </tr>
+            ))}
             <tr>
                 <td>Aggregated YASA Hypnogram</td>
                 <td>
@@ -157,29 +193,29 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = ({
                 <tr>
                     <td>Predicted Awake</td>
                     <td>
-                    <PredictedAwakeTimeline
-                        sleepStages={allData.predictedAwakeTimeline}
-                        scrollPosition={scrollPosition}
-                        totalSamples={totalSamples}
-                        width={TIMELINE_WIDTH}
-                        onTimelineClick={handleTimelineClick}
-                    />
-                </td>
-            </tr>
+                        <PredictedAwakeTimeline
+                            sleepStages={allData.predictedAwakeTimeline}
+                            scrollPosition={scrollPosition}
+                            totalSamples={totalSamples}
+                            width={TIMELINE_WIDTH}
+                            onTimelineClick={handleTimelineClick}
+                        />
+                    </td>
+                </tr>
             )}
             {allData.definiteAwakeSleepTimeline && (
-            <tr>
-                <td>Definite Awake/Probably Sleep</td>
-                <td>
-                    <DefiniteAwakeSleepTimeline
-                        sleepStages={allData.definiteAwakeSleepTimeline}
-                        scrollPosition={scrollPosition}
-                        totalSamples={totalSamples}
-                        width={TIMELINE_WIDTH}
-                        onTimelineClick={handleTimelineClick}
-                    />
-                </td>
-            </tr>
+                <tr>
+                    <td>Definite Awake/Probably Sleep</td>
+                    <td>
+                        <DefiniteAwakeSleepTimeline
+                            sleepStages={allData.definiteAwakeSleepTimeline}
+                            scrollPosition={scrollPosition}
+                            totalSamples={totalSamples}
+                            width={TIMELINE_WIDTH}
+                            onTimelineClick={handleTimelineClick}
+                        />
+                    </td>
+                </tr>
             )}
         </div>
     );
