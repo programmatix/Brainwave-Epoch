@@ -91,7 +91,7 @@ export async function readSleepStages(filePath: string): Promise<ProcessedSleepS
 
         const getChannelNames = (stage: any): string[] => {
             return [...new Set(Object.keys(stage)
-                .filter(key => key.includes('_'))
+                .filter(key => key.includes('-M1_'))
                 .map(key => key.split('_')[0]))];
         };
 
@@ -152,7 +152,16 @@ export async function readSleepStages(filePath: string): Promise<ProcessedSleepS
                 DefinitelySleep: stage.DefinitelySleep === 'True',
                 ProbablySleep: stage.ProbablySleep === 'True',
                 PredictedAwake: parseFloat(stage.PredictedAwake),
-                PredictedAwakeBinary: parseInt(stage.PredictedAwakeBinary)
+                PredictedAwakeBinary: parseInt(stage.PredictedAwakeBinary),
+                Predictions_has_microwaking_start: parseFloat(stage.Predictions_has_microwaking_start),
+                Predictions_has_microwaking_end: parseFloat(stage.Predictions_has_microwaking_end),
+                Predictions_Ambiguous_Deep: parseFloat(stage["Predictions_Ambiguous Deep"]),
+                Predictions_Deep: parseFloat(stage.Predictions_Deep),
+                Predictions_Non_Deep: parseFloat(stage["Predictions_Non-Deep"]),
+                Predictions_Unsure: parseFloat(stage.Predictions_Unsure),
+                Predictions_Wake: parseFloat(stage.Predictions_Wake),
+                Predictions_AnyDeep: parseFloat(stage.Predictions_AnyDeep),
+                Predictions_Noise: parseFloat(stage.Predictions_Noise)
             };
 
             return processed;
@@ -493,6 +502,8 @@ function calculateSleepStageFeatureMinMax(sleepStages: ProcessedSleepStages): Sl
         const mean = sortedValues.reduce((sum, val) => sum + val, 0) / len;
         initialMinMax[key].stdDev = Math.sqrt(sortedValues.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / len);
     });
+
+    console.log(channels, lastChannel, featureKeys, initialMinMax);
 
     return initialMinMax;
 }

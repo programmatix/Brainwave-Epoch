@@ -11,7 +11,7 @@ interface ScoringComponentProps {
   updateScorings: (newScorings: Scorings) => void;
 }
 
-const SCORING_OPTIONS: ScoringEntry['stage'][] = ["Wake", "Deep", "Non-Deep", "Ambiguous Deep", "Unsure"];
+const SCORING_OPTIONS: ScoringEntry['stage'][] = ["Wake", "Deep", "Non-Deep", "Ambiguous Deep", "Unsure", "Noise"];
 const TAG_OPTIONS = [
   // { tag: "Blinks", description: "Epoch contains one or more blinks" },
   // { tag: "No blinks", description: "No blinks" },
@@ -35,6 +35,8 @@ export const ScoringComponent: React.FC<ScoringComponentProps> = ({ scrollPositi
 
   const currentEpochIndex = Math.floor(scrollPosition / samplesPerEpoch);
   const currentEpochScoring = scorings.find(s => s.epochIndex === currentEpochIndex);
+
+  const currentEpochData = allData.sleepStages[currentEpochIndex];
 
   useEffect(() => {
     if (currentEpochScoring) {
@@ -125,6 +127,33 @@ export const ScoringComponent: React.FC<ScoringComponentProps> = ({ scrollPositi
         ) : (
           <span className="text-red-500">✗</span>
         )}
+      </div>
+
+      <div className="mt-4 grid grid-cols-2 gap-4">
+        <div>
+          <h3 className="text-lg font-semibold mb-2">Predictions</h3>
+          <ul className="space-y-1">
+            {Object.entries(currentEpochData)
+              .filter(([key]) => key.startsWith('Predictions_'))
+              .map(([key, value]: [string, any]) => (
+                <li key={key} className="flex justify-between">
+                  <span>{key.replace('Predictions_', '').replace(/_/g, ' ')}:</span>
+                  <span className="font-mono">{typeof value === 'number' ? value.toFixed(3) : value}</span>
+                </li>
+              ))}
+          </ul>
+        </div>
+        <div>
+          <h3 className="text-lg font-semibold mb-2">Other Data</h3>
+          <ul className="space-y-1">
+            {['Stage', 'Confidence', 'Source', 'StageInt', 'ManualStage', 'DefinitelyAwake', 'DefinitelySleep', 'ProbablySleep', 'PredictedAwake', 'PredictedAwakeBinary'].map(key => (
+              <li key={key} className="flex justify-between">
+                <span>{key}:</span>
+                <span className="font-mono">{currentEpochData[key]?.toString()}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
       </div>
     </div>
   );

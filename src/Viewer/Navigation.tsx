@@ -12,6 +12,7 @@ import { FeatureTimeline } from './FeatureTimeline';
 import { getFirstNonAggregatedChannel, getOrderedKeys } from './EEGChartAnnotations';
 import { SpectrogramTimeline } from './SpectrogramTimeline'; // Add import
 import { ScoredEpochsTimeline } from './ScoredEpochsTimeline';
+import { PredictedSleepStageTimeline } from './PredictedSleepStageTimeline';
 
 interface TimelineNavigationProps {
     allData: AllData;
@@ -30,7 +31,7 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = ({
     scrollPosition,
     setScrollPosition,
     totalSamples,
-    samplesPerSecond,   
+    samplesPerSecond,
     samplesPerEpoch,
     scorings,
 }) => {
@@ -211,6 +212,31 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = ({
                     />
                 </td>
             </tr>
+            <tr>
+                <td>Predicted Sleep Stages</td>
+                <td>
+                    <PredictedSleepStageTimeline
+                        sleepStages={allData.sleepStages}
+                        scrollPosition={scrollPosition}
+                        totalSamples={totalSamples}
+                        width={TIMELINE_WIDTH}
+                        onTimelineClick={handleTimelineClick}
+                    />
+                </td>
+            </tr>
+            <tr>
+                <td>Scored Epochs</td>
+                <td>
+                    <ScoredEpochsTimeline
+                        scorings={scorings}
+                        scrollPosition={scrollPosition}
+                        totalSamples={totalSamples}
+                        samplesPerEpoch={samplesPerEpoch}
+                        width={TIMELINE_WIDTH}
+                        onTimelineClick={handleTimelineClick}
+                    />
+                </td>
+            </tr>
             {allData.fitbitHypnogram && (
                 <tr>
                     <td>Fitbit Hypnogram</td>
@@ -254,19 +280,6 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = ({
                     </td>
                 </tr>
             )}
-            <tr>
-                <td>Scored Epochs</td>
-                <td>
-                    <ScoredEpochsTimeline
-                        scorings={scorings}
-                        scrollPosition={scrollPosition}
-                        totalSamples={totalSamples}
-                        samplesPerEpoch={samplesPerEpoch}
-                        width={TIMELINE_WIDTH}
-                        onTimelineClick={handleTimelineClick}
-                    />
-                </td>
-            </tr>
         </div>
     );
 };

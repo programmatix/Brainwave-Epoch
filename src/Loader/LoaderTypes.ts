@@ -162,6 +162,15 @@ export type ProcessedSleepStageEntry = {
     ProbablySleep?: boolean;
     PredictedAwake?: number;
     PredictedAwakeBinary?: number;
+    Predictions_has_microwaking_start?: number;
+    Predictions_has_microwaking_end?: number;
+    Predictions_Ambiguous_Deep?: number;
+    Predictions_Deep?: number;
+    Predictions_Non_Deep?: number;
+    Predictions_Unsure?: number;
+    Predictions_Wake?: number;
+    Predictions_AnyDeep?: number;
+    Predictions_Noise?: number;
 };
 
 export type ProcessedSleepStages = ProcessedSleepStageEntry[];
@@ -178,7 +187,7 @@ export type ScoringTag = {
   export type ScoringEntry = {
     epochIndex: number;
     scoredAt: string;
-    stage: "Wake" | "Deep" | "Non-Deep" | "Ambiguous Deep" | "Unsure";
+    stage: "Wake" | "Deep" | "Non-Deep" | "Ambiguous Deep" | "Unsure" | "Noise";
     tags: ScoringTag[];
   };
   
