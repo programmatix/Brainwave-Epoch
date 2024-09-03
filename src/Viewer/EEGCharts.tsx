@@ -238,7 +238,7 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition })
     }, [handleKeyDown]);
 
     return (
-        <div className="flex-col flex h-full">
+        <div className="flex-col flex h-full" id="eeg-charts">
             <ComparisonControls
                 compareEpochInput={compareEpochInput}
                 setCompareEpochInput={setCompareEpochInput}

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { AllData } from '../Loader/LoaderTypes';
+import { AllData, Scorings } from '../Loader/LoaderTypes';
 import { SleepStageTimeline } from './SleepStageTimeline';
 import { SlowWaveTimeline } from './SlowWaveTimeline';
 import { NightEventsTimeline } from './NightEventsTimeline';
@@ -11,6 +11,7 @@ import { CombinedSlowWaveSpindleTimeline } from './CombinedSlowWaveSpindleTimeli
 import { FeatureTimeline } from './FeatureTimeline';
 import { getFirstNonAggregatedChannel, getOrderedKeys } from './EEGChartAnnotations';
 import { SpectrogramTimeline } from './SpectrogramTimeline'; // Add import
+import { ScoredEpochsTimeline } from './ScoredEpochsTimeline';
 
 interface TimelineNavigationProps {
     allData: AllData;
@@ -19,6 +20,7 @@ interface TimelineNavigationProps {
     totalSamples: number;
     samplesPerSecond: number;
     samplesPerEpoch: number;
+    scorings: Scorings;
 }
 
 const TIMELINE_WIDTH = 1000;
@@ -28,8 +30,9 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = ({
     scrollPosition,
     setScrollPosition,
     totalSamples,
-    samplesPerSecond,
+    samplesPerSecond,   
     samplesPerEpoch,
+    scorings,
 }) => {
     const [epochInput, setEpochInput] = useState('');
     const [selectedFeature, setSelectedFeature] = useState<string>('');
@@ -81,10 +84,41 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = ({
         setScrollPosition(randomEpoch * samplesPerEpoch);
     };
 
+    const handleFirstUnscoredEpoch = () => {
+        const currentEpoch = Math.floor(scrollPosition / samplesPerEpoch);
+        for (let i = 0; i < currentEpoch; i++) {
+            if (!scorings.some(s => s.epochIndex === i)) {
+                setScrollPosition(i * samplesPerEpoch);
+                return;
+            }
+        }
+    };
+
+    const handlePrevUnscoredEpoch = () => {
+        const currentEpoch = Math.floor(scrollPosition / samplesPerEpoch);
+        for (let i = currentEpoch - 1; i >= 0; i--) {
+            if (!scorings.some(s => s.epochIndex === i)) {
+                setScrollPosition(i * samplesPerEpoch);
+                return;
+            }
+        }
+    };
+
+    const handleNextUnscoredEpoch = () => {
+        const currentEpoch = Math.floor(scrollPosition / samplesPerEpoch);
+        const totalEpochs = Math.floor(totalSamples / samplesPerEpoch);
+        for (let i = currentEpoch + 1; i < totalEpochs; i++) {
+            if (!scorings.some(s => s.epochIndex === i)) {
+                setScrollPosition(i * samplesPerEpoch);
+                return;
+            }
+        }
+    };
+
     const startDate = allData.processedEDF.startDate.epochSeconds;
 
     return (
-        <div className="table">
+        <div className="table" id="timeline-navigation">
             <div className="flex items-center space-x-2 mb-2">
                 <input
                     type="text"
@@ -97,6 +131,9 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = ({
                 <button onClick={handlePrevEpoch} className="bg-blue-500 text-white p-1 rounded">Prev Epoch (q)</button>
                 <button onClick={handleNextEpoch} className="bg-blue-500 text-white p-1 rounded">Next Epoch (e)</button>
                 <button onClick={handleRandomEpoch} className="bg-green-500 text-white p-1 rounded">Random Epoch (r)</button>
+                <button onClick={handleFirstUnscoredEpoch} className="bg-purple-500 text-white p-1 rounded">First Unscored</button>
+                <button onClick={handlePrevUnscoredEpoch} className="bg-purple-500 text-white p-1 rounded">Prev Unscored</button>
+                <button onClick={handleNextUnscoredEpoch} className="bg-purple-500 text-white p-1 rounded">Next Unscored</button>
             </div>
             {allData.slowWaveEvents && allData.spindleEvents && Object.keys(allData.slowWaveEvents).map(channel => (
                 <tr key={`combined-${channel}`}>
@@ -217,6 +254,19 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = ({
                     </td>
                 </tr>
             )}
+            <tr>
+                <td>Scored Epochs</td>
+                <td>
+                    <ScoredEpochsTimeline
+                        scorings={scorings}
+                        scrollPosition={scrollPosition}
+                        totalSamples={totalSamples}
+                        samplesPerEpoch={samplesPerEpoch}
+                        width={TIMELINE_WIDTH}
+                        onTimelineClick={handleTimelineClick}
+                    />
+                </td>
+            </tr>
         </div>
     );
 };

@@ -1,7 +1,7 @@
 import { Temporal } from '@js-temporal/polyfill';
 import { parse } from 'csv-parse/sync';
 import { promises as fs } from 'fs';
-import { AllData, EDFData, EDFHeader, EDFSignal, FitbitHypnogram, GroupedSlowWaveEvents, GroupedSpindleEvents, NightEvents, ProcessedEDFData, ProcessedSleepStageEntry, ProcessedSleepStages, SignalData, SlowWaveEvents, SpindleEvents, TimeLabel, SleepStageFeatureMinMax, ProcessedSleepStageEntryFeatures, ChannelData } from './LoaderTypes';
+import { AllData, EDFData, EDFHeader, EDFSignal, FitbitHypnogram, GroupedSlowWaveEvents, GroupedSpindleEvents, NightEvents, ProcessedEDFData, ProcessedSleepStageEntry, ProcessedSleepStages, SignalData, SlowWaveEvents, SpindleEvents, TimeLabel, SleepStageFeatureMinMax, ProcessedSleepStageEntryFeatures, ChannelData, Scorings, ScoringEntry, ScoringTag } from './LoaderTypes';
 
 
 import { EventEmitter } from 'events';
@@ -74,7 +74,7 @@ export async function readEDFPlus(filePath: string): Promise<EDFData> {
         }
     }
 
-    return { header, signals, records };
+    return { filePath, header, signals, records };
 }
 
 export async function readSleepStages(filePath: string): Promise<ProcessedSleepStages | undefined> {
@@ -94,7 +94,7 @@ export async function readSleepStages(filePath: string): Promise<ProcessedSleepS
                 .filter(key => key.includes('_'))
                 .map(key => key.split('_')[0]))];
         };
-        
+
         const getChannelData = (stage: any, channel: string): ChannelData => {
             return Object.keys(stage)
                 .filter(key => key.startsWith(channel))
@@ -108,14 +108,14 @@ export async function readSleepStages(filePath: string): Promise<ProcessedSleepS
                     return data;
                 }, {} as ChannelData);
         };
-        
+
         const result = parsedSleepStages.map(stage => {
             const [datePart, timePart] = stage.Timestamp.split(' ');
             const [timeWithNanos, offset] = timePart.split('+');
             const [time, nanos] = timeWithNanos.split('.');
             const [year, month, day] = datePart.split('-');
             const [hour, minute, second] = time.split(':');
-        
+
             const timestamp = Temporal.ZonedDateTime.from({
                 year: parseInt(year),
                 month: parseInt(month),
@@ -126,7 +126,7 @@ export async function readSleepStages(filePath: string): Promise<ProcessedSleepS
                 nanosecond: parseInt(nanos || '0'),
                 timeZone: Temporal.TimeZone.from(`+${offset}`)
             });
-        
+
             const channels = {
                 "Aggregated": {
                     Confidence: parseFloat(stage.Confidence),
@@ -138,7 +138,7 @@ export async function readSleepStages(filePath: string): Promise<ProcessedSleepS
                     return acc;
                 }, {} as { [key: string]: ChannelData })
             };
-        
+
             const processed: ProcessedSleepStageEntry = {
                 Epoch: parseInt(stage.Epoch),
                 Timestamp: timestamp,
@@ -154,7 +154,7 @@ export async function readSleepStages(filePath: string): Promise<ProcessedSleepS
                 PredictedAwake: parseFloat(stage.PredictedAwake),
                 PredictedAwakeBinary: parseInt(stage.PredictedAwakeBinary)
             };
-        
+
             return processed;
         });
 
@@ -231,6 +231,16 @@ export function setupFileMenu(onFileLoad: (filePath: string) => Promise<void>) {
     window.nw.Window.get().menu = menu;
 }
 
+export async function readScorings(filePath: string): Promise<Scorings | undefined> {
+    try {
+        const data = await fs.readFile(filePath, 'utf8');
+        return JSON.parse(data).scorings;
+    } catch (error) {
+        console.error(`Error reading Scorings file: ${error.message}`);
+        return undefined;
+    }
+}
+
 export async function loadFiles(edfPath: string): Promise<AllData> {
     const start = performance.now();
     loaderEvents.emit('log', `${new Date().toISOString()}: Starting to load files`);
@@ -240,14 +250,16 @@ export async function loadFiles(edfPath: string): Promise<AllData> {
     const nightEventsPath = edfPath.replace('.edf', '.night_events.csv');
     const fitbitHypnogramPath = edfPath.replace('.edf', '.fitbit_hypnogram.csv');
     const spindleEventsPath = edfPath.replace('.edf', '.spindle_summary.csv');
+    const scoringsPath = edfPath.replace('.edf', '.scorings.json');
 
-    const [processedStages, raw, slowWaveEvents, nightEvents, fitbitHypnogram, spindleEvents] = await Promise.all([
+    const [processedStages, raw, slowWaveEvents, nightEvents, fitbitHypnogram, spindleEvents, scorings] = await Promise.all([
         readSleepStages(sleepStagesPath),
         readEDFPlus(edfPath),
         readSlowWaveEvents(slowWaveEventsPath),
         readNightEvents(nightEventsPath),
         readFitbitHypnogram(fitbitHypnogramPath),
-        readSpindleEvents(spindleEventsPath)
+        readSpindleEvents(spindleEventsPath),
+        readScorings(scoringsPath)
     ]);
 
     loaderEvents.emit('log', `${new Date().toISOString()}: Processing EDF data...`);
@@ -270,7 +282,8 @@ export async function loadFiles(edfPath: string): Promise<AllData> {
         spindleEvents,
         predictedAwakeTimeline: processedStages,
         definiteAwakeSleepTimeline: processedStages,
-        sleepStageFeatureMinMax
+        sleepStageFeatureMinMax,
+        scorings
     };
 
     return allData;
@@ -424,6 +437,7 @@ export function processEDFData(edfData: EDFData): ProcessedEDFData {
     }
 
     return {
+        filePath: edfData.filePath,
         startDate: header.startDate,
         duration: header.numDataRecords * header.durationOfDataRecord,
         signals: processedSignals
@@ -436,49 +450,49 @@ export async function readAndProcessEDF(filePath: string): Promise<ProcessedEDFD
 }
 
 function calculateSleepStageFeatureMinMax(sleepStages: ProcessedSleepStages): SleepStageFeatureMinMax | undefined {
-	if (!sleepStages || sleepStages.length === 0) {
-		return undefined;
-	}
-	const channels = Object.keys(sleepStages[0].Channels);
-	const lastChannel = channels[channels.length - 1];
-	const featureKeys = Object.keys(sleepStages[0].Channels[lastChannel]).filter(key =>
-		key.startsWith('eeg_') && typeof sleepStages[0].Channels[lastChannel][key] === 'number'
-	) as (keyof ProcessedSleepStageEntryFeatures)[];
+    if (!sleepStages || sleepStages.length === 0) {
+        return undefined;
+    }
+    const channels = Object.keys(sleepStages[0].Channels);
+    const lastChannel = channels[channels.length - 1];
+    const featureKeys = Object.keys(sleepStages[0].Channels[lastChannel]).filter(key =>
+        key.startsWith('eeg_') && typeof sleepStages[0].Channels[lastChannel][key] === 'number'
+    ) as (keyof ProcessedSleepStageEntryFeatures)[];
 
-	const initialMinMax: SleepStageFeatureMinMax = {} as SleepStageFeatureMinMax;
-	featureKeys.forEach(key => {
-		initialMinMax[key] = { min: Infinity, max: -Infinity, stdDev: 0, p10: 0, p25: 0, p50: 0, p75: 0, p90: 0 };
-	});
+    const initialMinMax: SleepStageFeatureMinMax = {} as SleepStageFeatureMinMax;
+    featureKeys.forEach(key => {
+        initialMinMax[key] = { min: Infinity, max: -Infinity, stdDev: 0, p10: 0, p25: 0, p50: 0, p75: 0, p90: 0 };
+    });
 
-	const values: { [key: string]: number[] } = {};
-	featureKeys.forEach(key => {
-		values[key] = [];
-	});
+    const values: { [key: string]: number[] } = {};
+    featureKeys.forEach(key => {
+        values[key] = [];
+    });
 
-	sleepStages.forEach(stage => {
-		featureKeys.forEach(key => {
-			Object.keys(stage.Channels).forEach(channel => {
-				const value = stage.Channels[channel][key];
-				if (value !== undefined) {
-					values[key].push(value);
-					if (value < initialMinMax[key].min) initialMinMax[key].min = value;
-					if (value > initialMinMax[key].max) initialMinMax[key].max = value;
-				}
-			});
-		});
-	});
+    sleepStages.forEach(stage => {
+        featureKeys.forEach(key => {
+            Object.keys(stage.Channels).forEach(channel => {
+                const value = stage.Channels[channel][key];
+                if (value !== undefined) {
+                    values[key].push(value);
+                    if (value < initialMinMax[key].min) initialMinMax[key].min = value;
+                    if (value > initialMinMax[key].max) initialMinMax[key].max = value;
+                }
+            });
+        });
+    });
 
-	featureKeys.forEach(key => {
-		const sortedValues = values[key].sort((a, b) => a - b);
-		const len = sortedValues.length;
-		initialMinMax[key].p10 = sortedValues[Math.floor(len * 0.1)];
-		initialMinMax[key].p25 = sortedValues[Math.floor(len * 0.25)];
-		initialMinMax[key].p50 = sortedValues[Math.floor(len * 0.5)];
-		initialMinMax[key].p75 = sortedValues[Math.floor(len * 0.75)];
-		initialMinMax[key].p90 = sortedValues[Math.floor(len * 0.9)];
-		const mean = sortedValues.reduce((sum, val) => sum + val, 0) / len;
-		initialMinMax[key].stdDev = Math.sqrt(sortedValues.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / len);
-	});
+    featureKeys.forEach(key => {
+        const sortedValues = values[key].sort((a, b) => a - b);
+        const len = sortedValues.length;
+        initialMinMax[key].p10 = sortedValues[Math.floor(len * 0.1)];
+        initialMinMax[key].p25 = sortedValues[Math.floor(len * 0.25)];
+        initialMinMax[key].p50 = sortedValues[Math.floor(len * 0.5)];
+        initialMinMax[key].p75 = sortedValues[Math.floor(len * 0.75)];
+        initialMinMax[key].p90 = sortedValues[Math.floor(len * 0.9)];
+        const mean = sortedValues.reduce((sum, val) => sum + val, 0) / len;
+        initialMinMax[key].stdDev = Math.sqrt(sortedValues.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / len);
+    });
 
-	return initialMinMax;
+    return initialMinMax;
 }

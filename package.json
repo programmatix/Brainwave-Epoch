@@ -86,6 +86,7 @@
     "chartjs-plugin-style": "^0.5.0",
     "chartjs-plugin-zoom": "^2.0.1",
     "csv-parse": "^5.5.6",
+    "file-saver": "^2.0.5",
     "plotly": "^1.0.6",
     "plotly.js": "^2.35.0",
     "react-chartjs-2": "^5.2.0",

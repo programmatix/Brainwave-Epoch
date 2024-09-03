@@ -26,6 +26,7 @@ export type EDFSignal = {
 };
 
 export type EDFData = {
+    filePath: string;
     header: EDFHeader;
     signals: EDFSignal[];
     records: number[][];
@@ -118,6 +119,7 @@ export type SignalData = {
 };
 
 export type ProcessedEDFData = {
+    filePath: string;
     startDate: Temporal.ZonedDateTime;
     duration: number;
     signals: SignalData[];
@@ -168,6 +170,21 @@ export type SleepStageFeatureMinMax = {
     [K in keyof ProcessedSleepStageEntryFeatures]: FeatureMinMax;
 };
 
+export type ScoringTag = {
+    tag: string;
+    addedAt: string;
+  };
+  
+  export type ScoringEntry = {
+    epochIndex: number;
+    scoredAt: string;
+    stage: "Wake" | "Deep" | "Non-Deep" | "Ambiguous Deep" | "Unsure";
+    tags: ScoringTag[];
+  };
+  
+  export type Scorings = ScoringEntry[];
+  
+
 export type AllData = {
     processedEDF: ProcessedEDFData;
     sleepStages?: ProcessedSleepStages;
@@ -178,4 +195,5 @@ export type AllData = {
     predictedAwakeTimeline?: ProcessedSleepStages;
     definiteAwakeSleepTimeline?: ProcessedSleepStages;
     sleepStageFeatureMinMax?: SleepStageFeatureMinMax;
+    scorings?: Scorings;
 };

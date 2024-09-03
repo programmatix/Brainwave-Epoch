@@ -66,7 +66,7 @@ export function generateAnnotations(
 }
 
 export function getOrderedKeys(channelData: any): string[] {
-    const orderedKeys = ["eeg_sdelta", "eeg_fdelta", "eeg_theta", "eeg_alpha", "eeg_beta"];
+    const orderedKeys = ["eeg_sdelta", "eeg_fdelta", "eeg_theta", "eeg_alpha", "eeg_sigma", "eeg_beta"];
     const allKeys = new Set([...orderedKeys, ...Object.keys(channelData).filter(key => key.includes('eeg_'))]);
 
     const out = Array.from(allKeys).filter(key =>
@@ -81,7 +81,6 @@ export function getOrderedKeys(channelData: any): string[] {
         !key.includes('eeg_std')
     );
 
-    console.log(channelData, allKeys, out);
     return out;
 }
 
@@ -105,7 +104,7 @@ export function generateAnnotationsForLeft(
 
     const content: LabelContent = [
         // { key: 'Epoch', value: `${epochIndex}`, compValue: compareEpoch !== null ? `${compareEpoch}` : undefined },
-        // { key: 'Stage', value: `${channelData?.Stage || 'N/A'} (${((channelData?.Confidence || 0) * 100).toFixed(0)}%)`, compValue: compareEpoch !== null ? `${allData.sleepStages[compareEpoch]?.Channels[signal.label]?.Stage || 'N/A'} (${((allData.sleepStages[compareEpoch]?.Channels[signal.label]?.Confidence || 0) * 100).toFixed(0)}%)` : undefined },
+        { key: 'Stage', value: `${channelData?.Stage || 'N/A'} (${((channelData?.Confidence || 0) * 100).toFixed(0)}%)`, compValue: compareEpoch !== null ? `${allData.sleepStages[compareEpoch]?.Channels[signal.label]?.Stage || 'N/A'} (${((allData.sleepStages[compareEpoch]?.Channels[signal.label]?.Confidence || 0) * 100).toFixed(0)}%)` : undefined },
     ];
 
     const orderedKeys = getOrderedKeys(channelData);
