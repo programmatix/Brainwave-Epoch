@@ -116,6 +116,27 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = ({
         }
     };
 
+    const handlePrevScoredMicrowake = () => {
+        const currentEpoch = Math.floor(scrollPosition / samplesPerEpoch);
+        for (let i = currentEpoch - 1; i >= 0; i--) {
+            if (scorings.some(s => s.epochIndex === i && s.tags.some(tag => tag.tag.startsWith("Microwake")))) {
+                setScrollPosition(i * samplesPerEpoch);
+                return;
+            }
+        }
+    };
+
+    const handleNextScoredMicrowake = () => {
+        const currentEpoch = Math.floor(scrollPosition / samplesPerEpoch);
+        const totalEpochs = Math.floor(totalSamples / samplesPerEpoch);
+        for (let i = currentEpoch + 1; i < totalEpochs; i++) {
+            if (scorings.some(s => s.epochIndex === i && s.tags.some(tag => tag.tag.startsWith("Microwake")))) {
+                setScrollPosition(i * samplesPerEpoch);
+                return;
+            }
+        }
+    };
+
     const startDate = allData.processedEDF.startDate.epochSeconds;
 
     return (
@@ -135,6 +156,8 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = ({
                 <button onClick={handleFirstUnscoredEpoch} className="bg-purple-500 text-white p-1 rounded">First Unscored</button>
                 <button onClick={handlePrevUnscoredEpoch} className="bg-purple-500 text-white p-1 rounded">Prev Unscored</button>
                 <button onClick={handleNextUnscoredEpoch} className="bg-purple-500 text-white p-1 rounded">Next Unscored</button>
+                <button onClick={handlePrevScoredMicrowake} className="bg-purple-500 text-white p-1 rounded">Prev Scored Microwake</button>
+                <button onClick={handleNextScoredMicrowake} className="bg-purple-500 text-white p-1 rounded">Next Scored Microwake</button>
             </div>
             {allData.slowWaveEvents && allData.spindleEvents && Object.keys(allData.slowWaveEvents).map(channel => (
                 <tr key={`combined-${channel}`}>
