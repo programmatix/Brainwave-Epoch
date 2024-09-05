@@ -1,14 +1,13 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { AllData, Scorings, ScoringEntry } from '../Loader/LoaderTypes';
-import fs from 'fs';
-import path from 'path';
+import { StoreState, useStore } from '../Store/Store';
+
 
 interface ScoringComponentProps {
   scrollPosition: number;
   samplesPerEpoch: number;
   allData: AllData;
   handleNextEpoch: () => void;
-  updateScorings: (newScorings: Scorings) => void;
 }
 
 const SCORING_OPTIONS: ScoringEntry['stage'][] = ["Wake", "Deep", "Non-Deep", "Ambiguous Deep", "Unsure", "Noise"];
@@ -26,12 +25,14 @@ const TAG_OPTIONS = [
   { tag: "Unusual", description: "Something unusual" },
 ];
 
-export const ScoringComponent: React.FC<ScoringComponentProps> = ({ scrollPosition, samplesPerEpoch, allData, handleNextEpoch, updateScorings }) => {
+export const ScoringComponent: React.FC<ScoringComponentProps> = ({ scrollPosition, samplesPerEpoch, allData, handleNextEpoch }) => {
   const [currentScoring, setCurrentScoring] = useState<ScoringEntry['stage']>(SCORING_OPTIONS[0]);
   const [currentTags, setCurrentTags] = useState<string[]>([]);
-  const [scorings, setScorings] = useState<Scorings>(allData.scorings || []);
-
-  console.log("ScoringComponent", currentScoring)
+  const { scorings, saveScoring } = useStore((state: StoreState) => ({
+      scorings: state.scorings,
+      saveScoring: state.saveScoring
+    })
+  )
 
   const currentEpochIndex = Math.floor(scrollPosition / samplesPerEpoch);
   const currentEpochScoring = scorings.find(s => s.epochIndex === currentEpochIndex);
@@ -51,10 +52,11 @@ export const ScoringComponent: React.FC<ScoringComponentProps> = ({ scrollPositi
   }, [currentEpochIndex, scorings]);
 
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    console.log("handleKeyDown", e.key)
     if (e.key >= '1' && e.key <= '5') {
       setCurrentScoring(SCORING_OPTIONS[parseInt(e.key) - 1] as ScoringEntry['stage']);
     } else if (e.key === ' ') {
-      saveScoring();
+      saveScoringLocal();
       handleNextEpoch();
     }
   }, [scrollPosition, samplesPerEpoch, currentScoring, currentTags]);
@@ -66,35 +68,16 @@ export const ScoringComponent: React.FC<ScoringComponentProps> = ({ scrollPositi
     };
   }, [handleKeyDown]);
 
-  const saveScoring = () => {
+  const saveScoringLocal = () => {
     const newScoring: ScoringEntry = {
       epochIndex: currentEpochIndex,
       scoredAt: new Date().toISOString(),
       stage: currentScoring,
       tags: currentTags.map(tag => ({ tag, addedAt: new Date().toISOString() }))
     };
-    const updatedScorings = scorings.filter(s => s.epochIndex !== currentEpochIndex).concat(newScoring).sort((a, b) => a.epochIndex - b.epochIndex);
-    setScorings(updatedScorings);
-    updateScorings(updatedScorings);
-    saveToFile(updatedScorings);
+    saveScoring(newScoring);
   };
 
-  const saveToFile = (scorings: Scorings) => {
-    const filePath = allData.processedEDF.filePath.replace(/\.edf$/, '.scorings.json');
-    const dirPath = path.dirname(filePath);
-    
-    if (!fs.existsSync(dirPath)) {
-      fs.mkdirSync(dirPath, { recursive: true });
-    }
-
-    fs.writeFile(filePath, JSON.stringify({ scorings }, null, 2), (err) => {
-      if (err) {
-        console.error('Error saving scorings file:', err);
-      } else {
-        console.log('Scorings saved successfully');
-      }
-    });
-  };
 
   return (
     <div className="table" style={{border: '1px solid red'}} id="scoring-component">
@@ -120,8 +103,6 @@ export const ScoringComponent: React.FC<ScoringComponentProps> = ({ scrollPositi
             </label>
           ))}
         </div>
-        <button onClick={saveScoring} className="bg-blue-500 text-white p-1 rounded">Save Scoring</button>
-        <button onClick={() => saveToFile(scorings)} className="bg-green-500 text-white p-1 rounded">Save to File</button>
         {currentEpochScoring ? (
           <span className="text-green-500">✓</span>
         ) : (

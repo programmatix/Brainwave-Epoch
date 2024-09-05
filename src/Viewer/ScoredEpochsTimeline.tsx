@@ -26,6 +26,7 @@ export const ScoredEpochsTimeline: React.FC<ScoredEpochsTimelineProps> = ({
     width,
     onTimelineClick,
 }) => {
+    console.info("scorings", scorings)
     const totalEpochs = Math.ceil(totalSamples / samplesPerEpoch);
     const epochWidth = width / totalEpochs;
 

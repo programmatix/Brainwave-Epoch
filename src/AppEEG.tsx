@@ -4,6 +4,8 @@ import { loadFiles, loaderEvents, setupFileMenu } from './Loader/Loader';
 import { AllData } from './Loader/LoaderTypes';
 import LogContainer from './Logs/LogContainer';
 import EEGViewer from './Viewer/EEGViewer';
+import { StoreState, useStore } from './Store/Store';
+import { create, createStore } from 'zustand';
 
 declare global {
     interface Window {
@@ -11,10 +13,27 @@ declare global {
     }
 }
 
+interface SimpleStoreState {
+    bears: number;
+}
+
+const simpleStore = create<SimpleStoreState>((set) => ({
+    bears: 0,
+    increasePopulation: () => set((state) => ({ bears: state.bears + 1 })),
+    removeAllBears: () => set({ bears: 0 }),
+    updateBears: (newBears) => set({ bears: newBears }),
+  }))
+  
+  
 export const AppEEG: React.FC = () => {
     const [allData, setAllData] = useState<AllData | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [logs, setLogs] = useState<string[]>([]);
+    const { scorings, updateAllData } = useStore((state: StoreState) => ({
+        scorings: state.scorings,
+        updateAllData: state.updateAllData
+    }));
+    const { bears } = simpleStore();
 
     useEffect(() => {
         loaderEvents.on('log', (message: string) => {
@@ -29,6 +48,7 @@ export const AppEEG: React.FC = () => {
                 console.log('Processed EDF:', allData);
                 console.log('MinMax:', allData.sleepStageFeatureMinMax);
                 setAllData(allData);
+                updateAllData(allData);
             } catch (error) {
                 console.error('Error loading files:', error);
                 setLogs(prevLogs => [...prevLogs, `Error: ${error.message}`]);
@@ -45,6 +65,9 @@ export const AppEEG: React.FC = () => {
     return (
         <div className="h-full">
             <div className="flex flex-col h-full">
+                {scorings == undefined && <div>No scorings</div>}
+                {scorings != undefined && <div>Has scorings</div>}
+                {bears}
                 <div className="h-full">
                     {isLoading ? (
                         <div className="flex justify-center items-center h-full">

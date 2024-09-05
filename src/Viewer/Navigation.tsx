@@ -13,6 +13,7 @@ import { getFirstNonAggregatedChannel, getOrderedKeys } from './EEGChartAnnotati
 import { SpectrogramTimeline } from './SpectrogramTimeline'; // Add import
 import { ScoredEpochsTimeline } from './ScoredEpochsTimeline';
 import { PredictedSleepStageTimeline } from './PredictedSleepStageTimeline';
+import { StoreState, useStore } from '../Store/Store';
 
 interface TimelineNavigationProps {
     allData: AllData;
@@ -21,7 +22,6 @@ interface TimelineNavigationProps {
     totalSamples: number;
     samplesPerSecond: number;
     samplesPerEpoch: number;
-    scorings: Scorings;
 }
 
 const TIMELINE_WIDTH = 1000;
@@ -33,16 +33,19 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = ({
     totalSamples,
     samplesPerSecond,
     samplesPerEpoch,
-    scorings,
 }) => {
     const [epochInput, setEpochInput] = useState('');
     const [selectedFeature, setSelectedFeature] = useState<string>('');
+    const { scorings } = useStore((state: StoreState) => ({
+        scorings: state.scorings,
+    }))
+    console.info("scorings", scorings)
 
     const handleKeyDown = useCallback((e: KeyboardEvent) => {
         if (e.key === 'ArrowLeft') {
-            setScrollPosition((prev) => Math.max(0, prev - 50));
+            setScrollPosition((prev) => Math.max(0, prev - 200));
         } else if (e.key === 'ArrowRight') {
-            setScrollPosition((prev) => Math.min(totalSamples - 1, prev + 50));
+            setScrollPosition((prev) => Math.min(totalSamples - 1, prev + 200));
         } else if (e.key === 'q') {
             handlePrevEpoch()
         } else if (e.key === 'e') {

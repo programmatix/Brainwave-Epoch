@@ -1,4 +1,5 @@
-import { FeatureMinMax } from "../Loader/LoaderTypes";
+import { Temporal } from "@js-temporal/polyfill";
+import { AllData, FeatureMinMax } from "../Loader/LoaderTypes";
 
 export type LabelContentItem = {
     key: string;
@@ -59,5 +60,17 @@ export function createLabelCanvas(content: LabelContent, width: number, height: 
     });
 
     return canvas;
+}
+
+export function sampleIndexToTime(allData: AllData, index: number): Temporal.ZonedDateTime {
+    const samplingRate = allData.processedEDF.signals[0].samplingRate;
+    const totalSeconds = index / samplingRate;
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = Math.floor(totalSeconds % 60);
+    const milliseconds = Math.floor((totalSeconds % 1) * 1000);
+
+    console.log(`totalSeconds`, totalSeconds, `minutes`, minutes, `seconds`, seconds, `milliseconds`, milliseconds, `index`, index, `samplingRate`, samplingRate, `startDate`, allData.processedEDF.startDate);
+
+    return allData.processedEDF.startDate.add({ minutes, seconds, milliseconds });
 }
 

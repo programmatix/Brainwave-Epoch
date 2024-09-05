@@ -6,7 +6,10 @@ import { FitbitHypnogramChart } from './FitbitHypnogramChart';
 import { NightEventsChart } from './NightEventsChart';
 import { ComparisonControls } from './ComparisonControls';
 import { generateAnnotations, generateAnnotationsForLeft } from './EEGChartAnnotations';
-import { LabelContent } from './ChartUtils';
+import { LabelContent, sampleIndexToTime } from './ChartUtils';
+import { useStore, StoreState } from '../Store/Store';
+import { Temporal } from '@js-temporal/polyfill';
+import { parseDateString } from '../Loader/Loader';
 
 Chart.register(...registerables, annotationPlugin);
 
@@ -27,6 +30,11 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition })
     const [showSpindleEvents, setShowSpindleEvents] = useState(false);
     const [showEpochInfo, setShowEpochInfo] = useState(true);
     const [showTable, setShowTable] = useState(true);
+    const { handleChartClick, marks, deleteMark } = useStore((state: StoreState) => ({
+        handleChartClick: state.handleChartClick,
+        marks: state.marks,
+        deleteMark: state.deleteMark
+    }))
 
     const samplesPerSecond = allData.processedEDF.signals[0].samplingRate;
 
@@ -74,8 +82,14 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition })
             return Math.floor(seconds * samplesPerSecond);
         };
 
+        const millisecondsToSamples = (milliseconds: number) => {
+            console.log(`milliseconds`, milliseconds, `samplesPerSecond`, samplesPerSecond, `samples`, Math.floor(milliseconds * samplesPerSecond / 1000))
+            return Math.floor(milliseconds * samplesPerSecond / 1000);
+        };
+
 
         const startDate = allData.processedEDF.startDate.epochSeconds;
+        const startDateMillis = allData.processedEDF.startDate.epochMilliseconds;
 
         const newCharts = signalsToShow.map((signal, index) => {
             const ctx = chartRefs.current[index]?.getContext('2d');
@@ -117,6 +131,29 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition })
                 const eventEndSample = secondsToSamples(event.End);
                 return eventStartSample < scrollPosition + samplesToShow && eventEndSample > scrollPosition;
             }) : [];
+
+            const markAnnotations = marks.filter(mark => mark.channel === signal.label).map((mark, index) => ({
+                type: 'line',
+                xMin: millisecondsToSamples(parseDateString(mark.timestamp).toInstant().epochMilliseconds - startDateMillis) - scrollPosition,
+                xMax: millisecondsToSamples(parseDateString(mark.timestamp).toInstant().epochMilliseconds - startDateMillis) - scrollPosition,
+                borderColor: 'black',
+                borderWidth: 2,
+                label: {
+                    content: mark.type,
+                    backgroundColor: 'black',
+                    color: 'red',
+                    display: true,
+                    position: 'top'
+
+                },
+                click: (event: any) => {
+                    console.log(`Deleting mark`, mark, event)
+                    deleteMark(mark.timestamp, mark.channel);
+                    event.native.stopPropagation();
+                }
+            }))
+
+            console.log(`markAnnotations`, markAnnotations)
 
             const config: ChartConfiguration = {
                 type: 'line',
@@ -163,6 +200,7 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition })
                         legend: { display: false },
                         annotation: {
                             annotations: {
+                                ...markAnnotations,
                                 ...(showEpochInfo ? generateAnnotations(
                                     allData,
                                     startEpochIndex,
@@ -205,7 +243,33 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition })
                                     })
                                 ) : []),
                             },
+                            // click: (context: any, event: any) => {
+                            //     console.log(`context`, context, `event`, event)
+                            //     if (context.element) {
+                            //         const clickedAnnotation = context.element;
+                            //         if (clickedAnnotation.options.click) {
+                            //             clickedAnnotation.options.click();
+                            //             event.preventDefault();
+                            //             event.native.stopPropagation();
+                            //         }
+                            //     }
+                            // }
                         }
+                    },
+                    onClick: (event: any, elements: any[], chart: Chart) => {
+                        const left = event.chart.chartArea.left
+                        const right = event.chart.chartArea.right
+                        const xAsPctOfChartWidth = (event.x - left) / (right - left);
+                        const sampleIndexRaw = Math.floor(xAsPctOfChartWidth * samplesToShow);
+                        const sampleIndex = sampleIndexRaw + scrollPosition;
+
+                        console.info(`event`, event, `left`, left, `xAsPctOfChartWidth`, xAsPctOfChartWidth, `sampleIndexRaw`, sampleIndexRaw, `sampleIndex`, sampleIndex, `scrollPosition`, scrollPosition, `samplesToShow`, samplesToShow, `samplesPerSecond`, samplesPerSecond, `SECONDS_PER_EPOCH`, SECONDS_PER_EPOCH, `SECONDS_TO_SHOW`, SECONDS_TO_SHOW)
+
+                        const time = sampleIndexToTime(allData, sampleIndex);
+                        const channel = signal.label;
+
+                        console.log('Chart click', time.toInstant().epochSeconds, time.toInstant().toString());
+                        handleChartClick(time, channel);
                     },
                 }
             };
@@ -218,7 +282,7 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition })
         return () => {
             newCharts.forEach(chart => chart?.destroy());
         };
-    }, [allData, scrollPosition, compareEpoch, showSlowWaveEvents, showSpindleEvents, showEpochInfo]);
+    }, [allData, scrollPosition, compareEpoch, showSlowWaveEvents, showSpindleEvents, showEpochInfo, handleChartClick, marks, deleteMark]);
 
     const signalsToShow = allData.processedEDF.signals.filter(signal => signal.label !== 'EDF Annotations');
 
@@ -314,8 +378,8 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition })
                 );
                 return (
                     <div key={index} className="w-full flex-grow flex" style={{ width: '100%', height: '300px' }}>
-                            {showTable && (
-                        <div className="w-1/4 p-2">
+                        {showTable && (
+                            <div className="w-1/4 p-2">
                                 <div className="overflow-auto h-full">
                                     <table>
                                         {annotations.map((annotation, i) => (
@@ -336,8 +400,8 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition })
                                         ))}
                                     </table>
                                 </div>
-                                </div>
-                            )}
+                            </div>
+                        )}
                         <div className="w-3/4" style={{ width: '100%', height: '100%' }}>
                             <canvas ref={el => chartRefs.current[index] = el} style={{ width: '100%', height: '100%' }} />
                         </div>

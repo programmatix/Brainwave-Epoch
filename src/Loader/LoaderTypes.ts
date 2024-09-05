@@ -120,6 +120,7 @@ export type SignalData = {
 
 export type ProcessedEDFData = {
     filePath: string;
+    filePathWithoutExtension: string;
     startDate: Temporal.ZonedDateTime;
     duration: number;
     signals: SignalData[];
@@ -184,6 +185,13 @@ export type ScoringTag = {
     addedAt: string;
   };
   
+  export type Mark = {
+    channel: string
+    scoredAt: string
+    timestamp: string
+    type: 'MicrowakingStart' | 'MicrowakingEnd'
+  }
+  
   export type ScoringEntry = {
     epochIndex: number;
     scoredAt: string;
@@ -204,5 +212,7 @@ export type AllData = {
     predictedAwakeTimeline?: ProcessedSleepStages;
     definiteAwakeSleepTimeline?: ProcessedSleepStages;
     sleepStageFeatureMinMax?: SleepStageFeatureMinMax;
+    // These are the originally loaded values - they are not modified
     scorings?: Scorings;
+    marks?: Mark[];
 };

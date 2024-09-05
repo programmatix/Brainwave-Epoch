@@ -1,7 +1,7 @@
 import { Temporal } from '@js-temporal/polyfill';
 import { parse } from 'csv-parse/sync';
 import { promises as fs } from 'fs';
-import { AllData, EDFData, EDFHeader, EDFSignal, FitbitHypnogram, GroupedSlowWaveEvents, GroupedSpindleEvents, NightEvents, ProcessedEDFData, ProcessedSleepStageEntry, ProcessedSleepStages, SignalData, SlowWaveEvents, SpindleEvents, TimeLabel, SleepStageFeatureMinMax, ProcessedSleepStageEntryFeatures, ChannelData, Scorings, ScoringEntry, ScoringTag } from './LoaderTypes';
+import { AllData, EDFData, EDFHeader, EDFSignal, FitbitHypnogram, GroupedSlowWaveEvents, GroupedSpindleEvents, NightEvents, ProcessedEDFData, ProcessedSleepStageEntry, ProcessedSleepStages, SignalData, SlowWaveEvents, SpindleEvents, TimeLabel, SleepStageFeatureMinMax, ProcessedSleepStageEntryFeatures, ChannelData, Scorings, ScoringEntry, ScoringTag, Mark } from './LoaderTypes';
 
 
 import { EventEmitter } from 'events';
@@ -176,27 +176,48 @@ export async function readSleepStages(filePath: string): Promise<ProcessedSleepS
 }
 
 
-// 2024-08-26 21:10:07.764000+01:00
-const parseDateString = (dateStr: string): Temporal.ZonedDateTime => {
+export const parseDateString = (dateStr: string): Temporal.ZonedDateTime => {
     if (dateStr.includes('-')) {
-        const [datePart, timePart] = dateStr.split(' ');
-        const [year, month, day] = datePart.split('-');
-        const [time, offset] = timePart.split('+');
-        const [hour, minute, second] = time.split(':');
-        const [secondPart, millisecond] = second.split('.');
+        if (dateStr.includes('T')) {
+            // Handle 2024-08-26T19:56:15.123Z format
+            const [datePart, timePart] = dateStr.split('T');
+            const [year, month, day] = datePart.split('-');
+            const [time, offset] = timePart.split('Z');
+            const [hourMinuteSecond, millisecond] = time.split('.');
+            const [hour, minute, second] = hourMinuteSecond.split(':');
 
-        return Temporal.ZonedDateTime.from({
-            year: parseInt(year),
-            month: parseInt(month),
-            day: parseInt(day),
-            hour: parseInt(hour),
-            minute: parseInt(minute),
-            second: parseInt(secondPart),
-            millisecond: parseInt(millisecond || '0'),
-            timeZone: Temporal.TimeZone.from(`+${offset}`)
-        });
+            return Temporal.ZonedDateTime.from({
+                year: parseInt(year),
+                month: parseInt(month),
+                day: parseInt(day),
+                hour: parseInt(hour),
+                minute: parseInt(minute),
+                second: parseInt(second),
+                millisecond: parseInt(millisecond || '0'),
+                timeZone: "UTC"
+            });
+        } else {
+            // Handle existing 2024-08-26 21:10:07.764000+01:00 format
+            const [datePart, timePart] = dateStr.split(' ');
+            const [year, month, day] = datePart.split('-');
+            const [time, offset] = timePart.split('+');
+            const [hour, minute, second] = time.split(':');
+            const [secondPart, millisecond] = second.split('.');
+
+            return Temporal.ZonedDateTime.from({
+                year: parseInt(year),
+                month: parseInt(month),
+                day: parseInt(day),
+                hour: parseInt(hour),
+                minute: parseInt(minute),
+                second: parseInt(secondPart),
+                millisecond: parseInt(millisecond?.slice(0, 3) || '0'),
+                timeZone: Temporal.TimeZone.from(`+${offset}`)
+            });
+        }
     }
 
+    // Handle existing DD.MM.YYHH.MM.SS format
     const [day, month, yearAndHour, minute, second] = dateStr.split('.');
     const year = yearAndHour.slice(0, 2);
     const hour = yearAndHour.slice(2);
@@ -240,13 +261,17 @@ export function setupFileMenu(onFileLoad: (filePath: string) => Promise<void>) {
     window.nw.Window.get().menu = menu;
 }
 
-export async function readScorings(filePath: string): Promise<Scorings | undefined> {
+export async function readScorings(filePath: string): Promise<{scorings: Scorings, marks: Mark[]} | undefined> {
     try {
         const data = await fs.readFile(filePath, 'utf8');
-        return JSON.parse(data).scorings;
+        const json = JSON.parse(data);
+        return {
+            scorings: json.scorings || [],
+            marks: json.marks || []
+        }
     } catch (error) {
         console.error(`Error reading Scorings file: ${error.message}`);
-        return undefined;
+        return {scorings: [], marks: []};
     }
 }
 
@@ -292,7 +317,8 @@ export async function loadFiles(edfPath: string): Promise<AllData> {
         predictedAwakeTimeline: processedStages,
         definiteAwakeSleepTimeline: processedStages,
         sleepStageFeatureMinMax,
-        scorings
+        scorings: scorings.scorings,
+        marks: scorings.marks
     };
 
     return allData;
@@ -447,6 +473,7 @@ export function processEDFData(edfData: EDFData): ProcessedEDFData {
 
     return {
         filePath: edfData.filePath,
+        filePathWithoutExtension: edfData.filePath.replace(/\.edf$/, ''),
         startDate: header.startDate,
         duration: header.numDataRecords * header.durationOfDataRecord,
         signals: processedSignals

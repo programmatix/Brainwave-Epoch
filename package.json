@@ -91,6 +91,7 @@
     "plotly.js": "^2.35.0",
     "react-chartjs-2": "^5.2.0",
     "react-plotly.js": "^2.6.0",
-    "stream-browserify": "^3.0.0"
+    "stream-browserify": "^3.0.0",
+    "zustand": "^4.5.5"
   }
 }
