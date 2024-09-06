@@ -14,6 +14,7 @@ import { SpectrogramTimeline } from './SpectrogramTimeline'; // Add import
 import { ScoredEpochsTimeline } from './ScoredEpochsTimeline';
 import { PredictedSleepStageTimeline } from './PredictedSleepStageTimeline';
 import { StoreState, useStore } from '../Store/Store';
+import { MarksTimeline } from './MarksTimeline';
 
 interface TimelineNavigationProps {
     allData: AllData;
@@ -36,8 +37,9 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = ({
 }) => {
     const [epochInput, setEpochInput] = useState('');
     const [selectedFeature, setSelectedFeature] = useState<string>('');
-    const { scorings } = useStore((state: StoreState) => ({
+    const { scorings, marks } = useStore((state: StoreState) => ({
         scorings: state.scorings,
+        marks: state.marks,
     }))
     console.info("scorings", scorings)
 
@@ -178,20 +180,18 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = ({
                     </td>
                 </tr>
             ))}
-            <tr>
+            {allData.nightEvents && <tr>
                 <td>Night Events</td>
                 <td>
-                    {allData.nightEvents && (
-                        <NightEventsTimeline
-                            allData={allData}
-                            scrollPosition={scrollPosition}
-                            totalSamples={totalSamples}
-                            width={TIMELINE_WIDTH}
-                            onTimelineClick={handleTimelineClick}
-                        />
-                    )}
+                    <NightEventsTimeline
+                        allData={allData}
+                        scrollPosition={scrollPosition}
+                        totalSamples={totalSamples}
+                        width={TIMELINE_WIDTH}
+                        onTimelineClick={handleTimelineClick}
+                    />
                 </td>
-            </tr>
+            </tr>}
             {Object.keys(allData.sleepStages?.[0]?.Channels || {}).map((channel, index) => (
                 <tr key={`feature-${channel}`}>
                     <td>Feature Timeline {channel}
@@ -224,7 +224,7 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = ({
                     </td>
                 </tr>
             ))}
-            <tr>
+            {allData.sleepStages && <tr>
                 <td>Aggregated YASA Hypnogram</td>
                 <td>
                     <SleepStageTimeline
@@ -237,8 +237,8 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = ({
                         onTimelineClick={handleTimelineClick}
                     />
                 </td>
-            </tr>
-            <tr>
+            </tr>}
+            {allData.sleepStages && <tr>
                 <td>Predicted Sleep Stages</td>
                 <td>
                     <PredictedSleepStageTimeline
@@ -249,8 +249,8 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = ({
                         onTimelineClick={handleTimelineClick}
                     />
                 </td>
-            </tr>
-            <tr>
+            </tr>}
+            {scorings && <tr>
                 <td>Scored Epochs</td>
                 <td>
                     <ScoredEpochsTimeline
@@ -262,50 +262,56 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = ({
                         onTimelineClick={handleTimelineClick}
                     />
                 </td>
-            </tr>
-            {allData.fitbitHypnogram && (
-                <tr>
-                    <td>Fitbit Hypnogram</td>
-                    <td>
-                        <FitbitHypnogramTimeline
-                            fitbitHypnogram={allData.fitbitHypnogram}
-                            scrollPosition={scrollPosition}
-                            totalSamples={totalSamples}
-                            width={TIMELINE_WIDTH}
-                            onTimelineClick={handleTimelineClick}
-                            allData={allData}
-                        />
-                    </td>
-                </tr>
-            )}
-            {allData.predictedAwakeTimeline && (
-                <tr>
-                    <td>Predicted Awake</td>
-                    <td>
-                        <PredictedAwakeTimeline
-                            sleepStages={allData.predictedAwakeTimeline}
-                            scrollPosition={scrollPosition}
-                            totalSamples={totalSamples}
-                            width={TIMELINE_WIDTH}
-                            onTimelineClick={handleTimelineClick}
-                        />
-                    </td>
-                </tr>
-            )}
-            {allData.definiteAwakeSleepTimeline && (
-                <tr>
-                    <td>Definite Awake/Probably Sleep</td>
-                    <td>
-                        <DefiniteAwakeSleepTimeline
-                            sleepStages={allData.definiteAwakeSleepTimeline}
-                            scrollPosition={scrollPosition}
-                            totalSamples={totalSamples}
-                            width={TIMELINE_WIDTH}
-                            onTimelineClick={handleTimelineClick}
-                        />
-                    </td>
-                </tr>
-            )}
+            </tr>}
+            {marks && <tr>
+                <td>Marked Epochs</td>
+                <td>
+                    <MarksTimeline
+                        scrollPosition={scrollPosition}
+                        totalSamples={totalSamples}
+                        samplesPerEpoch={samplesPerEpoch}
+                        width={TIMELINE_WIDTH}
+                        onTimelineClick={handleTimelineClick}
+                    />
+                </td>
+            </tr>}
+            {allData.fitbitHypnogram && <tr>
+                <td>Fitbit Hypnogram</td>
+                <td>
+                    <FitbitHypnogramTimeline
+                        fitbitHypnogram={allData.fitbitHypnogram}
+                        scrollPosition={scrollPosition}
+                        totalSamples={totalSamples}
+                        width={TIMELINE_WIDTH}
+                        onTimelineClick={handleTimelineClick}
+                        allData={allData}
+                    />
+                </td>
+            </tr>}
+            {allData.predictedAwakeTimeline && <tr>
+                <td>Predicted Awake</td>
+                <td>
+                    <PredictedAwakeTimeline
+                        sleepStages={allData.predictedAwakeTimeline}
+                        scrollPosition={scrollPosition}
+                        totalSamples={totalSamples}
+                        width={TIMELINE_WIDTH}
+                        onTimelineClick={handleTimelineClick}
+                    />
+                </td>
+            </tr>}
+            {allData.definiteAwakeSleepTimeline && <tr>
+                <td>Definite Awake/Probably Sleep</td>
+                <td>
+                    <DefiniteAwakeSleepTimeline
+                        sleepStages={allData.definiteAwakeSleepTimeline}
+                        scrollPosition={scrollPosition}
+                        totalSamples={totalSamples}
+                        width={TIMELINE_WIDTH}
+                        onTimelineClick={handleTimelineClick}
+                    />
+                </td>
+            </tr>}
         </div>
     );
 };

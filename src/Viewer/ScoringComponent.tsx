@@ -37,7 +37,7 @@ export const ScoringComponent: React.FC<ScoringComponentProps> = ({ scrollPositi
   const currentEpochIndex = Math.floor(scrollPosition / samplesPerEpoch);
   const currentEpochScoring = scorings.find(s => s.epochIndex === currentEpochIndex);
 
-  const currentEpochData = allData.sleepStages[currentEpochIndex];
+  const currentEpochData = allData.sleepStages?.[currentEpochIndex] || {};
 
   useEffect(() => {
     if (currentEpochScoring) {
@@ -114,7 +114,7 @@ export const ScoringComponent: React.FC<ScoringComponentProps> = ({ scrollPositi
         <div>
           <h3 className="text-lg font-semibold mb-2">Predictions</h3>
           <ul className="space-y-1">
-            {Object.entries(currentEpochData)
+            {Object.entries(currentEpochData || {})
               .filter(([key]) => key.startsWith('Predictions_'))
               .map(([key, value]: [string, any]) => (
                 <li key={key} className="flex justify-between">
@@ -130,7 +130,7 @@ export const ScoringComponent: React.FC<ScoringComponentProps> = ({ scrollPositi
             {['Stage', 'Confidence', 'Source', 'StageInt', 'ManualStage', 'DefinitelyAwake', 'DefinitelySleep', 'ProbablySleep', 'PredictedAwake', 'PredictedAwakeBinary'].map(key => (
               <li key={key} className="flex justify-between">
                 <span>{key}:</span>
-                <span className="font-mono">{currentEpochData[key]?.toString()}</span>
+                <span className="font-mono">{currentEpochData?.[key]?.toString()}</span>
               </li>
             ))}
           </ul>

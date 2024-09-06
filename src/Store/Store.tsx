@@ -8,7 +8,7 @@ import { Temporal } from '@js-temporal/polyfill'
 
 function saveToFile(scorings: Scorings, marks: Mark[], allData: AllData) {
     console.info(allData)
-    const filePath = allData.processedEDF.filePathWithoutExtension + '.scorings.temp.json';
+    const filePath = allData.processedEDF.filePathWithoutExtension + '.scorings.json';
     console.log(`Saving to file ${filePath}`, scorings, marks)
     const dirPath = path.dirname(filePath);
 
@@ -100,11 +100,14 @@ export const useStore = create<StoreState>()(devtools((set) => ({
     },
     deleteMark: (timestamp: string, channel: string) => {
         set((state) => {
+            const foundMark = state.marks.find(
+                mark => mark.timestamp === timestamp && mark.channel === channel
+            );
             const updatedMarks = state.marks.filter(
                 mark => !(mark.timestamp === timestamp && mark.channel === channel)
             );
             saveToFile(state.scorings, updatedMarks, state.allData);
-            return { marks: updatedMarks };
+            return { marks: updatedMarks, markingMode: foundMark.type };
         });
     },
 })))

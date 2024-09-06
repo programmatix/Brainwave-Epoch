@@ -66,6 +66,10 @@ export function generateAnnotations(
 }
 
 export function getOrderedKeys(channelData: any): string[] {
+    if (!channelData) {
+        return [];
+    }
+
     const orderedKeys = ["eeg_sdelta", "eeg_fdelta", "eeg_theta", "eeg_alpha", "eeg_sigma", "eeg_beta"];
     const allKeys = new Set([...orderedKeys, ...Object.keys(channelData).filter(key => key.includes('eeg_'))]);
 

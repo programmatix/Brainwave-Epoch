@@ -74,3 +74,7 @@ export function sampleIndexToTime(allData: AllData, index: number): Temporal.Zon
     return allData.processedEDF.startDate.add({ minutes, seconds, milliseconds });
 }
 
+export const millisecondsToSamples = (milliseconds: number, samplesPerSecond: number) => {
+    console.log(`milliseconds`, milliseconds, `samplesPerSecond`, samplesPerSecond, `samples`, Math.floor(milliseconds * samplesPerSecond / 1000))
+    return Math.floor(milliseconds * samplesPerSecond / 1000);
+};

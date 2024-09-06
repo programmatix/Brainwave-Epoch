@@ -6,10 +6,11 @@ import { FitbitHypnogramChart } from './FitbitHypnogramChart';
 import { NightEventsChart } from './NightEventsChart';
 import { ComparisonControls } from './ComparisonControls';
 import { generateAnnotations, generateAnnotationsForLeft } from './EEGChartAnnotations';
-import { LabelContent, sampleIndexToTime } from './ChartUtils';
+import { LabelContent, millisecondsToSamples, sampleIndexToTime } from './ChartUtils';
 import { useStore, StoreState } from '../Store/Store';
 import { Temporal } from '@js-temporal/polyfill';
 import { parseDateString } from '../Loader/Loader';
+import { Slider } from './Slider';
 
 Chart.register(...registerables, annotationPlugin);
 
@@ -30,6 +31,7 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition })
     const [showSpindleEvents, setShowSpindleEvents] = useState(false);
     const [showEpochInfo, setShowEpochInfo] = useState(true);
     const [showTable, setShowTable] = useState(true);
+    const [yAxisRange, setYAxisRange] = useState(100);
     const { handleChartClick, marks, deleteMark } = useStore((state: StoreState) => ({
         handleChartClick: state.handleChartClick,
         marks: state.marks,
@@ -75,16 +77,15 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition })
         const startEpochIndex = Math.floor(scrollPosition / (samplesPerSecond * SECONDS_PER_EPOCH));
         const endEpochIndex = Math.ceil((scrollPosition + samplesToShow) / (samplesPerSecond * SECONDS_PER_EPOCH));
 
-        const yMax = 100;
-        const yMin = -100;
+        const yMax = yAxisRange;
+        const yMin = -yAxisRange;
 
         const secondsToSamples = (seconds: number) => {
             return Math.floor(seconds * samplesPerSecond);
         };
 
-        const millisecondsToSamples = (milliseconds: number) => {
-            console.log(`milliseconds`, milliseconds, `samplesPerSecond`, samplesPerSecond, `samples`, Math.floor(milliseconds * samplesPerSecond / 1000))
-            return Math.floor(milliseconds * samplesPerSecond / 1000);
+        const millisecondsToSamplesLocal = (milliseconds: number) => {
+            return millisecondsToSamples(milliseconds, samplesPerSecond);
         };
 
 
@@ -134,8 +135,8 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition })
 
             const markAnnotations = marks.filter(mark => mark.channel === signal.label).map((mark, index) => ({
                 type: 'line',
-                xMin: millisecondsToSamples(parseDateString(mark.timestamp).toInstant().epochMilliseconds - startDateMillis) - scrollPosition,
-                xMax: millisecondsToSamples(parseDateString(mark.timestamp).toInstant().epochMilliseconds - startDateMillis) - scrollPosition,
+                xMin: millisecondsToSamplesLocal(parseDateString(mark.timestamp).toInstant().epochMilliseconds - startDateMillis) - scrollPosition,
+                xMax: millisecondsToSamplesLocal(parseDateString(mark.timestamp).toInstant().epochMilliseconds - startDateMillis) - scrollPosition,
                 borderColor: 'black',
                 borderWidth: 2,
                 label: {
@@ -282,7 +283,7 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition })
         return () => {
             newCharts.forEach(chart => chart?.destroy());
         };
-    }, [allData, scrollPosition, compareEpoch, showSlowWaveEvents, showSpindleEvents, showEpochInfo, handleChartClick, marks, deleteMark]);
+    }, [allData, scrollPosition, compareEpoch, showSlowWaveEvents, showSpindleEvents, showEpochInfo, handleChartClick, marks, deleteMark, yAxisRange]);
 
     const signalsToShow = allData.processedEDF.signals.filter(signal => signal.label !== 'EDF Annotations');
 
@@ -347,6 +348,16 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition })
                     />
                     <span>Show Table (t)</span>
                 </label>
+                <div className="flex items-center space-x-2">
+                    <span>Y-Axis Range: ±{yAxisRange}</span>
+                    <Slider
+                        min={100}
+                        max={800}
+                        step={100}
+                        value={yAxisRange}
+                        onChange={(value) => setYAxisRange(value)}
+                    />
+                </div>
             </div>
             {allData.fitbitHypnogram && (
                 <FitbitHypnogramChart
