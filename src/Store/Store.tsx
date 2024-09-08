@@ -29,13 +29,14 @@ export interface StoreState {
     allData: AllData | null
     marks: Mark[]
     scorings: Scorings
-    markingMode: 'None' | 'MicrowakingStart' | 'MicrowakingEnd'
+    markingMode: 'None' | 'MicrowakingStart' | 'MicrowakingEnd' | 'StartExclusion' | 'EndExclusion'
     saveScoring: (newScoring: ScoringEntry) => void
     updateMarks: (newMarks: Mark[]) => void
     updateScorings: (newScorings: Scorings) => void
     updateAllData: (newAllData: AllData) => void
     handleChartClick: (timestamp: Temporal.ZonedDateTime, channel: string) => void
     deleteMark: (timestamp: string, channel: string) => void
+    setMarkingMode: (mode: StoreState['markingMode']) => void
 }
 
 export const useStore = create<StoreState>()(devtools((set) => ({

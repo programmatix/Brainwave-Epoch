@@ -28,11 +28,12 @@ const TAG_OPTIONS = [
 export const ScoringComponent: React.FC<ScoringComponentProps> = ({ scrollPosition, samplesPerEpoch, allData, handleNextEpoch }) => {
   const [currentScoring, setCurrentScoring] = useState<ScoringEntry['stage']>(SCORING_OPTIONS[0]);
   const [currentTags, setCurrentTags] = useState<string[]>([]);
-  const { scorings, saveScoring } = useStore((state: StoreState) => ({
-      scorings: state.scorings,
-      saveScoring: state.saveScoring
-    })
-  )
+  const { scorings, saveScoring, markingMode, setMarkingMode } = useStore((state: StoreState) => ({
+    scorings: state.scorings,
+    saveScoring: state.saveScoring,
+    markingMode: state.markingMode,
+    setMarkingMode: state.setMarkingMode
+  }));
 
   const currentEpochIndex = Math.floor(scrollPosition / samplesPerEpoch);
   const currentEpochScoring = scorings.find(s => s.epochIndex === currentEpochIndex);
@@ -108,6 +109,21 @@ export const ScoringComponent: React.FC<ScoringComponentProps> = ({ scrollPositi
         ) : (
           <span className="text-red-500">✗</span>
         )}
+        
+        <div className="flex items-center space-x-2">
+          <span>Marking Mode:</span>
+          <select
+            value={markingMode}
+            onChange={(e) => setMarkingMode(e.target.value as StoreState['markingMode'])}
+            className="select select-bordered"
+          >
+            <option value="None">None</option>
+            <option value="MicrowakingStart">Microwaking Start</option>
+            <option value="MicrowakingEnd">Microwaking End</option>
+            <option value="StartExclusion">Start Exclusion</option>
+            <option value="EndExclusion">End Exclusion</option>
+          </select>
+        </div>
       </div>
 
       <div className="mt-4 grid grid-cols-2 gap-4">

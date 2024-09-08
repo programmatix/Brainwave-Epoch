@@ -42,6 +42,7 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = ({
         marks: state.marks,
     }))
     console.info("scorings", scorings)
+    const [isAutoScrolling, setIsAutoScrolling] = useState(false);
 
     const handleKeyDown = useCallback((e: KeyboardEvent) => {
         if (e.key === 'ArrowLeft') {
@@ -54,6 +55,8 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = ({
             handleNextEpoch()
         } else if (e.key === 'r') {
             handleRandomEpoch()
+        } else if (e.key === 'a') {
+            setIsAutoScrolling(prev => !prev);
         }
     }, [setScrollPosition, totalSamples, scrollPosition, samplesPerEpoch]);
 
@@ -63,6 +66,23 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = ({
             window.removeEventListener('keydown', handleKeyDown);
         };
     }, [handleKeyDown]);
+
+    useEffect(() => {
+        let intervalId: number;
+        if (isAutoScrolling) {
+            intervalId = window.setInterval(() => {
+                setScrollPosition(prev => {
+                    const nextPosition = prev + samplesPerEpoch;
+                    return nextPosition < totalSamples ? nextPosition : prev;
+                });
+            }, 600);
+        }
+        return () => {
+            if (intervalId) {
+                clearInterval(intervalId);
+            }
+        };
+    }, [isAutoScrolling, setScrollPosition, samplesPerEpoch, totalSamples]);
 
     const handleTimelineClick = (newPosition: number) => {
         setScrollPosition(Math.min(totalSamples - 1, Math.max(0, newPosition)));
@@ -163,6 +183,12 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = ({
                 <button onClick={handleNextUnscoredEpoch} className="bg-purple-500 text-white p-1 rounded">Next Unscored</button>
                 <button onClick={handlePrevScoredMicrowake} className="bg-purple-500 text-white p-1 rounded">Prev Scored Microwake</button>
                 <button onClick={handleNextScoredMicrowake} className="bg-purple-500 text-white p-1 rounded">Next Scored Microwake</button>
+                <button 
+                    onClick={() => setIsAutoScrolling(prev => !prev)} 
+                    className={`${isAutoScrolling ? 'bg-red-500' : 'bg-green-500'} text-white p-1 rounded`}
+                >
+                    {isAutoScrolling ? 'Stop AutoScroll' : 'Start AutoScroll (a)'}
+                </button>
             </div>
             {allData.slowWaveEvents && allData.spindleEvents && Object.keys(allData.slowWaveEvents).map(channel => (
                 <tr key={`combined-${channel}`}>
