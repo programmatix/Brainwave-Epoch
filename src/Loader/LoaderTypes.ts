@@ -215,4 +215,13 @@ export type AllData = {
     // These are the originally loaded values - they are not modified
     scorings?: Scorings;
     marks?: Mark[];
+    microwakings?: Microwakings;
 };
+
+// Add this new type
+export type Microwaking = {
+    Start: Temporal.ZonedDateTime;
+    End: Temporal.ZonedDateTime;
+};
+
+export type Microwakings = Microwaking[];

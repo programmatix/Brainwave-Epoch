@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { Chart, ChartConfiguration, registerables } from 'chart.js';
 import annotationPlugin from 'chartjs-plugin-annotation';
-import { AllData } from '../Loader/LoaderTypes';
+import { AllData, Microwaking } from '../Loader/LoaderTypes';
 import { FitbitHypnogramChart } from './FitbitHypnogramChart';
 import { NightEventsChart } from './NightEventsChart';
 import { ComparisonControls } from './ComparisonControls';
@@ -156,6 +156,33 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition })
 
             console.log(`markAnnotations`, markAnnotations)
 
+            const microwakingAnnotations = allData.microwakings?.map((microwaking: Microwaking, index: number) => {
+
+                const startSamplesSinceBegin = microwaking.Start.epochMilliseconds - allData.processedEDF.startDate.epochMilliseconds
+                const endSamplesSinceBegin = microwaking.End.epochMilliseconds - allData.processedEDF.startDate.epochMilliseconds
+                const startSample = millisecondsToSamples(startSamplesSinceBegin, samplesPerSecond);
+
+                const endSample = millisecondsToSamples(endSamplesSinceBegin, samplesPerSecond);
+
+                const xMin = startSample - scrollPosition;
+                const xMax = endSample - scrollPosition;
+
+                console.log(`microwaking`, microwaking.Start.toString(), `startSamplesSinceBegin`, startSamplesSinceBegin, `endSamplesSinceBegin`, endSamplesSinceBegin, `startSample`, startSample, `endSample`, endSample, `xMin`, xMin, `xMax`, xMax, `scrollPosition`, scrollPosition)
+
+                return {
+                    type: 'box',
+                    xMin: xMin,
+                    xMax: xMax,
+                    yMin: 'min',
+                    yMax: 'max',
+                    backgroundColor: 'rgba(255, 0, 0, 0.2)',
+                    borderColor: 'rgba(255, 0, 0, 1)',
+                    borderWidth: 1,
+                };
+            }) || [];
+
+            console.log(`microwakingAnnotations`, microwakingAnnotations)
+
             const config: ChartConfiguration = {
                 type: 'line',
                 data: {
@@ -202,6 +229,8 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition })
                         annotation: {
                             annotations: {
                                 ...markAnnotations,
+                                ...microwakingAnnotations,
+
                                 ...(showEpochInfo ? generateAnnotations(
                                     allData,
                                     startEpochIndex,

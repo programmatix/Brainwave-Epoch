@@ -10,6 +10,6 @@ It is a desktop application using NW.js and React.
 ## Getting Started
 ```
 npm install
-run run dev
+npm run dev
 ```
 

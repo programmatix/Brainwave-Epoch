@@ -1,7 +1,7 @@
 import { Temporal } from '@js-temporal/polyfill';
 import { parse } from 'csv-parse/sync';
 import { promises as fs } from 'fs';
-import { AllData, EDFData, EDFHeader, EDFSignal, FitbitHypnogram, GroupedSlowWaveEvents, GroupedSpindleEvents, NightEvents, ProcessedEDFData, ProcessedSleepStageEntry, ProcessedSleepStages, SignalData, SlowWaveEvents, SpindleEvents, TimeLabel, SleepStageFeatureMinMax, ProcessedSleepStageEntryFeatures, ChannelData, Scorings, ScoringEntry, ScoringTag, Mark } from './LoaderTypes';
+import { AllData, EDFData, EDFHeader, EDFSignal, FitbitHypnogram, GroupedSlowWaveEvents, GroupedSpindleEvents, NightEvents, ProcessedEDFData, ProcessedSleepStageEntry, ProcessedSleepStages, SignalData, SlowWaveEvents, SpindleEvents, TimeLabel, SleepStageFeatureMinMax, ProcessedSleepStageEntryFeatures, ChannelData, Scorings, ScoringEntry, ScoringTag, Mark, Microwaking, Microwakings } from './LoaderTypes';
 
 
 import { EventEmitter } from 'events';
@@ -285,15 +285,17 @@ export async function loadFiles(edfPath: string): Promise<AllData> {
     const fitbitHypnogramPath = edfPath.replace('.edf', '.fitbit_hypnogram.csv');
     const spindleEventsPath = edfPath.replace('.edf', '.spindle_summary.csv');
     const scoringsPath = edfPath.replace('.edf', '.scorings.json');
+    const microwakingsPath = edfPath.replace('.edf', '.microwakings.csv');
 
-    const [processedStages, raw, slowWaveEvents, nightEvents, fitbitHypnogram, spindleEvents, scorings] = await Promise.all([
+    const [processedStages, raw, slowWaveEvents, nightEvents, fitbitHypnogram, spindleEvents, scorings, microwakings] = await Promise.all([
         readSleepStages(sleepStagesPath),
         readEDFPlus(edfPath),
         readSlowWaveEvents(slowWaveEventsPath),
         readNightEvents(nightEventsPath),
         readFitbitHypnogram(fitbitHypnogramPath),
         readSpindleEvents(spindleEventsPath),
-        readScorings(scoringsPath)
+        readScorings(scoringsPath),
+        readMicrowakings(microwakingsPath)
     ]);
 
     loaderEvents.emit('log', `${new Date().toISOString()}: Processing EDF data...`);
@@ -318,7 +320,8 @@ export async function loadFiles(edfPath: string): Promise<AllData> {
         definiteAwakeSleepTimeline: processedStages,
         sleepStageFeatureMinMax,
         scorings: scorings.scorings,
-        marks: scorings.marks
+        marks: scorings.marks,
+        microwakings
     };
 
     return allData;
@@ -412,6 +415,27 @@ export async function readSpindleEvents(filePath: string): Promise<GroupedSpindl
         return groupedEvents;
     } catch (error) {
         console.error(`Error reading SpindleEvents file: ${error.message}`);
+        return undefined;
+    }
+}
+
+export async function readMicrowakings(filePath: string): Promise<Microwakings | undefined> {
+    try {
+        console.time('readMicrowakings');
+        const data = await fs.readFile(filePath, 'utf8');
+        const parsedData = parse(data, {
+            columns: true,
+            skip_empty_lines: true
+        });
+
+        const microwakings: Microwakings = parsedData.map((entry: any) => ({
+            Start: parseDateString(entry.Start),
+            End: parseDateString(entry.End)
+        }));
+        console.timeEnd('readMicrowakings');
+        return microwakings;
+    } catch (error) {
+        console.error(`Error reading Microwakings file: ${error.message}`);
         return undefined;
     }
 }

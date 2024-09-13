@@ -15,6 +15,7 @@ import { ScoredEpochsTimeline } from './ScoredEpochsTimeline';
 import { PredictedSleepStageTimeline } from './PredictedSleepStageTimeline';
 import { StoreState, useStore } from '../Store/Store';
 import { MarksTimeline } from './MarksTimeline';
+import { MicrowakingsTimeline } from './MicrowakingsTimeline';
 
 interface TimelineNavigationProps {
     allData: AllData;
@@ -331,6 +332,18 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = ({
                 <td>
                     <DefiniteAwakeSleepTimeline
                         sleepStages={allData.definiteAwakeSleepTimeline}
+                        scrollPosition={scrollPosition}
+                        totalSamples={totalSamples}
+                        width={TIMELINE_WIDTH}
+                        onTimelineClick={handleTimelineClick}
+                    />
+                </td>
+            </tr>}
+            {allData.microwakings && <tr>
+                <td>Microwakings</td>
+                <td>
+                    <MicrowakingsTimeline
+                        allData={allData}
                         scrollPosition={scrollPosition}
                         totalSamples={totalSamples}
                         width={TIMELINE_WIDTH}
