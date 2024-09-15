@@ -5,6 +5,7 @@ import { AllData, EDFData, EDFHeader, EDFSignal, FitbitHypnogram, GroupedSlowWav
 
 
 import { EventEmitter } from 'events';
+import { loadVideos } from '../Videos/Videos';
 
 export const loaderEvents = new EventEmitter();
 
@@ -309,6 +310,8 @@ export async function loadFiles(edfPath: string): Promise<AllData> {
 
     const sleepStageFeatureMinMax = calculateSleepStageFeatureMinMax(processedStages);
 
+    const videos = await loadVideos(processedEDF.startDate, processedEDF.duration);
+
     const allData: AllData = {
         processedEDF,
         sleepStages: processedStages,
@@ -321,7 +324,8 @@ export async function loadFiles(edfPath: string): Promise<AllData> {
         sleepStageFeatureMinMax,
         scorings: scorings.scorings,
         marks: scorings.marks,
-        microwakings
+        microwakings,
+        videos
     };
 
     return allData;
@@ -446,32 +450,31 @@ export function processEDFData(edfData: EDFData): ProcessedEDFData {
     const processedSignals: SignalData[] = signals.map(signal => {
         const samplingRate = signal.numSamplesPerDataRecord / header.durationOfDataRecord;
         const totalSamples = signal.numSamplesPerDataRecord * header.numDataRecords;
+
+        console.time('processEDFData for ' + signal.label);
+
         const timeLabels: TimeLabel[] = [];
 
         const padZero = (num: number) => num.toString().padStart(2, '0');
-        const startTime = new Date(header.startDate.year, header.startDate.month - 1, header.startDate.day,
+        const startTime = new Date(Date.UTC(header.startDate.year, header.startDate.month - 1, header.startDate.day,
             header.startDate.hour, header.startDate.minute, header.startDate.second,
-            header.startDate.millisecond).getTime();
-
+            header.startDate.millisecond)).getTime();
+        
+        // Pre-calculate the offset once
+        const offsetMilliseconds = new Date().getTimezoneOffset() * 60000;
+        
         for (let i = 0; i < totalSamples; i++) {
             const milliseconds = Math.round(i / samplingRate * 1000);
-            const currentTime = new Date(startTime + milliseconds);
-
-            // const formatter = new Intl.DateTimeFormat('en-GB', {
-            //   timeZone: 'Europe/London',
-            //   hour: "2-digit",
-            //   minute: "2-digit",
-            //   second: "2-digit",
-            // });
-            // const formattedDate = formatter.format(currentTime);
-
-            const formattedTime = `${padZero(currentTime.getHours())}:${padZero(currentTime.getMinutes())}:${padZero(currentTime.getSeconds())}`;
-
+            const currentTime = new Date(startTime + milliseconds - offsetMilliseconds);
+        
+            const formattedTime = `${padZero(currentTime.getUTCHours())}:${padZero(currentTime.getUTCMinutes())}:${padZero(currentTime.getUTCSeconds())}`;
+        
             timeLabels.push({
                 timestamp: startTime + milliseconds,
                 formatted: formattedTime
             });
         }
+        console.timeEnd('processEDFData for ' + signal.label);
 
         return {
             label: signal.label,

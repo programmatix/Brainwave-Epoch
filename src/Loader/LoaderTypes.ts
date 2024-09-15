@@ -1,4 +1,5 @@
 import { Temporal } from "@js-temporal/polyfill";
+import { VideoFile } from "../Videos/Videos";
 
 export type EDFHeader = {
     version: string;
@@ -216,6 +217,7 @@ export type AllData = {
     scorings?: Scorings;
     marks?: Mark[];
     microwakings?: Microwakings;
+    videos?: VideoFile[];
 };
 
 // Add this new type

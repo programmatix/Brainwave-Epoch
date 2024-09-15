@@ -81,7 +81,7 @@ export const ScoringComponent: React.FC<ScoringComponentProps> = ({ scrollPositi
 
 
   return (
-    <div className="table" style={{border: '1px solid red'}} id="scoring-component">
+    <div className="table" id="scoring-component">
       <div className="flex items-center space-x-2 mb-2">
         <select
           value={currentScoring}

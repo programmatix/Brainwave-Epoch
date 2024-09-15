@@ -16,6 +16,7 @@ import { PredictedSleepStageTimeline } from './PredictedSleepStageTimeline';
 import { StoreState, useStore } from '../Store/Store';
 import { MarksTimeline } from './MarksTimeline';
 import { MicrowakingsTimeline } from './MicrowakingsTimeline';
+import { VideoTimeline } from '../Videos/VideoTimeline';
 
 interface TimelineNavigationProps {
     allData: AllData;
@@ -184,8 +185,8 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = ({
                 <button onClick={handleNextUnscoredEpoch} className="bg-purple-500 text-white p-1 rounded">Next Unscored</button>
                 <button onClick={handlePrevScoredMicrowake} className="bg-purple-500 text-white p-1 rounded">Prev Scored Microwake</button>
                 <button onClick={handleNextScoredMicrowake} className="bg-purple-500 text-white p-1 rounded">Next Scored Microwake</button>
-                <button 
-                    onClick={() => setIsAutoScrolling(prev => !prev)} 
+                <button
+                    onClick={() => setIsAutoScrolling(prev => !prev)}
                     className={`${isAutoScrolling ? 'bg-red-500' : 'bg-green-500'} text-white p-1 rounded`}
                 >
                     {isAutoScrolling ? 'Stop AutoScroll' : 'Start AutoScroll (a)'}
@@ -351,6 +352,18 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = ({
                     />
                 </td>
             </tr>}
+            <tr>
+                <td>Videos</td>
+                <td>
+                    <VideoTimeline
+                        videoFiles={allData.videos}
+                        startTime={allData.processedEDF.startDate}
+                        duration={allData.processedEDF.duration}
+                        width={1000}
+                        onTimelineClick={handleTimelineClick}
+                    />
+                </td>
+            </tr>
         </div>
     );
 };
