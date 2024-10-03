@@ -17,7 +17,7 @@ export function filterOverlappingVideoFiles(
     const out = videoFiles
         .map(filename => {
             try {
-                const timestampMatch = filename.match(/(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})/);
+                const timestampMatch = filename.match(/(\d{4})(\d{2})(\d{2})_?(\d{2})(\d{2})(\d{2})/);
                 if (timestampMatch) {
                     const [, year, month, day, hour, minute, second] = timestampMatch;
                     const timestamp = Temporal.ZonedDateTime.from({
@@ -36,14 +36,19 @@ export function filterOverlappingVideoFiles(
                 return null;
             }
         })
-        .filter(video => video !== null && video.timestamp.epochSeconds >= eegStartTime.epochSeconds && video.timestamp.epochSeconds <= eegEndTime.epochSeconds);
+        .filter(video => video && video.timestamp && video.timestamp.epochSeconds >= eegStartTime.epochSeconds && video.timestamp.epochSeconds <= eegEndTime.epochSeconds);
 
     console.log("Videos filtered: ", out);
     return out;
 }
 
 export async function loadVideos(startDate: Temporal.ZonedDateTime, duration: number): Promise<VideoFiles> {
-    const response = await fetch('http://192.168.1.72:5000/api/files');
-    const files = await response.json();
-    return filterOverlappingVideoFiles(files, startDate, startDate.add({ seconds: duration }));
+    try {
+        const response = await fetch('http://192.168.1.180:5000/api/files');
+        const files = await response.json();
+        return filterOverlappingVideoFiles(files, startDate, startDate.add({ seconds: duration }));
+    } catch (error) {
+        console.error("Error loading videos: ", error);
+        return [];
+    }
 }

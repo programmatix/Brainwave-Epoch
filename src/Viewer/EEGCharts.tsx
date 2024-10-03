@@ -154,7 +154,7 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition })
                 }
             }))
 
-            console.log(`markAnnotations`, markAnnotations)
+            //console.log(`markAnnotations`, markAnnotations)
 
             const microwakingAnnotations = allData.microwakings?.map((microwaking: Microwaking, index: number) => {
 
@@ -167,7 +167,7 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition })
                 const xMin = startSample - scrollPosition;
                 const xMax = endSample - scrollPosition;
 
-                console.log(`microwaking`, microwaking.Start.toString(), `startSamplesSinceBegin`, startSamplesSinceBegin, `endSamplesSinceBegin`, endSamplesSinceBegin, `startSample`, startSample, `endSample`, endSample, `xMin`, xMin, `xMax`, xMax, `scrollPosition`, scrollPosition)
+                //console.log(`microwaking`, microwaking.Start.toString(), `startSamplesSinceBegin`, startSamplesSinceBegin, `endSamplesSinceBegin`, endSamplesSinceBegin, `startSample`, startSample, `endSample`, endSample, `xMin`, xMin, `xMax`, xMax, `scrollPosition`, scrollPosition)
 
                 return {
                     type: 'box',
@@ -181,7 +181,7 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition })
                 };
             }) || [];
 
-            console.log(`microwakingAnnotations`, microwakingAnnotations)
+            //console.log(`microwakingAnnotations`, microwakingAnnotations)
 
             const config: ChartConfiguration = {
                 type: 'line',

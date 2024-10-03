@@ -38,10 +38,11 @@ export const VideoViewer: React.FC<VideoViewerProps> = ({
             <div>{currentVideo.name}</div>
             <div>{currentVideo.timestamp.toLocaleString()}</div>
           <video
-            src={`http://192.168.1.72:5000/media/${currentVideo.name}`}
+            src={`http://192.168.1.180:5000/media/${currentVideo.name}`}
             controls
-            width="640"
-            height="360"
+            autoPlay
+            width="1280"
+            // height="360"
           />
         </div>
       )}

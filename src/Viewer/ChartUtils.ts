@@ -75,6 +75,6 @@ export function sampleIndexToTime(allData: AllData, index: number): Temporal.Zon
 }
 
 export const millisecondsToSamples = (milliseconds: number, samplesPerSecond: number) => {
-    console.log(`milliseconds`, milliseconds, `samplesPerSecond`, samplesPerSecond, `samples`, Math.floor(milliseconds * samplesPerSecond / 1000))
+    //console.log(`milliseconds`, milliseconds, `samplesPerSecond`, samplesPerSecond, `samples`, Math.floor(milliseconds * samplesPerSecond / 1000))
     return Math.floor(milliseconds * samplesPerSecond / 1000);
 };
