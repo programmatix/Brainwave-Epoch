@@ -247,7 +247,40 @@ export function setupFileMenu(onFileLoad: (filePath: string) => Promise<void>) {
                 const file = (e.target as HTMLInputElement).files?.[0];
                 console.log('File:', file);
                 if (file) {
-                    await onFileLoad((file as any).path);
+                    console.log('Opening new window');
+                    const newWindow = await new Promise<any>((resolve) => {
+                        const win = window.nw.Window.open(window.location.href, {
+                            width: 1200,
+                            height: 800,
+                            icon: './build/logo512.png',
+                            new_instance: true
+                        }, (createdWindow: any) => {
+                            resolve(createdWindow);
+                        });
+                    });
+                    
+                    // Store the file path to be opened
+                    const filePath = (file as any).path;
+                    console.log('New window:', newWindow, filePath);
+                    
+                    // Create a function to handle the window load
+                    const handleLoad = function() {
+                        console.log('Setting up load handler');
+                        setTimeout(async () => {
+                            console.log('Handling load', newWindow, newWindow.window);
+                            if (newWindow.window.openFile) {
+                                console.log('Opening file', filePath);
+                                await newWindow.window.openFile(filePath);
+                                newWindow.removeListener('loaded', handleLoad);
+                            } else {
+                                console.log('No openFile function');
+                                setTimeout(handleLoad, 100);
+                            }
+                        }, 100);
+                    };
+
+                    // Add the load listener
+                    newWindow.on('loaded', handleLoad);
                 }
             };
             fileInput.click();

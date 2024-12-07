@@ -10,6 +10,7 @@ import { create, createStore } from 'zustand';
 declare global {
     interface Window {
         nw: any;
+        openFile: (filePath: string) => Promise<void>;
     }
 }
 
@@ -35,30 +36,39 @@ export const AppEEG: React.FC = () => {
     }));
     const { bears } = simpleStore();
 
+    const openFile = async (filePath: string) => {
+        setIsLoading(true);
+        setLogs([]);
+        try {
+            const allData = await loadFiles(filePath);
+            console.log('Processed EDF:', allData);
+            console.log('MinMax:', allData.sleepStageFeatureMinMax);
+            setAllData(allData);
+            updateAllData(allData);
+        } catch (error) {
+            console.error('Error loading files:', error);
+            setLogs(prevLogs => [...prevLogs, `Error: ${error.message}`]);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     useEffect(() => {
+        window.openFile = openFile;
+        console.log('Setting up openFile', window);
+        
         loaderEvents.on('log', (message: string) => {
             setLogs(prevLogs => [...prevLogs, message]);
         });
 
         setupFileMenu(async (filePath: string) => {
-            setIsLoading(true);
-            setLogs([]);
-            try {
-                const allData = await loadFiles(filePath);
-                console.log('Processed EDF:', allData);
-                console.log('MinMax:', allData.sleepStageFeatureMinMax);
-                setAllData(allData);
-                updateAllData(allData);
-            } catch (error) {
-                console.error('Error loading files:', error);
-                setLogs(prevLogs => [...prevLogs, `Error: ${error.message}`]);
-            } finally {
-                setIsLoading(false);
-            }
+            await openFile(filePath);
         });
 
         return () => {
             loaderEvents.removeAllListeners('log');
+            //console.log('Removing openFile');
+            //delete window.openFile;
         };
     }, []);
 
