@@ -107,12 +107,12 @@ export function generateAnnotationsForLeft(
             const compColor = compValue !== undefined ? getColorForValueFromMinMax(compValue as number, minMax) : undefined;
             const diffPercent = compValue !== undefined ? (((value - compValue) / compValue) * 100) : undefined;
             const diffPercentColor = diffPercent !== undefined ? getColorForValue(diffPercent, -100, 100) : undefined;
-            const v = key.includes("petrosian") ? value.toFixed(4) : key.includes("nzc") ? value.toFixed(0) : value.toFixed(2);
+            // const v = key.includes("petrosian") ? value.toFixed(4) : key.includes("nzc") ? value.toFixed(0) : value.toFixed(2);
             const compV = compValue !== undefined ? (key.includes("petrosian") ? (compValue as number).toFixed(4) : key.includes("nzc") ? (compValue as number).toFixed(0) : (compValue as number).toFixed(2)) : undefined;
             const group = groupKey(key);
             content.push({
                 key,
-                value: v,
+                value: value,
                 color,
                 compValue: compV,
                 compColor,
@@ -150,7 +150,7 @@ function groupKey(key: string): { keyGroup: KeyGroup, scaled: boolean, mostUsefu
         }
         return { keyGroup: 'Relative bandpowers', scaled, mostUseful: true };
     }
-    if (key.includes('petrosian') || key.includes('nzc') || key.includes('kurt') || key.includes('perm') || key.includes('perment') || key.includes('skew') || key.includes('specent') || key.includes('svdent') || key.endsWith('higuchi')) {
+    if (key.includes('petrosian') || key.includes('nzc') || key.includes('kurt') || key.includes('perm') || key.includes('perment') || key.includes('skew') || key.includes('specent') || key.includes('svdent') || key.includes('higuchi')) {
         const mostUseful = key.includes("pertent")
         return { keyGroup: 'Complexity', scaled, mostUseful };
     }
