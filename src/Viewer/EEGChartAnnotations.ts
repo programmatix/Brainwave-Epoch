@@ -1,5 +1,5 @@
 import { AllData, ChannelData, ProcessedSleepStageEntryFeatures } from '../Loader/LoaderTypes';
-import { getColorForValue, createLabelCanvas, LabelContent, getColorForValueFromMinMax } from './ChartUtils';
+import { getColorForValue, createLabelCanvas, LabelContent, getColorForValueFromMinMax, KeyGroup } from './ChartUtils';
 
 export function generateAnnotations(
     allData: AllData,
@@ -26,28 +26,6 @@ export function generateAnnotations(
                 { key: 'Stage', value: `${channelData?.Stage || 'N/A'} (${((channelData?.Confidence || 0) * 100).toFixed(0)}%)`, compValue: compareEpoch !== null ? `${allData.sleepStages[compareEpoch]?.Channels[signal.label]?.Stage || 'N/A'} (${((allData.sleepStages[compareEpoch]?.Channels[signal.label]?.Confidence || 0) * 100).toFixed(0)}%)` : undefined },
             ];
 
-            // const orderedKeys = [
-            //     "eeg_sdelta", "eeg_fdelta", "eeg_theta", "eeg_alpha", "eeg_beta"
-            // ];
-
-            // const allKeys = new Set([...orderedKeys, ...Object.keys(sleepStage).filter(key => key.startsWith('eeg_'))]);
-
-            // allKeys.forEach(key => {
-            //     if (orderedKeys.includes(key) || !key.includes('p2') && !key.includes('c7') && !key.includes('eeg_at') && !key.includes('eeg_db') && !key.includes('eeg_ds') && !key.includes('eeg_dt') && !key.includes('eeg_hcomp') && !key.includes('eeg_hmob') && !key.includes('eeg_sigma') && !key.includes('eeg_std')) {
-            //         const value = sleepStage[key as keyof ProcessedSleepStageEntryFeatures];
-            //         if (typeof value === 'number') {
-            //             const minMax = allData.sleepStageFeatureMinMax[key as keyof ProcessedSleepStageEntryFeatures];
-            //             const color = getColorForValue(value, minMax.min, minMax.max);
-            //             const compValue = compareEpoch !== null ? allData.sleepStages[compareEpoch][key as keyof ProcessedSleepStageEntryFeatures] : undefined;
-            //             const compColor = compValue !== undefined ? getColorForValue(compValue as number, minMax.min, minMax.max) : undefined;
-            //             const diffPercent = compValue !== undefined ? (((value - compValue) / compValue) * 100) : undefined;
-            //             const v = key.includes("petrosian") ? value.toFixed(4) : key.includes("nzc") ? value.toFixed(0) : value.toFixed(2);
-            //             const compV = compValue !== undefined ? (key.includes("petrosian") ? (compValue as number).toFixed(4) : key.includes("nzc") ? (compValue as number).toFixed(0) : (compValue as number).toFixed(2)) : undefined;
-            //             content.push([key, v, color, compV, compColor, diffPercent]);
-            //         }
-            //     }
-            // });
-
             const labelCanvas = createLabelCanvas(content, 400, (content.length + 1) * 15);
 
             return [
@@ -70,7 +48,14 @@ export function getOrderedKeys(channelData: any): string[] {
         return [];
     }
 
-    const orderedKeys = ["eeg_sdelta", "eeg_fdelta", "eeg_theta", "eeg_alpha", "eeg_sigma", "eeg_beta"];
+    const orderedKeys = ["eeg_sdelta", "eeg_fdelta", "eeg_theta", "eeg_alpha", "eeg_sigma", "eeg_beta",
+        "eeg_sdeltaabs", "eeg_fdeltaabs", "eeg_thetaabs", "eeg_alphaabs", "eeg_betaabs",
+        "eeg_sdeltaabs_s", "eeg_fdeltaabs_s", "eeg_thetaabs_s", "eeg_alphaabs_s", "eeg_betaabs_s",
+        "eeg_sdelta_s", "eeg_fdelta_s", "eeg_theta_s", "eeg_alpha_s", "eeg_beta_s",
+        "eeg_sdelta_s", "eeg_fdelta_s", "eeg_theta_s", "eeg_alpha_s", "eeg_beta_s",
+        "eeg_fdeltaab", "eeg_thetaab", "eeg_alphaab", "eeg_betaab", "eeg_fdeltaaa", "eeg_thetaaa", "eeg_alphaaa", "eeg_betaaa",
+        "eeg_fdeltaab_s", "eeg_thetaab_s", "eeg_alphaab_s", "eeg_betaab_s", "eeg_fdeltaaa_s", "eeg_thetaaa_s", "eeg_alphaaa_s", "eeg_betaaa_s"
+    ];
     const allKeys = new Set([...orderedKeys, ...Object.keys(channelData).filter(key => key.includes('eeg_'))]);
 
     const out = Array.from(allKeys).filter(key =>
@@ -113,7 +98,7 @@ export function generateAnnotationsForLeft(
 
     const orderedKeys = getOrderedKeys(channelData);
 
-    orderedKeys.forEach(key => {
+    orderedKeys.filter(key => key.includes('eeg_')).forEach(key => {
         const value = channelData[key as keyof ProcessedSleepStageEntryFeatures];
         if (typeof value === 'number') {
             const minMax = allData.sleepStageFeatureMinMax[key as keyof ProcessedSleepStageEntryFeatures];
@@ -124,12 +109,60 @@ export function generateAnnotationsForLeft(
             const diffPercentColor = diffPercent !== undefined ? getColorForValue(diffPercent, -100, 100) : undefined;
             const v = key.includes("petrosian") ? value.toFixed(4) : key.includes("nzc") ? value.toFixed(0) : value.toFixed(2);
             const compV = compValue !== undefined ? (key.includes("petrosian") ? (compValue as number).toFixed(4) : key.includes("nzc") ? (compValue as number).toFixed(0) : (compValue as number).toFixed(2)) : undefined;
-            content.push({ key, value: v, color, compValue: compV, compColor, diffPercent, diffPercentColor });
+            const group = groupKey(key);
+            content.push({
+                key,
+                value: v,
+                color,
+                compValue: compV,
+                compColor,
+                diffPercent,
+                diffPercentColor,
+                minUsed: minMax.p10,
+                minUsedLabel: '10%',
+                maxUsed: minMax.p90,
+                maxUsedLabel: '90%',
+                actualMin: minMax.min,
+                actualMax: minMax.max,
+                keyGroup: group.keyGroup,
+                scaled: group.scaled,
+                mostUseful: group.mostUseful
+            });
         }
     })
 
     return content;
     // });
+}
+
+function groupKey(key: string): { keyGroup: KeyGroup, scaled: boolean, mostUseful: boolean } {
+    const scaled = key.endsWith("_s");
+
+    if (key.includes('eeg_sdeltaabs') || key.includes('eeg_fdeltaabs') || key.includes('eeg_thetaabs') || key.includes('eeg_alphaabs') || key.includes('eeg_betaabs')) {
+        if (key.includes('absab') || key.includes('absaa')) {
+            return { keyGroup: 'Absolute bandpowers derived', scaled, mostUseful: false };
+        }
+        return { keyGroup: 'Absolute bandpowers', scaled, mostUseful: false };
+    }
+    if (key.includes('eeg_sdelta') || key.includes('eeg_fdelta') || key.includes('eeg_theta') || key.includes('eeg_alpha') || key.includes('eeg_beta')) {
+        if (key.includes('ab') || key.includes('aa')) {
+            return { keyGroup: 'Relative bandpowers derived', scaled, mostUseful: false };
+        }
+        return { keyGroup: 'Relative bandpowers', scaled, mostUseful: true };
+    }
+    if (key.includes('petrosian') || key.includes('nzc') || key.includes('kurt') || key.includes('perm') || key.includes('perment') || key.includes('skew') || key.includes('specent') || key.includes('svdent') || key.endsWith('higuchi')) {
+        const mostUseful = key.includes("pertent")
+        return { keyGroup: 'Complexity', scaled, mostUseful };
+    }
+    if (key.includes('iqr') || key.includes('auc') || key.includes('abspow')) {
+        const mostUseful = key.includes("iqr")
+        return { keyGroup: 'Power', scaled, mostUseful };
+    }
+    if (key.includes('at')) {
+        return { keyGroup: 'Derived', scaled, mostUseful: false };
+    }
+
+    return { keyGroup: 'Other', scaled, mostUseful: false };
 }
 
 export function getFirstNonAggregatedChannel(allData: AllData): ChannelData {

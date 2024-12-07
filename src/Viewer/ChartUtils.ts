@@ -1,14 +1,25 @@
 import { Temporal } from "@js-temporal/polyfill";
 import { AllData, FeatureMinMax } from "../Loader/LoaderTypes";
 
+export type KeyGroup = 'Relative bandpowers' | 'Relative bandpowers derived' | 'Absolute bandpowers' | 'Absolute bandpowers derived' | 'Power' | 'Derived' | 'Complexity' | 'Other';
+
 export type LabelContentItem = {
     key: string;
     value: string | number;
+    minUsed?: number;
+    minUsedLabel?: string;
+    maxUsed?: number;
+    maxUsedLabel?: string;
+    actualMax?: number;
+    actualMin?: number;
     color?: string;
     compValue?: string | number;
     compColor?: string;
     diffPercent?: number;
     diffPercentColor?: string;
+    keyGroup?: KeyGroup;
+    scaled?: boolean;
+    mostUseful?: boolean;
 };
 
 export type LabelContent = LabelContentItem[];

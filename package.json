@@ -79,6 +79,7 @@
   },
   "dependencies": {
     "@js-temporal/polyfill": "^0.4.4",
+    "@tippyjs/react": "^4.2.6",
     "assert": "^2.1.0",
     "buffer": "^6.0.3",
     "chartjs-plugin-annotation": "^3.0.1",
@@ -93,6 +94,7 @@
     "react-chartjs-2": "^5.2.0",
     "react-plotly.js": "^2.6.0",
     "stream-browserify": "^3.0.0",
+    "tippy.js": "^6.3.7",
     "zustand": "^4.5.5"
   }
 }

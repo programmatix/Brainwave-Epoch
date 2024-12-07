@@ -11,6 +11,7 @@ import { useStore, StoreState } from '../Store/Store';
 import { Temporal } from '@js-temporal/polyfill';
 import { parseDateString } from '../Loader/Loader';
 import { Slider } from './Slider';
+import { MetricsTable } from './MetricsTable';
 
 Chart.register(...registerables, annotationPlugin);
 
@@ -331,6 +332,20 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition })
         };
     }, [handleKeyDown]);
 
+    const startEpochIndex = Math.floor(scrollPosition / (samplesPerSecond * SECONDS_PER_EPOCH));
+    const endEpochIndex = Math.ceil((scrollPosition + samplesPerSecond * SECONDS_TO_SHOW) / (samplesPerSecond * SECONDS_PER_EPOCH));
+    // Since we're focussed on one channel now we're going to maximise left space and only show that
+    const annotations: LabelContent = generateAnnotationsForLeft(
+        allData,
+        startEpochIndex,
+        endEpochIndex,
+        scrollPosition,
+        samplesPerSecond,
+        compareEpoch,
+        signalsToShow[0]
+    );
+
+
     return (
         <div className="flex-col flex h-full" id="eeg-charts">
             <ComparisonControls
@@ -404,50 +419,23 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition })
                     secondsToShow={SECONDS_TO_SHOW}
                 />
             )}
-            {signalsToShow.map((signal, index) => {
-                const startEpochIndex = Math.floor(scrollPosition / (samplesPerSecond * SECONDS_PER_EPOCH));
-                const endEpochIndex = Math.ceil((scrollPosition + samplesPerSecond * SECONDS_TO_SHOW) / (samplesPerSecond * SECONDS_PER_EPOCH));
-                const annotations: LabelContent = generateAnnotationsForLeft(
-                    allData,
-                    startEpochIndex,
-                    endEpochIndex,
-                    scrollPosition,
-                    samplesPerSecond,
-                    compareEpoch,
-                    signal
-                );
-                return (
-                    <div key={index} className="w-full flex-grow flex" style={{ width: '100%', height: '300px' }}>
-                        {showTable && (
-                            <div className="w-1/4 p-2">
-                                <div className="overflow-auto h-full">
-                                    <table>
-                                        {annotations.map((annotation, i) => (
-                                            <tr key={i} style={{ fontSize: '12px', backgroundColor: 'black', color: 'white' }}>
-                                                <td>
-                                                    {annotation.key}
-                                                </td>
-                                                <td>
-                                                    {<p style={{ color: annotation.color }}>{annotation.value ?? "-"}</p>}
-                                                </td>
-                                                <td>
-                                                    {<p style={{ color: annotation.compColor }}>{annotation.compValue ?? "-"}</p>}
-                                                </td>
-                                                <td>
-                                                    {<p style={{ color: annotation.diffPercentColor }}>{annotation.diffPercent?.toFixed(0) ?? "-"}%</p>}
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </table>
-                                </div>
-                            </div>
-                        )}
-                        <div className="w-3/4" style={{ width: '100%', height: '100%' }}>
-                            <canvas ref={el => chartRefs.current[index] = el} style={{ width: '100%', height: '100%' }} />
-                        </div>
+            <div className="flex flex-grow">
+                {showTable && (
+                    <div className="w-1/4 p-2">
+                        <MetricsTable annotations={annotations} />
                     </div>
-                );
-            })}
+                )}
+
+                <div className={`${showTable ? 'w-3/4' : 'w-full'} flex flex-col flex-grow`}>
+                    {signalsToShow.map((signal, index) => {
+                        return (
+                            <div key={index} className="w-full" style={{ height: '300px' }}>
+                                <canvas ref={el => chartRefs.current[index] = el} style={{ width: '100%', height: '100%' }} />
+                            </div>
+                        );
+                    })}
+                </div>
+            </div>
         </div>
     );
 };
