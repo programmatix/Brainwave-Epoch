@@ -428,13 +428,13 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition })
                                                     {annotation.key}
                                                 </td>
                                                 <td>
-                                                    {<p style={{ color: annotation.color }}>{annotation.value}</p>}
+                                                    {<p style={{ color: annotation.color }}>{annotation.value ?? "-"}</p>}
                                                 </td>
                                                 <td>
-                                                    {<p style={{ color: annotation.compColor }}>{annotation.compValue}</p>}
+                                                    {<p style={{ color: annotation.compColor }}>{annotation.compValue ?? "-"}</p>}
                                                 </td>
                                                 <td>
-                                                    {<p style={{ color: annotation.diffPercentColor }}>{annotation.diffPercent?.toFixed(0)}%</p>}
+                                                    {<p style={{ color: annotation.diffPercentColor }}>{annotation.diffPercent?.toFixed(0) ?? "-"}%</p>}
                                                 </td>
                                             </tr>
                                         ))}
