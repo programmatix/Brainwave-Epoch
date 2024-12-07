@@ -20,8 +20,16 @@ const ValueTooltip: React.FC<{ annotation: LabelContent[0] }> = ({ annotation })
         <table className="table-auto border-collapse">
             <tbody className="text-xs">
                 <tr>
-                    <td className="pr-2">Value:</td>
+                    <td className="pr-2">Key:</td>
+                    <td>{annotation.key}</td>
+                </tr>
+                <tr>
+                    <td className="pr-2">Raw Value:</td>
                     <td>{annotation.value}</td>
+                </tr>
+                <tr>
+                    <td className="pr-2">Normalized Value:</td>
+                    <td>{annotation.normalizedValue}</td>
                 </tr>
                 <tr>
                     <td className="pr-2">{annotation.minUsedLabel}:</td>
@@ -121,73 +129,125 @@ const CompareTooltip: React.FC<{ annotation: LabelContent[0] }> = ({ annotation 
     </table>
 );
 
-// Extract row rendering into separate component
-const MetricRow: React.FC<{ annotation: LabelContent[0] }> = ({ annotation }) => (
+// Add utility function to pair regular and scaled metrics
+const pairMetrics = (annotations: LabelContent) => {
+    const pairs: Record<string, { regular: LabelContent[0], scaled?: LabelContent[0] }> = {};
+    
+    annotations.forEach(annotation => {
+        const baseKey = annotation.key.endsWith('_s') 
+            ? annotation.key.slice(0, -2) 
+            : annotation.key;
+            
+        if (!pairs[baseKey]) {
+            pairs[baseKey] = { regular: annotation };
+        } else if (annotation.key.endsWith('_s')) {
+            pairs[baseKey].scaled = annotation;
+        } else {
+            pairs[baseKey].regular = annotation;
+        }
+    });
+    
+    return pairs;
+};
+
+const MetricRow: React.FC<{ 
+    regular: LabelContent[0], 
+    scaled?: LabelContent[0] 
+}> = ({ regular, scaled }) => (
     <tr style={{ fontSize: '12px', backgroundColor: 'black', color: 'white' }}>
-        <td className="w-1/8">{annotation.key}</td>
+        <td className="w-1/8">{regular.key}</td>
         <td className="w-1/8 text-center">
-            {Number(annotation.value) < (annotation.minUsed || 0) && '-'}
+            {Number(regular.value) < (regular.minUsed || 0) && '-'}
         </td>
         <td className="w-1/8">
-            <Tippy content={<ValueTooltip annotation={annotation} />}>
-                <div className="space-y-1">
+            <div className="flex space-x-1">
+                <Tippy content={<ValueTooltip annotation={regular} />}>
                     <div className="relative w-24 h-4 bg-gray-200 rounded">
                         <div className="absolute h-full bg-blue-500 rounded"
                             style={{
-                                width: `${Math.min(100, Math.max(0, ((Number(annotation.value) - (annotation.minUsed || 0)) /
-                                    ((annotation.maxUsed || 1) - (annotation.minUsed || 0))) * 100))}%`,
-                                backgroundColor: annotation.color
+                                width: `${Math.min(100, Math.max(0, ((Number(regular.value) - (regular.minUsed || 0)) /
+                                    ((regular.maxUsed || 1) - (regular.minUsed || 0))) * 100))}%`,
+                                backgroundColor: regular.color
                             }} />
                     </div>
-                </div>
-            </Tippy>
-        </td>
-        <td className="w-1/8 text-center">
-            {Number(annotation.value) > (annotation.maxUsed || 1) && '+'}
-        </td>
-        <td className="w-1/8 text-center">
-            {annotation.compValue && Number(annotation.compValue) < (annotation.minUsed || 0) && '-'}
-        </td>
-        <td className="w-1/8">
-            {annotation.compValue && (
-                <Tippy content={<CompareTooltip annotation={annotation} />}>
-                    <div className="space-y-1">
+                </Tippy>
+                {scaled && (
+                    <Tippy content={<ValueTooltip annotation={scaled} />}>
                         <div className="relative w-24 h-4 bg-gray-200 rounded">
                             <div className="absolute h-full bg-blue-500 rounded"
                                 style={{
-                                    width: `${Math.min(100, Math.max(0, ((Number(annotation.compValue) - (annotation.minUsed || 0)) /
-                                        ((annotation.maxUsed || 1) - (annotation.minUsed || 0))) * 100))}%`,
-                                    backgroundColor: annotation.compColor
+                                    width: `${Math.min(100, Math.max(0, ((Number(scaled.value) - (scaled.minUsed || 0)) /
+                                        ((scaled.maxUsed || 1) - (scaled.minUsed || 0))) * 100))}%`,
+                                    backgroundColor: scaled.color,
+                                    opacity: 0.5
                                 }} />
                         </div>
-                    </div>
-                </Tippy>
-            )}
+                    </Tippy>
+                )}
+            </div>
         </td>
         <td className="w-1/8 text-center">
-            {annotation.compValue && Number(annotation.compValue) > (annotation.maxUsed || 1) && '+'}
+            {Number(regular.value) > (regular.maxUsed || 1) && '+'}
+        </td>
+        <td className="w-1/8 text-center">
+            {regular.compValue && Number(regular.compValue) < (regular.minUsed || 0) && '-'}
         </td>
         <td className="w-1/8">
-            {<p style={{ color: annotation.diffPercentColor }}>{annotation.diffPercent?.toFixed(0) ?? "-"}%</p>}
+            <div className="flex space-x-1">
+                {regular.compValue && (
+                    <Tippy content={<CompareTooltip annotation={regular} />}>
+                        <div className="relative w-24 h-4 bg-gray-200 rounded">
+                            <div className="absolute h-full bg-blue-500 rounded"
+                                style={{
+                                    width: `${Math.min(100, Math.max(0, ((Number(regular.compValue) - (regular.minUsed || 0)) /
+                                        ((regular.maxUsed || 1) - (regular.minUsed || 0))) * 100))}%`,
+                                    backgroundColor: regular.compColor
+                                }} />
+                        </div>
+                    </Tippy>
+                )}
+                {scaled && scaled.compValue && (
+                    <Tippy content={<CompareTooltip annotation={scaled} />}>
+                        <div className="relative w-24 h-4 bg-gray-200 rounded">
+                            <div className="absolute h-full bg-blue-500 rounded"
+                                style={{
+                                    width: `${Math.min(100, Math.max(0, ((Number(scaled.compValue) - (scaled.minUsed || 0)) /
+                                        ((scaled.maxUsed || 1) - (scaled.minUsed || 0))) * 100))}%`,
+                                    backgroundColor: scaled.compColor,
+                                    opacity: 0.5
+                                }} />
+                        </div>
+                    </Tippy>
+                )}
+            </div>
+        </td>
+        <td className="w-1/8 text-center">
+            {regular.compValue && Number(regular.compValue) > (regular.maxUsed || 1) && '+'}
+        </td>
+        <td className="w-1/8">
+            {<p style={{ color: regular.diffPercentColor }}>{regular.diffPercent?.toFixed(0) ?? "-"}%</p>}
         </td>
     </tr>
 );
 
-// Extract group rendering into separate component 
 const MetricGroup: React.FC<{
     groupName: string,
     annotations: LabelContent,
     isMostUseful?: boolean
-}> = ({ groupName, annotations, isMostUseful }) => (
-    <React.Fragment>
-        <tr>
-            <td colSpan={8} className="font-semibold bg-base-200 p-1">{groupName}</td>
-        </tr>
-        {annotations.map((annotation, i) => (
-            <MetricRow key={i} annotation={annotation} />
-        ))}
-    </React.Fragment>
-);
+}> = ({ groupName, annotations, isMostUseful }) => {
+    const pairs = pairMetrics(annotations);
+    
+    return (
+        <React.Fragment>
+            <tr>
+                <td colSpan={8} className="font-semibold bg-base-200 p-1">{groupName}</td>
+            </tr>
+            {Object.entries(pairs).map(([key, pair]) => (
+                <MetricRow key={key} regular={pair.regular} scaled={pair.scaled} />
+            ))}
+        </React.Fragment>
+    );
+};
 
 // Extract sorting logic into utility function
 const sortAnnotations = (annotations: LabelContent, sortType: SortType) => {
@@ -210,38 +270,18 @@ const sortAnnotations = (annotations: LabelContent, sortType: SortType) => {
 // Extract grouping logic into utility function
 const groupAnnotations = (annotations: LabelContent) => {
     return annotations.reduce((acc, curr) => {
-        const scaledGroup = curr.scaled ? 'Scaled' : 'Unscaled';
         const group = curr.mostUseful ? 'Most Useful' : (curr.keyGroup || 'Other');
-        acc[scaledGroup] = acc[scaledGroup] || {};
-        acc[scaledGroup][group] = acc[scaledGroup][group] || [];
-        acc[scaledGroup][group].push(curr);
+        acc[group] = acc[group] || [];
+        acc[group].push(curr);
         return acc;
-    }, {} as Record<string, Record<string, typeof annotations>>);
+    }, {} as Record<string, typeof annotations>);
 };
 
 export const MetricsTable: React.FC<MetricsTableProps> = ({ annotations }) => {
     const [sortType, setSortType] = useState<SortType>('default');
-    const [showScaled, setShowScaled] = useState(true);
-    const [showUnscaled, setShowUnscaled] = useState(true);
 
     const sortedAnnotations = sortAnnotations(annotations, sortType);
-
-    const filteredAnnotations = sortedAnnotations.filter(a =>
-        (a.scaled && showScaled) || (!a.scaled && showUnscaled)
-    );
-
-    const groupOrder = [
-        'Relative bandpowers',
-        'Power',
-        'Complexity',
-        'Relative bandpowers derived',
-        'Absolute bandpowers',
-        'Absolute bandpowers derived',
-        'Derived',
-        'Other'
-    ];
-
-    const groupedAnnotations = groupAnnotations(filteredAnnotations);
+    const groupedAnnotations = groupAnnotations(sortedAnnotations);
 
     return (
         <div className="overflow-auto h-full">
@@ -254,56 +294,51 @@ export const MetricsTable: React.FC<MetricsTableProps> = ({ annotations }) => {
                     <option value="default">Default Sort</option>
                     <option value="extremes">Sort by Extremes</option>
                 </select>
-
-                <label className="flex items-center space-x-2">
-                    <input
-                        type="checkbox"
-                        checked={showScaled}
-                        onChange={() => setShowScaled(!showScaled)}
-                        className="toggle toggle-primary"
-                    />
-                    <span>Show Scaled</span>
-                </label>
-
-                <label className="flex items-center space-x-2">
-                    <input
-                        type="checkbox"
-                        checked={showUnscaled}
-                        onChange={() => setShowUnscaled(!showUnscaled)}
-                        className="toggle toggle-primary"
-                    />
-                    <span>Show Unscaled</span>
-                </label>
             </div>
 
             <table className="w-full">
+                <thead>
+                    <tr className="text-xs">
+                        <th className="w-1/8">Key</th>
+                        <th className="w-1/8">Min</th>
+                        <th className="w-1/8">
+                            <div className="flex space-x-1">
+                                <div className="w-24 text-center">Value</div>
+                                <div className="w-24 text-center">Scaled</div>
+                            </div>
+                        </th>
+                        <th className="w-1/8">Max</th>
+                        <th className="w-1/8">Min</th>
+                        <th className="w-1/8">
+                            <div className="flex space-x-1">
+                                <div className="w-24 text-center">Compare</div>
+                                <div className="w-24 text-center">Scaled</div>
+                            </div>
+                        </th>
+                        <th className="w-1/8">Max</th>
+                        <th className="w-1/8">Diff%</th>
+                    </tr>
+                </thead>
                 <tbody>
-                    {Object.entries(groupedAnnotations).map(([scaledGroup, groups]) => (
-                        <React.Fragment key={scaledGroup}>
-                            <tr>
-                                <td colSpan={8} className="font-bold bg-base-300 p-2">{scaledGroup}</td>
-                            </tr>
+                    {/* Most Useful group first */}
+                    {groupedAnnotations['Most Useful'] && (
+                        <MetricGroup 
+                            groupName="Most Useful" 
+                            annotations={groupedAnnotations['Most Useful']} 
+                            isMostUseful={true}
+                        />
+                    )}
 
-                            {/* Most Useful group first */}
-                            {groups['Most Useful'] && (
-                                <>
-                                    <tr>
-                                        <td colSpan={8} className="font-semibold bg-base-200 p-1">Most Useful</td>
-                                    </tr>
-                                    {groups['Most Useful'].map((annotation, i) => (
-                                        <MetricRow key={i} annotation={annotation} />
-                                    ))}
-                                </>
-                            )}
-
-                            {/* Other groups */}
-                            {groupOrder.map(groupName =>
-                                groups[groupName] && (
-                                    <MetricGroup key={groupName} groupName={groupName} annotations={groups[groupName]} />
-                                )
-                            )}
-                        </React.Fragment>
-                    ))}
+                    {/* Other groups */}
+                    {Object.keys(groupedAnnotations).map(groupName =>
+                        groupedAnnotations[groupName] && (
+                            <MetricGroup 
+                                key={groupName} 
+                                groupName={groupName} 
+                                annotations={groupedAnnotations[groupName]} 
+                            />
+                        )
+                    )}
                 </tbody>
             </table>
         </div>

@@ -113,6 +113,7 @@ export function generateAnnotationsForLeft(
             content.push({
                 key,
                 value: value,
+                normalizedValue: ((value - minMax.p10) / (minMax.p90 - minMax.p10)),
                 color,
                 compValue: compV,
                 compColor,

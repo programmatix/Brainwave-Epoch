@@ -5,7 +5,10 @@ export type KeyGroup = 'Relative bandpowers' | 'Relative bandpowers derived' | '
 
 export type LabelContentItem = {
     key: string;
+    // The actual value, not normalized
     value: string | number;
+    // The normalized value, between 10 and 90%
+    normalizedValue?: string | number;
     minUsed?: number;
     minUsedLabel?: string;
     maxUsed?: number;
