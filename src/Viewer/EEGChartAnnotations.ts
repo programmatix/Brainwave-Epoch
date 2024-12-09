@@ -151,9 +151,12 @@ function groupKey(key: string): { keyGroup: KeyGroup, scaled: boolean, mostUsefu
         }
         return { keyGroup: 'Relative bandpowers', scaled, mostUseful: true };
     }
-    if (key.includes('petrosian') || key.includes('nzc') || key.includes('kurt') || key.includes('perm') || key.includes('perment') || key.includes('skew') || key.includes('specent') || key.includes('svdent') || key.includes('higuchi')) {
-        const mostUseful = key.includes("pertent")
+    if (key.includes('petrosian') || key.includes('nzc') || key.includes('perm') || key.includes('perment') || key.includes('specent') || key.includes('svdent') || key.includes('higuchi')) {
+        const mostUseful = key.includes("petrosian")
         return { keyGroup: 'Complexity', scaled, mostUseful };
+    }
+    if ( key.includes('skew')) {
+        return { keyGroup: 'Symmetry', scaled, mostUseful: false };
     }
     if (key.includes('iqr') || key.includes('auc') || key.includes('abspow')) {
         const mostUseful = key.includes("iqr")

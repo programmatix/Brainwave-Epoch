@@ -59,11 +59,15 @@ const ValueTooltip: React.FC<{ annotation: LabelContent[0] }> = ({ annotation })
                     <td colSpan={2} className="pt-2">
                         <div className="relative w-full h-4 bg-gray-200 rounded">
                             <div className="absolute h-full bg-gray-400 rounded" style={{
-                                left: '10%',
+                                zIndex: 100,
+                                left: `${Math.min(100, Math.max(0, ((Number(annotation.minUsed) - (annotation.actualMin || 0)) /
+                                    ((annotation.actualMax || 1) - (annotation.actualMin || 0))) * 100))}%`,
                                 width: '1px'
                             }} />
                             <div className="absolute h-full bg-gray-400 rounded" style={{
-                                left: '90%',
+                                zIndex: 100,
+                                left: `${Math.min(100, Math.max(0, ((Number(annotation.maxUsed) - (annotation.actualMin || 0)) /
+                                    ((annotation.actualMax || 1) - (annotation.actualMin || 0))) * 100))}%`, 
                                 width: '1px'
                             }} />
                             <div className="absolute h-full bg-blue-500 rounded" style={{
@@ -330,15 +334,15 @@ export const MetricsTable: React.FC<MetricsTableProps> = ({ annotations }) => {
                     )}
 
                     {/* Other groups */}
-                    {Object.keys(groupedAnnotations).map(groupName =>
-                        groupedAnnotations[groupName] && (
+                    {Object.entries(groupedAnnotations)
+                        .filter(([groupName]) => groupName !== 'Most Useful')
+                        .map(([groupName, groupAnnotations]) => (
                             <MetricGroup 
                                 key={groupName} 
                                 groupName={groupName} 
-                                annotations={groupedAnnotations[groupName]} 
+                                annotations={groupAnnotations}
                             />
-                        )
-                    )}
+                        ))}
                 </tbody>
             </table>
         </div>

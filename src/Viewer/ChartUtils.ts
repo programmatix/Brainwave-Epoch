@@ -1,7 +1,7 @@
 import { Temporal } from "@js-temporal/polyfill";
 import { AllData, FeatureMinMax } from "../Loader/LoaderTypes";
 
-export type KeyGroup = 'Relative bandpowers' | 'Relative bandpowers derived' | 'Absolute bandpowers' | 'Absolute bandpowers derived' | 'Power' | 'Derived' | 'Complexity' | 'Other';
+export type KeyGroup = 'Relative bandpowers' | 'Relative bandpowers derived' | 'Absolute bandpowers' | 'Absolute bandpowers derived' | 'Power' | 'Derived' | 'Complexity' | 'Other' | 'Symmetry';
 
 export type LabelContentItem = {
     key: string;
