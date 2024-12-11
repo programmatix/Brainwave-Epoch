@@ -12,6 +12,7 @@ import { Temporal } from '@js-temporal/polyfill';
 import { parseDateString } from '../Loader/Loader';
 import { Slider } from './Slider';
 import { MetricsTable } from './MetricsTable';
+import { detectBlinks } from '../BlinkDetection/BlinkDetector';
 
 Chart.register(...registerables, annotationPlugin);
 
@@ -184,6 +185,36 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition })
 
             //console.log(`microwakingAnnotations`, microwakingAnnotations)
 
+            const blinkAnnotations = Object.fromEntries(
+                detectBlinks(signal.samples.slice(scrollPosition, scrollPosition + samplesToShow), samplesPerSecond)
+                    .map((blink, i) => [`blink${i}`, {
+                        type: 'box',
+                        xMin: Math.max(0, blink.peakIdx - 25),
+                        xMax: Math.min(samplesToShow, blink.peakIdx + 25),
+                        yMin: yMin,
+                        yMax: yMax,
+                        backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        borderWidth: 1,
+                        label: {
+                            content: `Peak: ${blink.peakValue.toFixed(1)}µV\nDuration: ${(blink.blinkLength / samplesPerSecond * 1000).toFixed(0)}ms`,
+                            display: false,
+                            position: 'top'
+                        },
+                        enter: ({ element }) => {
+                            element.label.options.display = true;
+                            element.chart.update('none');
+                        },
+                        leave: ({ element }) => {
+                            element.label.options.display = false;
+                            element.chart.update('none');
+                        }
+
+                    }])
+            );
+
+            console.log(`blinkAnnotations`, blinkAnnotations)
+
             const config: ChartConfiguration = {
                 type: 'line',
                 data: {
@@ -231,6 +262,7 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition })
                             annotations: {
                                 ...markAnnotations,
                                 ...microwakingAnnotations,
+                                ...blinkAnnotations,
 
                                 ...(showEpochInfo ? generateAnnotations(
                                     allData,
