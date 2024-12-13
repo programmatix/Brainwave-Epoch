@@ -17,6 +17,7 @@ import { StoreState, useStore } from '../Store/Store';
 import { MarksTimeline } from './MarksTimeline';
 import { MicrowakingsTimeline } from './MicrowakingsTimeline';
 import { VideoTimeline } from '../Videos/VideoTimeline';
+import { StageTimeline } from './StageTimeline';
 
 interface TimelineNavigationProps {
     allData: AllData;
@@ -316,7 +317,7 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = ({
                     />
                 </td>
             </tr>}
-            {allData.predictedAwakeTimeline && <tr>
+            {/* {allData.predictedAwakeTimeline && <tr>
                 <td>Predicted Awake</td>
                 <td>
                     <PredictedAwakeTimeline
@@ -339,7 +340,63 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = ({
                         onTimelineClick={handleTimelineClick}
                     />
                 </td>
-            </tr>}
+            </tr>} */}
+            <tr>
+                <td>SettlingScorePrediction</td>
+                <td>
+                    <StageTimeline
+                        sleepStages={allData.sleepStages}
+                        scrollPosition={scrollPosition}
+                        totalSamples={totalSamples}
+                        width={TIMELINE_WIDTH}
+                        onTimelineClick={handleTimelineClick}
+                        field="SettlingScorePrediction"
+                        color="red"
+                    />
+                </td>
+            </tr>
+            <tr>
+                <td>SettlingV4ScorePrediction</td>
+                <td>
+                    <StageTimeline
+                        sleepStages={allData.sleepStages}
+                        scrollPosition={scrollPosition}
+                        totalSamples={totalSamples}
+                        width={TIMELINE_WIDTH}
+                        onTimelineClick={handleTimelineClick}
+                        field="SettlingV4ScorePrediction"
+                        color="red"
+                    />
+                </td>
+            </tr>
+            <tr>
+                <td>SettlingTiredVsWiredPrediction</td>
+                <td>
+                    <StageTimeline
+                        sleepStages={allData.sleepStages}
+                        scrollPosition={scrollPosition}
+                        totalSamples={totalSamples}
+                        width={TIMELINE_WIDTH}
+                        onTimelineClick={handleTimelineClick}
+                        field="SettlingTiredVsWiredPrediction"
+                        color="red"
+                    />
+                </td>
+            </tr>
+            <tr>
+                <td>SettlingManualScore</td>
+                <td>
+                    <StageTimeline
+                        sleepStages={allData.sleepStages}
+                        scrollPosition={scrollPosition}
+                        totalSamples={totalSamples}
+                        width={TIMELINE_WIDTH}
+                        onTimelineClick={handleTimelineClick}
+                        field="SettlingManualScore"
+                        color="red"
+                    />
+                </td>
+            </tr>
             {allData.microwakings && <tr>
                 <td>Microwakings</td>
                 <td>

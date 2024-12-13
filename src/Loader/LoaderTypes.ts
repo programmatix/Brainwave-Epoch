@@ -173,6 +173,11 @@ export type ProcessedSleepStageEntry = {
     Predictions_Wake?: number;
     Predictions_AnyDeep?: number;
     Predictions_Noise?: number;
+    SettlingScorePrediction?: number;
+    SettlingV4ScorePrediction?: number;
+    SettlingTiredVsWiredPrediction?: number;
+    SettlingManualScore?: number;
+    SettlingEventVersion?: string;
 };
 
 export type ProcessedSleepStages = ProcessedSleepStageEntry[];

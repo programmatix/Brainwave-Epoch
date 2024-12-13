@@ -78,10 +78,17 @@ export async function readEDFPlus(filePath: string): Promise<EDFData> {
     return { filePath, header, signals, records };
 }
 
-export async function readSleepStages(filePath: string): Promise<ProcessedSleepStages | undefined> {
+export async function readSleepStages(filePath: string, postHumansStagesPath: string): Promise<ProcessedSleepStages | undefined> {
     try {
         console.time('readSleepStages');
-        const sleepStagesData = await fs.readFile(filePath, 'utf8');
+        let sleepStagesData;
+        try {
+            sleepStagesData = await fs.readFile(postHumansStagesPath, 'utf8');
+            console.log('Using post humans stages file');
+        } catch {
+            sleepStagesData = await fs.readFile(filePath, 'utf8');
+            console.log('Using original stages file');
+        }
         console.timeLog('readSleepStages', 'File read');
 
         const parsedSleepStages: any[] = parse(sleepStagesData, {
@@ -162,7 +169,13 @@ export async function readSleepStages(filePath: string): Promise<ProcessedSleepS
                 Predictions_Unsure: parseFloat(stage.Predictions_Unsure),
                 Predictions_Wake: parseFloat(stage.Predictions_Wake),
                 Predictions_AnyDeep: parseFloat(stage.Predictions_AnyDeep),
-                Predictions_Noise: parseFloat(stage.Predictions_Noise)
+                Predictions_Noise: parseFloat(stage.Predictions_Noise),
+                SettlingScorePrediction: parseFloat(stage.SettlingScorePrediction),
+                SettlingV4ScorePrediction: parseFloat(stage.SettlingV4ScorePrediction),
+                SettlingTiredVsWiredPrediction: parseFloat(stage.SettlingTiredVsWiredPrediction),
+                SettlingManualScore: parseFloat(stage.SettlingManualScore),
+                SettlingEventVersion: stage.SettlingEventVersion,
+
             };
 
             return processed;
@@ -314,6 +327,7 @@ export async function loadFiles(edfPath: string): Promise<AllData> {
     loaderEvents.emit('log', `${new Date().toISOString()}: Starting to load files`);
 
     const sleepStagesPath = edfPath.replace('.edf', '.with_features.csv');
+    const postHumansStagesPath = edfPath.replace('.edf', '.post_human.csv');
     const slowWaveEventsPath = edfPath.replace('.edf', '.sw_summary.csv');
     const nightEventsPath = edfPath.replace('.edf', '.night_events.csv');
     const fitbitHypnogramPath = edfPath.replace('.edf', '.fitbit_hypnogram.csv');
@@ -322,7 +336,7 @@ export async function loadFiles(edfPath: string): Promise<AllData> {
     const microwakingsPath = edfPath.replace('.edf', '.microwakings.csv');
 
     const [processedStages, raw, slowWaveEvents, nightEvents, fitbitHypnogram, spindleEvents, scorings, microwakings] = await Promise.all([
-        readSleepStages(sleepStagesPath),
+        readSleepStages(sleepStagesPath, postHumansStagesPath),
         readEDFPlus(edfPath),
         readSlowWaveEvents(slowWaveEventsPath),
         readNightEvents(nightEventsPath),

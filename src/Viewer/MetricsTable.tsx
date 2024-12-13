@@ -25,23 +25,23 @@ const ValueTooltip: React.FC<{ annotation: LabelContent[0] }> = ({ annotation })
                 </tr>
                 <tr>
                     <td className="pr-2">Raw Value:</td>
-                    <td>{annotation.value}</td>
+                    <td>{formatNumber(Number(annotation.value))}</td>
                 </tr>
                 <tr>
                     <td className="pr-2">Normalized Value:</td>
-                    <td>{annotation.normalizedValue}</td>
+                    <td>{formatNumber(Number(annotation.normalizedValue))}</td>
                 </tr>
                 <tr>
                     <td className="pr-2">{annotation.minUsedLabel}:</td>
-                    <td>{annotation.minUsed}</td>
+                    <td>{formatNumber(annotation.minUsed)}</td>
                 </tr>
                 <tr>
                     <td className="pr-2">{annotation.maxUsedLabel}:</td>
-                    <td>{annotation.maxUsed}</td>
+                    <td>{formatNumber(annotation.maxUsed)}</td>
                 </tr>
                 <tr>
                     <td className="pr-2">Actual Min:</td>
-                    <td>{annotation.actualMin}</td>
+                    <td>{formatNumber(annotation.actualMin)}</td>
                 </tr>
                 <tr>
                     <td className="pr-2">Actual Max:</td>
@@ -49,11 +49,11 @@ const ValueTooltip: React.FC<{ annotation: LabelContent[0] }> = ({ annotation })
                 </tr>
                 <tr>
                     <td className="pr-2">% of maxUsed:</td>
-                    <td>{((Number(annotation.value) / (annotation.maxUsed || 1)) * 100).toFixed(1)}%</td>
+                    <td>{formatNumber(((Number(annotation.value) / (annotation.maxUsed || 1)) * 100))}%</td>
                 </tr>
                 <tr>
                     <td className="pr-2">% of max:</td>
-                    <td>{((Number(annotation.value) / (annotation.actualMax || 1)) * 100).toFixed(1)}%</td>
+                    <td>{formatNumber(((Number(annotation.value) / (annotation.actualMax || 1)) * 100))}%</td>
                 </tr>
                 <tr>
                     <td colSpan={2} className="pt-2">
@@ -88,7 +88,7 @@ const CompareTooltip: React.FC<{ annotation: LabelContent[0] }> = ({ annotation 
         <tbody className="text-xs">
             <tr>
                 <td className="pr-2">Compare Value:</td>
-                <td>{annotation.compValue}</td>
+                <td>{formatNumber(Number(annotation.compValue))}</td>
             </tr>
             <tr>
                 <td className="pr-2">Min:</td>
@@ -104,11 +104,11 @@ const CompareTooltip: React.FC<{ annotation: LabelContent[0] }> = ({ annotation 
             </tr>
             <tr>
                 <td className="pr-2">% of maxUsed:</td>
-                <td>{((Number(annotation.compValue) / (annotation.maxUsed || 1)) * 100).toFixed(1)}%</td>
+                <td>{formatNumber(((Number(annotation.compValue) / (annotation.maxUsed || 1)) * 100))}%</td>
             </tr>
             <tr>
                 <td className="pr-2">% of max:</td>
-                <td>{((Number(annotation.compValue) / (annotation.actualMax || 1)) * 100).toFixed(1)}%</td>
+                <td>{formatNumber(((Number(annotation.compValue) / (annotation.actualMax || 1)) * 100))}%</td>
             </tr>
             <tr>
                 <td colSpan={2} className="pt-2">
@@ -229,7 +229,7 @@ const MetricRow: React.FC<{
             {regular.compValue && Number(regular.compValue) > (regular.maxUsed || 1) && '+'}
         </td>
         <td className="w-1/8">
-            {<p style={{ color: regular.diffPercentColor }}>{regular.diffPercent?.toFixed(0) ?? "-"}%</p>}
+            {regular.diffPercent && <p style={{ color: regular.diffPercentColor }}>{formatNumber(regular.diffPercent)}%</p>}
         </td>
     </tr>
 );
@@ -279,6 +279,16 @@ const groupAnnotations = (annotations: LabelContent) => {
         acc[group].push(curr);
         return acc;
     }, {} as Record<string, typeof annotations>);
+};
+
+const formatNumber = (num: number): string => {
+    if (isNaN(num) || num === undefined) return '-';
+    if (Math.abs(num) < 0.000001) return '0';
+    return num.toLocaleString('en-US', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 20,
+        useGrouping: false
+    });
 };
 
 export const MetricsTable: React.FC<MetricsTableProps> = ({ annotations }) => {

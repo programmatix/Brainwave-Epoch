@@ -34,6 +34,7 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition })
     const [showEpochInfo, setShowEpochInfo] = useState(true);
     const [showTable, setShowTable] = useState(true);
     const [yAxisRange, setYAxisRange] = useState(100);
+    const [showBlinks, setShowBlinks] = useState(false);
     const { handleChartClick, marks, deleteMark } = useStore((state: StoreState) => ({
         handleChartClick: state.handleChartClick,
         marks: state.marks,
@@ -185,7 +186,7 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition })
 
             //console.log(`microwakingAnnotations`, microwakingAnnotations)
 
-            const blinkAnnotations = Object.fromEntries(
+            const blinkAnnotations = showBlinks ? Object.fromEntries(
                 detectBlinks(signal.samples.slice(scrollPosition, scrollPosition + samplesToShow), samplesPerSecond)
                     .map((blink, i) => [`blink${i}`, {
                         type: 'box',
@@ -211,7 +212,7 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition })
                         }
 
                     }])
-            );
+            ) : {};
 
             console.log(`blinkAnnotations`, blinkAnnotations)
 
@@ -345,7 +346,7 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition })
         return () => {
             newCharts.forEach(chart => chart?.destroy());
         };
-    }, [allData, scrollPosition, compareEpoch, showSlowWaveEvents, showSpindleEvents, showEpochInfo, handleChartClick, marks, deleteMark, yAxisRange]);
+    }, [allData, scrollPosition, compareEpoch, showSlowWaveEvents, showSpindleEvents, showEpochInfo, handleChartClick, marks, deleteMark, yAxisRange, showBlinks]);
 
     const signalsToShow = allData.processedEDF.signals.filter(signal => signal.label !== 'EDF Annotations');
 
@@ -423,6 +424,15 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition })
                         className="toggle toggle-primary"
                     />
                     <span>Show Table (t)</span>
+                </label>
+                <label className="flex items-center space-x-2">
+                    <input
+                        type="checkbox"
+                        checked={showBlinks}
+                        onChange={() => setShowBlinks(!showBlinks)}
+                        className="toggle toggle-primary"
+                    />
+                    <span>Show Blinks</span>
                 </label>
                 <div className="flex items-center space-x-2">
                     <span>Y-Axis Range: ±{yAxisRange}</span>
