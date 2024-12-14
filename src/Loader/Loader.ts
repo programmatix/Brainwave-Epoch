@@ -1,7 +1,7 @@
 import { Temporal } from '@js-temporal/polyfill';
 import { parse } from 'csv-parse/sync';
 import { promises as fs } from 'fs';
-import { AllData, EDFData, EDFHeader, EDFSignal, FitbitHypnogram, GroupedSlowWaveEvents, GroupedSpindleEvents, NightEvents, ProcessedEDFData, ProcessedSleepStageEntry, ProcessedSleepStages, SignalData, SlowWaveEvents, SpindleEvents, TimeLabel, SleepStageFeatureMinMax, ProcessedSleepStageEntryFeatures, ChannelData, Scorings, ScoringEntry, ScoringTag, Mark, Microwaking, Microwakings } from './LoaderTypes';
+import { AllData, EDFData, EDFHeader, EDFSignal, FitbitHypnogram, GroupedSlowWaveEvents, GroupedSpindleEvents, NightEvents, ProcessedEDFData, ProcessedSleepStageEntry, ProcessedSleepStages, SignalData, SlowWaveEvents, SpindleEvents, TimeLabel, SleepStageFeatureMinMax, ProcessedSleepStageEntryFeatures, ChannelData, Scorings, ScoringEntry, ScoringTag, Mark, Microwaking, Microwakings, StageFeatureMinMax, StatsCSVRow, FeatureMinMax } from './LoaderTypes';
 
 
 import { EventEmitter } from 'events';
@@ -334,8 +334,11 @@ export async function loadFiles(edfPath: string): Promise<AllData> {
     const spindleEventsPath = edfPath.replace('.edf', '.spindle_summary.csv');
     const scoringsPath = edfPath.replace('.edf', '.scorings.json');
     const microwakingsPath = edfPath.replace('.edf', '.microwakings.csv');
+    // Completely deviating from original goal of making this a general purpose utility..
+    const sleepStatsPath = "C:\\dev\\play\\brainwave-data\\stats.csv";
 
-    const [processedStages, raw, slowWaveEvents, nightEvents, fitbitHypnogram, spindleEvents, scorings, microwakings] = await Promise.all([
+    const [stats, processedStages, raw, slowWaveEvents, nightEvents, fitbitHypnogram, spindleEvents, scorings, microwakings] = await Promise.all([
+        readStats(sleepStatsPath),
         readSleepStages(sleepStagesPath, postHumansStagesPath),
         readEDFPlus(edfPath),
         readSlowWaveEvents(slowWaveEventsPath),
@@ -355,7 +358,7 @@ export async function loadFiles(edfPath: string): Promise<AllData> {
     const end = performance.now();
     loaderEvents.emit('log', `${new Date().toISOString()}: All files loaded and processed in ${(end - start).toFixed(2)}ms`);
 
-    const sleepStageFeatureMinMax = calculateSleepStageFeatureMinMax(processedStages);
+    const sleepStageFeatureMinMax = await calculateSleepStageFeatureMinMax(stats, processedStages);
 
     const videos = await loadVideos(processedEDF.startDate, processedEDF.duration);
 
@@ -559,10 +562,91 @@ export async function readAndProcessEDF(filePath: string): Promise<ProcessedEDFD
     return processEDFData(edfData);
 }
 
-function calculateSleepStageFeatureMinMax(sleepStages: ProcessedSleepStages): SleepStageFeatureMinMax | undefined {
+async function readStats(sleepStatsPath: string): Promise<{ [key: string]: StatsCSVRow }> {
+    const response = await fetch(sleepStatsPath);
+    const text = await response.text();
+    const rows = text.split('\n').slice(1); // Skip header
+    
+    const stats: { [key: string]: StatsCSVRow } = {};
+    
+    rows.forEach(row => {
+        if (!row.trim()) return;
+        const [_, column, ...values] = row.split(',');
+        const numericValues = values.map(v => parseFloat(v));
+        
+        stats[column] = {
+            Column: column,
+            Mean: numericValues[0],
+            P10: numericValues[1],
+            P90: numericValues[2],
+            Min: numericValues[3],
+            Max: numericValues[4],
+            StdDev: numericValues[5],
+            W_Mean: numericValues[6],
+            W_P10: numericValues[7],
+            W_P90: numericValues[8],
+            W_Min: numericValues[9],
+            W_Max: numericValues[10],
+            W_StdDev: numericValues[11],
+            N1_Mean: numericValues[12],
+            N1_P10: numericValues[13],
+            N1_P90: numericValues[14],
+            N1_Min: numericValues[15],
+            N1_Max: numericValues[16],
+            N1_StdDev: numericValues[17],
+            N2_Mean: numericValues[18],
+            N2_P10: numericValues[19],
+            N2_P90: numericValues[20],
+            N2_Min: numericValues[21],
+            N2_Max: numericValues[22],
+            N2_StdDev: numericValues[23],
+            N3_Mean: numericValues[24],
+            N3_P10: numericValues[25],
+            N3_P90: numericValues[26],
+            N3_Min: numericValues[27],
+            N3_Max: numericValues[28],
+            N3_StdDev: numericValues[29],
+            R_Mean: numericValues[30],
+            R_P10: numericValues[31],
+            R_P90: numericValues[32],
+            R_Min: numericValues[33],
+            R_Max: numericValues[34],
+            R_StdDev: numericValues[35],
+            Sleep_Mean: numericValues[36],
+            Sleep_P10: numericValues[37],
+            Sleep_P90: numericValues[38],
+            Sleep_Min: numericValues[39],
+            Sleep_Max: numericValues[40],
+            Sleep_StdDev: numericValues[41],
+            NonDeepSleep_Mean: numericValues[42],
+            NonDeepSleep_P10: numericValues[43],
+            NonDeepSleep_P90: numericValues[44],
+            NonDeepSleep_Min: numericValues[45],
+            NonDeepSleep_Max: numericValues[46],
+            NonDeepSleep_StdDev: numericValues[47],
+        };
+    });
+    
+    return stats;
+}
+
+function createFeatureMinMaxFromStats(statsRow: StatsCSVRow, prefix: string): FeatureMinMax {
+    return {
+        min: statsRow[`${prefix}_Min`],
+        max: statsRow[`${prefix}_Max`],
+        stdDev: statsRow[`${prefix}_StdDev`],
+        p10: statsRow[`${prefix}_P10`],
+        p90: statsRow[`${prefix}_P90`],
+    };
+}
+
+async function calculateSleepStageFeatureMinMax(stats: { [key: string]: StatsCSVRow }, sleepStages: ProcessedSleepStages): Promise<SleepStageFeatureMinMax | undefined> {
     if (!sleepStages || sleepStages.length === 0) {
         return undefined;
     }
+
+    const stages = ['All', 'Sleep', 'NonDeepSleep', 'W', 'N1', 'N2', 'N3', 'R'] as const;
+    
     const channels = Object.keys(sleepStages[0].Channels);
     const lastChannel = channels[channels.length - 1];
     const featureKeys = Object.keys(sleepStages[0].Channels[lastChannel]).filter(key =>
@@ -571,12 +655,21 @@ function calculateSleepStageFeatureMinMax(sleepStages: ProcessedSleepStages): Sl
 
     const initialMinMax: SleepStageFeatureMinMax = {} as SleepStageFeatureMinMax;
     featureKeys.forEach(key => {
-        initialMinMax[key] = { min: Infinity, max: -Infinity, stdDev: 0, p10: 0, p25: 0, p50: 0, p75: 0, p90: 0 };
+        initialMinMax[key] = {
+            forLocalFile: {} as StageFeatureMinMax['forLocalFile'],
+            forAllStats: {} as StageFeatureMinMax['forAllStats']
+        };
+        stages.forEach(stage => {
+            initialMinMax[key].forLocalFile[stage] = { min: Infinity, max: -Infinity, stdDev: 0, p10: 0, p90: 0 };
+        });
     });
 
-    const values: { [key: string]: number[] } = {};
+    const values: { [key: string]: { [stage: string]: number[] } } = {};
     featureKeys.forEach(key => {
-        values[key] = [];
+        values[key] = {};
+        stages.forEach(stage => {
+            values[key][stage] = [];
+        });
     });
 
     sleepStages.forEach(stage => {
@@ -584,27 +677,51 @@ function calculateSleepStageFeatureMinMax(sleepStages: ProcessedSleepStages): Sl
             Object.keys(stage.Channels).forEach(channel => {
                 const value = stage.Channels[channel][key];
                 if (value !== undefined) {
-                    values[key].push(value);
-                    if (value < initialMinMax[key].min) initialMinMax[key].min = value;
-                    if (value > initialMinMax[key].max) initialMinMax[key].max = value;
+                    // Add to All
+                    values[key].All.push(value);
+                    
+                    // Add to appropriate stage bucket
+                    const stageLabel = stage.Stage;
+                    if (['N1', 'N2', 'N3', 'R'].includes(stageLabel)) {
+                        values[key].Sleep.push(value);
+                    }
+                    if (['N1', 'N2', 'R'].includes(stageLabel)) {
+                        values[key].NonDeepSleep.push(value);
+                    }
+                    if (['W', 'N1', 'N2', 'N3', 'R'].includes(stageLabel)) {
+                        values[key][stageLabel].push(value);
+                    }
                 }
             });
         });
     });
 
     featureKeys.forEach(key => {
-        const sortedValues = values[key].sort((a, b) => a - b);
-        const len = sortedValues.length;
-        initialMinMax[key].p10 = sortedValues[Math.floor(len * 0.1)];
-        initialMinMax[key].p25 = sortedValues[Math.floor(len * 0.25)];
-        initialMinMax[key].p50 = sortedValues[Math.floor(len * 0.5)];
-        initialMinMax[key].p75 = sortedValues[Math.floor(len * 0.75)];
-        initialMinMax[key].p90 = sortedValues[Math.floor(len * 0.9)];
-        const mean = sortedValues.reduce((sum, val) => sum + val, 0) / len;
-        initialMinMax[key].stdDev = Math.sqrt(sortedValues.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / len);
-    });
+        stages.forEach(stage => {
+            const stageValues = values[key][stage];
+            if (stageValues.length > 0) {
+                const sortedValues = stageValues.sort((a, b) => a - b);
+                const len = sortedValues.length;
+                const mean = sortedValues.reduce((sum, val) => sum + val, 0) / len;
+                
+                initialMinMax[key].forLocalFile[stage] = {
+                    min: Math.min(...stageValues),
+                    max: Math.max(...stageValues),
+                    p10: sortedValues[Math.floor(len * 0.1)],
+                    p90: sortedValues[Math.floor(len * 0.9)],
+                    stdDev: Math.sqrt(sortedValues.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / len)
+                };
+            }
+        });
 
-    console.log(channels, lastChannel, featureKeys, initialMinMax);
+        if (stats[key]) {
+            const statsRow = stats[key];
+            stages.forEach(stage => {
+                const prefix = stage === 'All' ? '' : stage;
+                initialMinMax[key].forAllStats[stage] = createFeatureMinMaxFromStats(statsRow, prefix);
+            });
+        }
+    });
 
     return initialMinMax;
 }

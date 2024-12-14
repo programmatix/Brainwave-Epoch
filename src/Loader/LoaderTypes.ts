@@ -140,9 +140,6 @@ export type FeatureMinMax = {
     max: number;
     stdDev: number;
     p10: number;
-    p25: number;
-    p50: number;
-    p75: number;
     p90: number;
 };
 
@@ -182,8 +179,85 @@ export type ProcessedSleepStageEntry = {
 
 export type ProcessedSleepStages = ProcessedSleepStageEntry[];
 
+export type StageFeatureMinMax = {
+    // Looking at min-max values just in the current file
+    forLocalFile: {
+        All: FeatureMinMax;
+        Sleep: FeatureMinMax; 
+        NonDeepSleep: FeatureMinMax;
+        W: FeatureMinMax;
+        N1: FeatureMinMax;
+        N2: FeatureMinMax; 
+        N3: FeatureMinMax;
+        R: FeatureMinMax;
+    };
+    // Looking at min-max values from stats.csv e.g. all files
+    forAllStats: {
+        All: FeatureMinMax;
+        Sleep: FeatureMinMax;
+        NonDeepSleep: FeatureMinMax; 
+        W: FeatureMinMax;
+        N1: FeatureMinMax;
+        N2: FeatureMinMax;
+        N3: FeatureMinMax;
+        R: FeatureMinMax;
+    };
+};
+
 export type SleepStageFeatureMinMax = {
-    [K in keyof ProcessedSleepStageEntryFeatures]: FeatureMinMax;
+    [K in keyof ProcessedSleepStageEntryFeatures]: StageFeatureMinMax;
+};
+
+export type StatsCSVRow = {
+    Column: string;
+    Mean: number;
+    P10: number;
+    P90: number;
+    Min: number;
+    Max: number;
+    StdDev: number;
+    W_Mean: number;
+    W_P10: number;
+    W_P90: number;
+    W_Min: number;
+    W_Max: number;
+    W_StdDev: number;
+    N1_Mean: number;
+    N1_P10: number;
+    N1_P90: number;
+    N1_Min: number;
+    N1_Max: number;
+    N1_StdDev: number;
+    N2_Mean: number;
+    N2_P10: number;
+    N2_P90: number;
+    N2_Min: number;
+    N2_Max: number;
+    N2_StdDev: number;
+    N3_Mean: number;
+    N3_P10: number;
+    N3_P90: number;
+    N3_Min: number;
+    N3_Max: number;
+    N3_StdDev: number;
+    R_Mean: number;
+    R_P10: number;
+    R_P90: number;
+    R_Min: number;
+    R_Max: number;
+    R_StdDev: number;
+    Sleep_Mean: number;
+    Sleep_P10: number;
+    Sleep_P90: number;
+    Sleep_Min: number;
+    Sleep_Max: number;
+    Sleep_StdDev: number;
+    NonDeepSleep_Mean: number;
+    NonDeepSleep_P10: number;
+    NonDeepSleep_P90: number;
+    NonDeepSleep_Min: number;
+    NonDeepSleep_Max: number;
+    NonDeepSleep_StdDev: number;
 };
 
 export type ScoringTag = {
