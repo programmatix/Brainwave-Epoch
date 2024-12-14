@@ -251,6 +251,17 @@ export function setupFileMenu(onFileLoad: (filePath: string) => Promise<void>) {
     const fileMenu = new window.nw.Menu();
 
     fileMenu.append(new window.nw.MenuItem({
+        label: 'New Window',
+        click: () => {
+            window.nw.Window.open('index.html', { icon: './logo512.png' });
+        }
+    }));
+
+    fileMenu.append(new window.nw.MenuItem({
+        type: 'separator'
+    }));
+
+    fileMenu.append(new window.nw.MenuItem({
         label: 'Open EDF File',
         click: () => {
             const fileInput = document.createElement('input');
@@ -275,7 +286,7 @@ export function setupFileMenu(onFileLoad: (filePath: string) => Promise<void>) {
     window.nw.Window.get().menu = menu;
 }
 
-export async function readScorings(filePath: string): Promise<{scorings: Scorings, marks: Mark[]} | undefined> {
+export async function readScorings(filePath: string): Promise<{ scorings: Scorings, marks: Mark[] } | undefined> {
     try {
         const data = await fs.readFile(filePath, 'utf8');
         const json = JSON.parse(data);
@@ -285,7 +296,7 @@ export async function readScorings(filePath: string): Promise<{scorings: Scoring
         }
     } catch (error) {
         console.error(`Error reading Scorings file: ${error.message}`);
-        return {scorings: [], marks: []};
+        return { scorings: [], marks: [] };
     }
 }
 
@@ -476,16 +487,16 @@ export function processEDFData(edfData: EDFData): ProcessedEDFData {
         const startTime = new Date(Date.UTC(header.startDate.year, header.startDate.month - 1, header.startDate.day,
             header.startDate.hour, header.startDate.minute, header.startDate.second,
             header.startDate.millisecond)).getTime();
-        
+
         // Pre-calculate the offset once
         const offsetMilliseconds = new Date().getTimezoneOffset() * 60000;
-        
+
         for (let i = 0; i < totalSamples; i++) {
             const milliseconds = Math.round(i / samplingRate * 1000);
             const currentTime = new Date(startTime + milliseconds - offsetMilliseconds);
-        
+
             const formattedTime = `${padZero(currentTime.getUTCHours())}:${padZero(currentTime.getUTCMinutes())}:${padZero(currentTime.getUTCSeconds())}`;
-        
+
             timeLabels.push({
                 timestamp: startTime + milliseconds,
                 formatted: formattedTime
@@ -530,81 +541,106 @@ export async function readAndProcessEDF(filePath: string): Promise<ProcessedEDFD
 }
 
 async function readStats(sleepStatsPath: string): Promise<{ [key: string]: StatsCSVRow }> {
-    const response = await fetch(sleepStatsPath);
-    const text = await response.text();
-    const rows = text.split('\n').slice(1); // Skip header
-    
-    const stats: { [key: string]: StatsCSVRow } = {};
-    
-    rows.forEach(row => {
-        if (!row.trim()) return;
-        const [_, column, ...values] = row.split(',');
-        const numericValues = values.map(v => parseFloat(v));
-        
-        stats[column] = {
-            Column: column,
-            Mean: numericValues[0],
-            P10: numericValues[1],
-            P90: numericValues[2],
-            Min: numericValues[3],
-            Max: numericValues[4],
-            StdDev: numericValues[5],
-            W_Mean: numericValues[6],
-            W_P10: numericValues[7],
-            W_P90: numericValues[8],
-            W_Min: numericValues[9],
-            W_Max: numericValues[10],
-            W_StdDev: numericValues[11],
-            N1_Mean: numericValues[12],
-            N1_P10: numericValues[13],
-            N1_P90: numericValues[14],
-            N1_Min: numericValues[15],
-            N1_Max: numericValues[16],
-            N1_StdDev: numericValues[17],
-            N2_Mean: numericValues[18],
-            N2_P10: numericValues[19],
-            N2_P90: numericValues[20],
-            N2_Min: numericValues[21],
-            N2_Max: numericValues[22],
-            N2_StdDev: numericValues[23],
-            N3_Mean: numericValues[24],
-            N3_P10: numericValues[25],
-            N3_P90: numericValues[26],
-            N3_Min: numericValues[27],
-            N3_Max: numericValues[28],
-            N3_StdDev: numericValues[29],
-            R_Mean: numericValues[30],
-            R_P10: numericValues[31],
-            R_P90: numericValues[32],
-            R_Min: numericValues[33],
-            R_Max: numericValues[34],
-            R_StdDev: numericValues[35],
-            Sleep_Mean: numericValues[36],
-            Sleep_P10: numericValues[37],
-            Sleep_P90: numericValues[38],
-            Sleep_Min: numericValues[39],
-            Sleep_Max: numericValues[40],
-            Sleep_StdDev: numericValues[41],
-            NonDeepSleep_Mean: numericValues[42],
-            NonDeepSleep_P10: numericValues[43],
-            NonDeepSleep_P90: numericValues[44],
-            NonDeepSleep_Min: numericValues[45],
-            NonDeepSleep_Max: numericValues[46],
-            NonDeepSleep_StdDev: numericValues[47],
-        };
-    });
-    
-    return stats;
+    try {
+        const response = await fetch(sleepStatsPath);
+        const text = await response.text();
+        const rows = text.split('\n').slice(1); // Skip header
+
+        const stats: { [key: string]: StatsCSVRow } = {};
+
+        rows.forEach(row => {
+            if (!row.trim()) return;
+            const [_, column, ...values] = row.split(',');
+            const numericValues = values.map(v => parseFloat(v));
+
+            stats[column] = {
+                Column: column,
+                Mean: numericValues[0],
+                P10: numericValues[1],
+                P90: numericValues[2],
+                Min: numericValues[3],
+                Max: numericValues[4],
+                StdDev: numericValues[5],
+                W_Mean: numericValues[6],
+                W_P10: numericValues[7],
+                W_P90: numericValues[8],
+                W_Min: numericValues[9],
+                W_Max: numericValues[10],
+                W_StdDev: numericValues[11],
+                N1_Mean: numericValues[12],
+                N1_P10: numericValues[13],
+                N1_P90: numericValues[14],
+                N1_Min: numericValues[15],
+                N1_Max: numericValues[16],
+                N1_StdDev: numericValues[17],
+                N2_Mean: numericValues[18],
+                N2_P10: numericValues[19],
+                N2_P90: numericValues[20],
+                N2_Min: numericValues[21],
+                N2_Max: numericValues[22],
+                N2_StdDev: numericValues[23],
+                N3_Mean: numericValues[24],
+                N3_P10: numericValues[25],
+                N3_P90: numericValues[26],
+                N3_Min: numericValues[27],
+                N3_Max: numericValues[28],
+                N3_StdDev: numericValues[29],
+                R_Mean: numericValues[30],
+                R_P10: numericValues[31],
+                R_P90: numericValues[32],
+                R_Min: numericValues[33],
+                R_Max: numericValues[34],
+                R_StdDev: numericValues[35],
+                Sleep_Mean: numericValues[36],
+                Sleep_P10: numericValues[37],
+                Sleep_P90: numericValues[38],
+                Sleep_Min: numericValues[39],
+                Sleep_Max: numericValues[40],
+                Sleep_StdDev: numericValues[41],
+                NonDeepSleep_Mean: numericValues[42],
+                NonDeepSleep_P10: numericValues[43],
+                NonDeepSleep_P90: numericValues[44],
+                NonDeepSleep_Min: numericValues[45],
+                NonDeepSleep_Max: numericValues[46],
+                NonDeepSleep_StdDev: numericValues[47],
+            };
+        });
+
+        console.log(`stats`, stats);
+
+        return stats;
+    } catch (error) {
+        console.error(`Error reading stats file: ${error.message}`);
+        return undefined;
+    }
 }
 
 function createFeatureMinMaxFromStats(statsRow: StatsCSVRow, prefix: string): FeatureMinMax {
     return {
-        min: statsRow[`${prefix}_Min`],
-        max: statsRow[`${prefix}_Max`],
-        stdDev: statsRow[`${prefix}_StdDev`],
-        p10: statsRow[`${prefix}_P10`],
-        p90: statsRow[`${prefix}_P90`],
+        min: statsRow[`${prefix}Min`],
+        max: statsRow[`${prefix}Max`],
+        stdDev: statsRow[`${prefix}StdDev`],
+        p10: statsRow[`${prefix}P10`],
+        p90: statsRow[`${prefix}P90`],
     };
+}
+
+// Duplicates Python logic
+export function findMainChannel(sleepStages: ProcessedSleepStages): string | undefined {
+    if (!sleepStages?.length) return undefined;
+
+    const channels = [...new Set(sleepStages.map(stage => stage.Source))];
+    const filteredChannels = channels.filter(channel => channel?.startsWith('F'));
+
+    if (filteredChannels.length === 1) {
+        return filteredChannels[0];
+    }
+    
+    if (filteredChannels.includes('Fpz')) {
+        return 'Fpz';
+    }
+
+    return filteredChannels[0];
 }
 
 async function calculateSleepStageFeatureMinMax(stats: { [key: string]: StatsCSVRow }, sleepStages: ProcessedSleepStages): Promise<SleepStageFeatureMinMax | undefined> {
@@ -613,82 +649,80 @@ async function calculateSleepStageFeatureMinMax(stats: { [key: string]: StatsCSV
     }
 
     const stages = ['All', 'Sleep', 'NonDeepSleep', 'W', 'N1', 'N2', 'N3', 'R'] as const;
-    
+
     const channels = Object.keys(sleepStages[0].Channels);
-    const lastChannel = channels[channels.length - 1];
-    const featureKeys = Object.keys(sleepStages[0].Channels[lastChannel]).filter(key =>
-        key.startsWith('eeg_') && typeof sleepStages[0].Channels[lastChannel][key] === 'number'
-    ) as (keyof ProcessedSleepStageEntryFeatures)[];
+    const result: SleepStageFeatureMinMax = {};
 
-    const initialMinMax: SleepStageFeatureMinMax = {} as SleepStageFeatureMinMax;
-    featureKeys.forEach(key => {
-        initialMinMax[key] = {
-            forLocalFile: {} as StageFeatureMinMax['forLocalFile'],
-            forAllStats: {} as StageFeatureMinMax['forAllStats']
-        };
-        stages.forEach(stage => {
-            initialMinMax[key].forLocalFile[stage] = { min: Infinity, max: -Infinity, stdDev: 0, p10: 0, p90: 0 };
-        });
-    });
+    channels.forEach(channel => {
+        const featureKeys = Object.keys(sleepStages[0].Channels[channel]).filter(key =>
+            key.startsWith('eeg_') && typeof sleepStages[0].Channels[channel][key] === 'number'
+        ) as (keyof ProcessedSleepStageEntryFeatures)[];
 
-    const values: { [key: string]: { [stage: string]: number[] } } = {};
-    featureKeys.forEach(key => {
-        values[key] = {};
-        stages.forEach(stage => {
-            values[key][stage] = [];
-        });
-    });
+        result[channel] = {} as { [K in keyof ProcessedSleepStageEntryFeatures]: StageFeatureMinMax };
 
-    sleepStages.forEach(stage => {
         featureKeys.forEach(key => {
-            Object.keys(stage.Channels).forEach(channel => {
+            result[channel][key] = {
+                forLocalFile: {} as StageFeatureMinMax['forLocalFile'],
+                forAllStats: {} as StageFeatureMinMax['forAllStats']
+            };
+
+            stages.forEach(stage => {
+                result[channel][key].forLocalFile[stage] = { min: Infinity, max: -Infinity, stdDev: 0, p10: 0, p90: 0 };
+            });
+
+            const values: { [stage: string]: number[] } = {};
+            stages.forEach(stage => {
+                values[stage] = [];
+            });
+
+            sleepStages.forEach(stage => {
                 const value = stage.Channels[channel][key];
                 if (value !== undefined) {
                     // Add to All
-                    values[key].All.push(value);
-                    
+                    values.All.push(value);
+
                     // Add to appropriate stage bucket
                     const stageLabel = stage.Stage;
                     if (['N1', 'N2', 'N3', 'R'].includes(stageLabel)) {
-                        values[key].Sleep.push(value);
+                        values.Sleep.push(value);
                     }
                     if (['N1', 'N2', 'R'].includes(stageLabel)) {
-                        values[key].NonDeepSleep.push(value);
+                        values.NonDeepSleep.push(value);
                     }
                     if (['W', 'N1', 'N2', 'N3', 'R'].includes(stageLabel)) {
-                        values[key][stageLabel].push(value);
+                        values[stageLabel].push(value);
                     }
                 }
             });
-        });
-    });
 
-    featureKeys.forEach(key => {
-        stages.forEach(stage => {
-            const stageValues = values[key][stage];
-            if (stageValues.length > 0) {
-                const sortedValues = stageValues.sort((a, b) => a - b);
-                const len = sortedValues.length;
-                const mean = sortedValues.reduce((sum, val) => sum + val, 0) / len;
-                
-                initialMinMax[key].forLocalFile[stage] = {
-                    min: Math.min(...stageValues),
-                    max: Math.max(...stageValues),
-                    p10: sortedValues[Math.floor(len * 0.1)],
-                    p90: sortedValues[Math.floor(len * 0.9)],
-                    stdDev: Math.sqrt(sortedValues.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / len)
-                };
+            stages.forEach(stage => {
+                const stageValues = values[stage];
+                if (stageValues.length > 0) {
+                    const sortedValues = stageValues.sort((a, b) => a - b);
+                    const len = sortedValues.length;
+                    const mean = sortedValues.reduce((sum, val) => sum + val, 0) / len;
+
+                    result[channel][key].forLocalFile[stage] = {
+                        min: Math.min(...stageValues),
+                        max: Math.max(...stageValues),
+                        p10: sortedValues[Math.floor(len * 0.1)],
+                        p90: sortedValues[Math.floor(len * 0.9)],
+                        stdDev: Math.sqrt(sortedValues.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / len)
+                    };
+                }
+            });
+
+            const mainKey = `${channel}_${key}`
+
+            if (stats[mainKey]) {
+                const statsRow = stats[mainKey];
+                stages.forEach(stage => {
+                    const prefix = stage === 'All' ? '' : (stage + "_");
+                    result[channel][key].forAllStats[stage] = createFeatureMinMaxFromStats(statsRow, prefix);
+                });
             }
         });
-
-        if (stats[key]) {
-            const statsRow = stats[key];
-            stages.forEach(stage => {
-                const prefix = stage === 'All' ? '' : stage;
-                initialMinMax[key].forAllStats[stage] = createFeatureMinMaxFromStats(statsRow, prefix);
-            });
-        }
     });
 
-    return initialMinMax;
+    return result;
 }

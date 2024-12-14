@@ -205,7 +205,9 @@ export type StageFeatureMinMax = {
 };
 
 export type SleepStageFeatureMinMax = {
-    [K in keyof ProcessedSleepStageEntryFeatures]: StageFeatureMinMax;
+    [channel: string]: {
+        [K in keyof ProcessedSleepStageEntryFeatures]: StageFeatureMinMax;
+    };
 };
 
 export type StatsCSVRow = {

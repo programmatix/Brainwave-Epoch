@@ -1,87 +1,122 @@
 import React, { useState } from 'react';
-import { LabelContent } from './ChartUtils';
+import { LabelContent, LabelContentItem, NormalizedValue } from './ChartUtils';
 import Tippy from '@tippyjs/react';
 import 'tippy.js/dist/tippy.css';
 
 type SortType = 'default' | 'extremes';
 
 interface MetricsTableProps {
-    annotations: LabelContent;
+    annotations: LabelContent; 
 }
 
-// Extract tooltip tables into separate components
-const ValueTooltip: React.FC<{ annotation: LabelContent[0] }> = ({ annotation }) => (
-    <>
-        <div>
-            <p>The main table progress bar is showing values scaled between 10% and 90% of the value range, for that key, for this EEG file.</p>
-            <p>The progress bar in this tooltip shows the value against the real min and max for that key, for this EEG file.</p>
-            <p>Reminder that any _s keys are already scaled against the value range of all nights, for that key.</p>
+type ValueSelector = 
+  'normalizedAgainst.forLocalFile.All' | 
+  'normalizedAgainst.forLocalFile.Sleep' |
+  'normalizedAgainst.forLocalFile.NonDeepSleep' |
+  'normalizedAgainst.forLocalFile.W' |
+  'normalizedAgainst.forLocalFile.N1' |
+  'normalizedAgainst.forLocalFile.N2' |
+  'normalizedAgainst.forLocalFile.N3' |
+  'normalizedAgainst.forLocalFile.R' |
+  'normalizedAgainst.forAllStats.All' |
+  'normalizedAgainst.forAllStats.Sleep' |
+  'normalizedAgainst.forAllStats.NonDeepSleep' |
+  'normalizedAgainst.forAllStats.W' |
+  'normalizedAgainst.forAllStats.N1' |
+  'normalizedAgainst.forAllStats.N2' |
+  'normalizedAgainst.forAllStats.N3' |
+  'normalizedAgainst.forAllStats.R' |
+  'currentStage.forLocalFile' |
+  'currentStage.forAllStats';
+
+const ValueTooltip: React.FC<{ 
+    annotation: LabelContentItem, 
+    selector: ValueSelector,
+}> = ({ annotation }) => {
+    const allSelectors: ValueSelector[] = [
+        'currentStage.forLocalFile',
+        'currentStage.forAllStats',
+        'normalizedAgainst.forLocalFile.All',
+        'normalizedAgainst.forLocalFile.Sleep',
+        'normalizedAgainst.forLocalFile.NonDeepSleep',
+        'normalizedAgainst.forLocalFile.W',
+        'normalizedAgainst.forLocalFile.N1',
+        'normalizedAgainst.forLocalFile.N2',
+        'normalizedAgainst.forLocalFile.N3',
+        'normalizedAgainst.forLocalFile.R',
+        'normalizedAgainst.forAllStats.All',
+        'normalizedAgainst.forAllStats.Sleep',
+        'normalizedAgainst.forAllStats.NonDeepSleep',
+        'normalizedAgainst.forAllStats.W',
+        'normalizedAgainst.forAllStats.N1',
+        'normalizedAgainst.forAllStats.N2',
+        'normalizedAgainst.forAllStats.N3',
+        'normalizedAgainst.forAllStats.R'
+    ];
+
+    const formatLabel = (selector: ValueSelector): string => { 
+        if (selector.startsWith('currentStage')) {
+            return `Current Stage (${annotation.currentEpochStage}) (${selector.includes('Local') ? 'This File' : 'All Files'})`;
+        }
+        const [, source, stage] = selector.split('.');
+        return `${stage} (${source === 'forLocalFile' ? 'This File' : 'All Files'})`;
+    };
+
+    return (
+        <div className="p-2" style={{ minWidth: '800px' }}>
+            <div className="mb-4">
+                <p>Key: {annotation.key}</p>
+                <p>Value: {formatNumber(annotation.value)}</p>
+                <p>Channel: {annotation.channel}</p>
+                <p>Current Epoch: {annotation.currentEpoch}</p>
+                <p>Current Epoch Stage: {annotation.currentEpochStage}</p>
+            </div>
+            <table className="table table-xs table-zebra w-full">
+                <thead>
+                    <tr>
+                        <th className="whitespace-nowrap">Range</th>
+                        <th>Used Min</th>
+                        <th>Used Max</th>
+                        <th>Min</th>
+                        <th>Max</th>
+                        <th className="w-96">Distribution</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {allSelectors.map(selector => {
+                        const normalizedData = selectNormalizedValue(annotation, selector, annotation.currentEpochStage);
+                        return (
+                            <tr key={selector}>
+                                <td className="whitespace-nowrap">{formatLabel(selector)}</td>
+                                <td>{formatNumber(normalizedData.minUsed)}</td>
+                                <td>{formatNumber(normalizedData.maxUsed)}</td>
+                                <td>{formatNumber(normalizedData.actualMin)}</td>
+                                <td>{formatNumber(normalizedData.actualMax)}</td>
+                                <td>
+                                    <div className="relative w-full h-2 bg-gray-200 rounded">
+                                        <div className="absolute h-full rounded" style={{
+                                            width: `${Math.min(100, Math.max(0, ((annotation.value - normalizedData.actualMin) /
+                                                (normalizedData.actualMax - normalizedData.actualMin)) * 100))}%`,
+                                            backgroundColor: normalizedData.color
+                                        }} />
+                                        <div className="absolute h-full border-l border-black" style={{
+                                            left: `${((normalizedData.minUsed - normalizedData.actualMin) /
+                                                (normalizedData.actualMax - normalizedData.actualMin)) * 100}%`
+                                        }} />
+                                        <div className="absolute h-full border-l border-black" style={{
+                                            left: `${((normalizedData.maxUsed - normalizedData.actualMin) /
+                                                (normalizedData.actualMax - normalizedData.actualMin)) * 100}%`
+                                        }} />
+                                    </div>
+                                </td>
+                            </tr>
+                        );
+                    })}
+                </tbody>
+            </table>
         </div>
-        <table className="table-auto border-collapse">
-            <tbody className="text-xs">
-                <tr>
-                    <td className="pr-2">Key:</td>
-                    <td>{annotation.key}</td>
-                </tr>
-                <tr>
-                    <td className="pr-2">Raw Value:</td>
-                    <td>{formatNumber(Number(annotation.value))}</td>
-                </tr>
-                <tr>
-                    <td className="pr-2">Normalized Value:</td>
-                    <td>{formatNumber(Number(annotation.normalizedValue))}</td>
-                </tr>
-                <tr>
-                    <td className="pr-2">{annotation.minUsedLabel}:</td>
-                    <td>{formatNumber(annotation.minUsed)}</td>
-                </tr>
-                <tr>
-                    <td className="pr-2">{annotation.maxUsedLabel}:</td>
-                    <td>{formatNumber(annotation.maxUsed)}</td>
-                </tr>
-                <tr>
-                    <td className="pr-2">Actual Min:</td>
-                    <td>{formatNumber(annotation.actualMin)}</td>
-                </tr>
-                <tr>
-                    <td className="pr-2">Actual Max:</td>
-                    <td>{annotation.actualMax}</td>
-                </tr>
-                <tr>
-                    <td className="pr-2">% of maxUsed:</td>
-                    <td>{formatNumber(((Number(annotation.value) / (annotation.maxUsed || 1)) * 100))}%</td>
-                </tr>
-                <tr>
-                    <td className="pr-2">% of max:</td>
-                    <td>{formatNumber(((Number(annotation.value) / (annotation.actualMax || 1)) * 100))}%</td>
-                </tr>
-                <tr>
-                    <td colSpan={2} className="pt-2">
-                        <div className="relative w-full h-4 bg-gray-200 rounded">
-                            <div className="absolute h-full bg-gray-400 rounded" style={{
-                                zIndex: 100,
-                                left: `${Math.min(100, Math.max(0, ((Number(annotation.minUsed) - (annotation.actualMin || 0)) /
-                                    ((annotation.actualMax || 1) - (annotation.actualMin || 0))) * 100))}%`,
-                                width: '1px'
-                            }} />
-                            <div className="absolute h-full bg-gray-400 rounded" style={{
-                                zIndex: 100,
-                                left: `${Math.min(100, Math.max(0, ((Number(annotation.maxUsed) - (annotation.actualMin || 0)) /
-                                    ((annotation.actualMax || 1) - (annotation.actualMin || 0))) * 100))}%`, 
-                                width: '1px'
-                            }} />
-                            <div className="absolute h-full bg-blue-500 rounded" style={{
-                                width: `${Math.min(100, Math.max(0, ((Number(annotation.value) - (annotation.actualMin || 0)) /
-                                    ((annotation.actualMax || 1) - (annotation.actualMin || 0))) * 100))}%`,
-                                backgroundColor: annotation.color
-                            }} />
-                        </div>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
-    </>
-);
+    );
+};
 
 const CompareTooltip: React.FC<{ annotation: LabelContent[0] }> = ({ annotation }) => (
     <table className="table-auto border-collapse">
@@ -92,38 +127,22 @@ const CompareTooltip: React.FC<{ annotation: LabelContent[0] }> = ({ annotation 
             </tr>
             <tr>
                 <td className="pr-2">Min:</td>
-                <td>{annotation.minUsed} ({annotation.minUsedLabel})</td>
+                <td>{annotation.normalizedAgainst.forAllStats.All.minUsed} ({annotation.normalizedAgainst.forAllStats.All.minUsedLabel})</td>
             </tr>
             <tr>
                 <td className="pr-2">Max:</td>
-                <td>{annotation.maxUsed} ({annotation.maxUsedLabel})</td>
+                <td>{annotation.normalizedAgainst.forAllStats.All.maxUsed} ({annotation.normalizedAgainst.forAllStats.All.maxUsedLabel})</td>
             </tr>
             <tr>
                 <td className="pr-2">Diff:</td>
                 <td>{annotation.diffPercent}%</td>
             </tr>
             <tr>
-                <td className="pr-2">% of maxUsed:</td>
-                <td>{formatNumber(((Number(annotation.compValue) / (annotation.maxUsed || 1)) * 100))}%</td>
-            </tr>
-            <tr>
-                <td className="pr-2">% of max:</td>
-                <td>{formatNumber(((Number(annotation.compValue) / (annotation.actualMax || 1)) * 100))}%</td>
-            </tr>
-            <tr>
                 <td colSpan={2} className="pt-2">
                     <div className="relative w-full h-4 bg-gray-200 rounded">
-                        <div className="absolute h-full bg-gray-400 rounded" style={{
-                            left: '10%',
-                            width: '1px'
-                        }} />
-                        <div className="absolute h-full bg-gray-400 rounded" style={{
-                            left: '90%',
-                            width: '1px'
-                        }} />
                         <div className="absolute h-full bg-blue-500 rounded" style={{
-                            width: `${Math.min(100, Math.max(0, ((Number(annotation.compValue) - (annotation.minUsed || 0)) /
-                                ((annotation.maxUsed || 1) - (annotation.minUsed || 0))) * 100))}%`,
+                            width: `${Math.min(100, Math.max(0, ((Number(annotation.compValue) - annotation.normalizedAgainst.forAllStats.All.minUsed) /
+                                (annotation.normalizedAgainst.forAllStats.All.maxUsed - annotation.normalizedAgainst.forAllStats.All.minUsed)) * 100))}%`,
                             backgroundColor: annotation.compColor
                         }} />
                     </div>
@@ -133,7 +152,6 @@ const CompareTooltip: React.FC<{ annotation: LabelContent[0] }> = ({ annotation 
     </table>
 );
 
-// Add utility function to pair regular and scaled metrics
 const pairMetrics = (annotations: LabelContent) => {
     const pairs: Record<string, { regular: LabelContent[0], scaled?: LabelContent[0] }> = {};
     
@@ -151,94 +169,110 @@ const pairMetrics = (annotations: LabelContent) => {
         }
     });
     
-    return pairs;
+    return pairs;  
+};
+
+const stageToSelector = (stage: string, source: 'forLocalFile' | 'forAllStats'): ValueSelector => {
+    const stageMap: Record<string, ValueSelector> = {
+        'W': `normalizedAgainst.${source}.W`,
+        'N1': `normalizedAgainst.${source}.N1`,
+        'N2': `normalizedAgainst.${source}.N2`,
+        'N3': `normalizedAgainst.${source}.N3`,
+        'R': `normalizedAgainst.${source}.R`
+    } as const;
+    
+    return stageMap[stage] || `normalizedAgainst.${source}.All` as ValueSelector;
+};
+
+const selectNormalizedValue = (item: LabelContentItem, selector: ValueSelector, currentStage: string): NormalizedValue => {
+    if (selector.startsWith('currentStage.') && currentStage) {
+        const source = selector.split('.')[1] as 'forLocalFile' | 'forAllStats';
+        selector = stageToSelector(currentStage, source);
+    }
+    
+    const [base, source, stage] = selector.split('.');
+    return item[base][source][stage];
 };
 
 const MetricRow: React.FC<{ 
-    regular: LabelContent[0], 
-    scaled?: LabelContent[0] 
-}> = ({ regular, scaled }) => (
-    <tr style={{ fontSize: '12px', backgroundColor: 'black', color: 'white' }}>
-        <td className="w-1/8">{regular.key}</td>
-        <td className="w-1/8 text-center">
-            {Number(regular.value) < (regular.minUsed || 0) && '-'}
-        </td>
-        <td className="w-1/8">
-            <div className="flex space-x-1">
-                <Tippy content={<ValueTooltip annotation={regular} />}>
-                    <div className="relative w-24 h-4 bg-gray-200 rounded">
-                        <div className="absolute h-full bg-blue-500 rounded"
-                            style={{
-                                width: `${Math.min(100, Math.max(0, ((Number(regular.value) - (regular.minUsed || 0)) /
-                                    ((regular.maxUsed || 1) - (regular.minUsed || 0))) * 100))}%`,
-                                backgroundColor: regular.color
-                            }} />
-                    </div>
-                </Tippy>
-                {scaled && (
-                    <Tippy content={<ValueTooltip annotation={scaled} />}>
+    regular: LabelContent[0],  
+    scaled?: LabelContent[0],
+    leftSelector: ValueSelector,
+    rightSelector: ValueSelector 
+}> = ({ regular, scaled, leftSelector, rightSelector }) => {
+    const currentStage = regular.currentEpochStage;
+    
+    const getProgressValue = (annotation: LabelContentItem, selector: ValueSelector) => {
+        const normalizedData = selectNormalizedValue(annotation, selector, currentStage);
+        return normalizedData.normalizedValue * 100;
+    };
+
+    return (
+        <tr style={{ fontSize: '12px', backgroundColor: 'black', color: 'white' }}>
+            <td className="w-1/8">{regular.key}</td>
+            <td className="w-1/8">
+                <div className="flex space-x-1">
+                    <Tippy content={<ValueTooltip annotation={regular} selector={leftSelector} />}
+                           maxWidth={1000}
+                           interactive={true}>
                         <div className="relative w-24 h-4 bg-gray-200 rounded">
                             <div className="absolute h-full bg-blue-500 rounded"
                                 style={{
-                                    width: `${Math.min(100, Math.max(0, ((Number(scaled.value) - (scaled.minUsed || 0)) /
-                                        ((scaled.maxUsed || 1) - (scaled.minUsed || 0))) * 100))}%`,
-                                    backgroundColor: scaled.color,
-                                    opacity: 0.5
+                                    width: `${Math.min(100, Math.max(0, getProgressValue(regular, leftSelector)))}%`,
+                                    backgroundColor: selectNormalizedValue(regular, leftSelector, currentStage).color
                                 }} />
                         </div>
                     </Tippy>
-                )}
-            </div>
-        </td>
-        <td className="w-1/8 text-center">
-            {Number(regular.value) > (regular.maxUsed || 1) && '+'}
-        </td>
-        <td className="w-1/8 text-center">
-            {regular.compValue && Number(regular.compValue) < (regular.minUsed || 0) && '-'}
-        </td>
-        <td className="w-1/8">
-            <div className="flex space-x-1">
-                {regular.compValue && (
-                    <Tippy content={<CompareTooltip annotation={regular} />}>
+
+                    <Tippy content={<ValueTooltip annotation={regular} selector={rightSelector} />}
+                           maxWidth={1000}
+                           interactive={true}>
                         <div className="relative w-24 h-4 bg-gray-200 rounded">
                             <div className="absolute h-full bg-blue-500 rounded"
                                 style={{
-                                    width: `${Math.min(100, Math.max(0, ((Number(regular.compValue) - (regular.minUsed || 0)) /
-                                        ((regular.maxUsed || 1) - (regular.minUsed || 0))) * 100))}%`,
-                                    backgroundColor: regular.compColor
+                                    width: `${Math.min(100, Math.max(0, getProgressValue(regular, rightSelector)))}%`,
+                                    backgroundColor: selectNormalizedValue(regular, rightSelector, currentStage).color
                                 }} />
                         </div>
                     </Tippy>
-                )}
-                {scaled && scaled.compValue && (
-                    <Tippy content={<CompareTooltip annotation={scaled} />}>
-                        <div className="relative w-24 h-4 bg-gray-200 rounded">
-                            <div className="absolute h-full bg-blue-500 rounded"
-                                style={{
-                                    width: `${Math.min(100, Math.max(0, ((Number(scaled.compValue) - (scaled.minUsed || 0)) /
-                                        ((scaled.maxUsed || 1) - (scaled.minUsed || 0))) * 100))}%`,
-                                    backgroundColor: scaled.compColor,
-                                    opacity: 0.5
-                                }} />
-                        </div>
-                    </Tippy>
-                )}
-            </div>
-        </td>
-        <td className="w-1/8 text-center">
-            {regular.compValue && Number(regular.compValue) > (regular.maxUsed || 1) && '+'}
-        </td>
-        <td className="w-1/8">
-            {regular.diffPercent && <p style={{ color: regular.diffPercentColor }}>{formatNumber(regular.diffPercent)}%</p>}
-        </td>
-    </tr>
-);
+                </div>
+            </td>
+            <td className="w-1/8 text-center">
+                {regular.value < regular.normalizedAgainst.forAllStats.All.minUsed && '-'}
+            </td>
+            <td className="w-1/8">
+                <div className="flex space-x-1">
+                    {regular.compValue && (
+                        <Tippy content={<CompareTooltip annotation={regular} />}>
+                            <div className="relative w-24 h-4 bg-gray-200 rounded">
+                                <div className="absolute h-full bg-blue-500 rounded"
+                                    style={{
+                                        width: `${Math.min(100, Math.max(0, ((Number(regular.compValue) - regular.normalizedAgainst.forAllStats.All.minUsed) /
+                                            (regular.normalizedAgainst.forAllStats.All.maxUsed - regular.normalizedAgainst.forAllStats.All.minUsed)) * 100))}%`,
+                                        backgroundColor: regular.compColor
+                                    }} />
+                            </div>
+                        </Tippy>
+                    )}
+                </div>
+            </td>
+            <td className="w-1/8 text-center">
+                {regular.compValue && Number(regular.compValue) > regular.normalizedAgainst.forAllStats.All.maxUsed && '+'}
+            </td>
+            <td className="w-1/8">
+                {regular.diffPercent && <p style={{ color: regular.diffPercentColor }}>{formatNumber(regular.diffPercent)}%</p>}
+            </td>
+        </tr>
+    );
+};
 
 const MetricGroup: React.FC<{
     groupName: string,
     annotations: LabelContent,
-    isMostUseful?: boolean
-}> = ({ groupName, annotations, isMostUseful }) => {
+    isMostUseful?: boolean,
+    leftSelector: ValueSelector,
+    rightSelector: ValueSelector
+}> = ({ groupName, annotations, isMostUseful, leftSelector, rightSelector }) => {
     const pairs = pairMetrics(annotations);
     
     return (
@@ -247,23 +281,30 @@ const MetricGroup: React.FC<{
                 <td colSpan={8} className="font-semibold bg-base-200 p-1">{groupName}</td>
             </tr>
             {Object.entries(pairs).map(([key, pair]) => (
-                <MetricRow key={key} regular={pair.regular} scaled={pair.scaled} />
+                <MetricRow 
+                    key={key} 
+                    regular={pair.regular} 
+                    scaled={pair.scaled}
+                    leftSelector={leftSelector}
+                    rightSelector={rightSelector}
+                />
             ))}
         </React.Fragment>
     );
 };
 
-// Extract sorting logic into utility function
 const sortAnnotations = (annotations: LabelContent, sortType: SortType) => {
     if (sortType === 'extremes') {
         return [...annotations].sort((a, b) => {
             const aDistance = Math.max(
-                Math.abs((Number(a.value) - (a.minUsed || 0)) / ((a.maxUsed || 1) - (a.minUsed || 0)) - 0.5),
-                Math.abs((Number(a.compValue || 0) - (a.minUsed || 0)) / ((a.maxUsed || 1) - (a.minUsed || 0)) - 0.5)
+                Math.abs(a.normalizedAgainst.forAllStats.All.normalizedValue - 0.5),
+                Math.abs((Number(a.compValue || 0) - a.normalizedAgainst.forAllStats.All.minUsed) / 
+                    (a.normalizedAgainst.forAllStats.All.maxUsed - a.normalizedAgainst.forAllStats.All.minUsed) - 0.5)
             );
             const bDistance = Math.max(
-                Math.abs((Number(b.value) - (b.minUsed || 0)) / ((b.maxUsed || 1) - (b.minUsed || 0)) - 0.5),
-                Math.abs((Number(b.compValue || 0) - (b.minUsed || 0)) / ((b.maxUsed || 1) - (b.minUsed || 0)) - 0.5)
+                Math.abs(b.normalizedAgainst.forAllStats.All.normalizedValue - 0.5),
+                Math.abs((Number(b.compValue || 0) - b.normalizedAgainst.forAllStats.All.minUsed) /
+                    (b.normalizedAgainst.forAllStats.All.maxUsed - b.normalizedAgainst.forAllStats.All.minUsed) - 0.5)
             );
             return bDistance - aDistance;
         });
@@ -271,7 +312,6 @@ const sortAnnotations = (annotations: LabelContent, sortType: SortType) => {
     return [...annotations];
 };
 
-// Extract grouping logic into utility function
 const groupAnnotations = (annotations: LabelContent) => {
     return annotations.reduce((acc, curr) => {
         const group = curr.mostUseful ? 'Most Useful' : (curr.keyGroup || 'Other');
@@ -291,23 +331,65 @@ const formatNumber = (num: number): string => {
     });
 };
 
+const ValueSelectorDropdown: React.FC<{
+    value: ValueSelector,
+    onChange: (value: ValueSelector) => void
+}> = ({ value, onChange }) => (
+    <select 
+        className="select select-bordered w-64"
+        value={value}
+        onChange={e => onChange(e.target.value as ValueSelector)}
+    >
+        <option value="currentStage.forLocalFile">This file: Current Stage</option>
+        <option value="currentStage.forAllStats">All files: Current Stage</option>
+        <optgroup label="This File">
+            <option value="normalizedAgainst.forLocalFile.All">This file: All Stages</option>
+            <option value="normalizedAgainst.forLocalFile.Sleep">This file: Sleep</option>
+            <option value="normalizedAgainst.forLocalFile.NonDeepSleep">This file: Non Deep Sleep</option>
+            <option value="normalizedAgainst.forLocalFile.W">This file: Wake</option>
+            <option value="normalizedAgainst.forLocalFile.N1">This file: N1</option>
+            <option value="normalizedAgainst.forLocalFile.N2">This file: N2</option>
+            <option value="normalizedAgainst.forLocalFile.N3">This file: N3</option>
+            <option value="normalizedAgainst.forLocalFile.R">This file: REM</option>
+        </optgroup>
+        <optgroup label="All Files">
+            <option value="normalizedAgainst.forAllStats.All">All files: All Stages</option>
+            <option value="normalizedAgainst.forAllStats.Sleep">All files: Sleep</option>
+            <option value="normalizedAgainst.forAllStats.NonDeepSleep">All files: Non Deep Sleep</option>
+            <option value="normalizedAgainst.forAllStats.W">All files: Wake</option>
+            <option value="normalizedAgainst.forAllStats.N1">All files: N1</option>
+            <option value="normalizedAgainst.forAllStats.N2">All files: N2</option>
+            <option value="normalizedAgainst.forAllStats.N3">All files: N3</option>
+            <option value="normalizedAgainst.forAllStats.R">All files: REM</option>
+        </optgroup>
+    </select>
+);
+
 export const MetricsTable: React.FC<MetricsTableProps> = ({ annotations }) => {
     const [sortType, setSortType] = useState<SortType>('default');
+    const [leftSelector, setLeftSelector] = useState<ValueSelector>('currentStage.forAllStats');
+    const [rightSelector, setRightSelector] = useState<ValueSelector>('normalizedAgainst.forAllStats.All');
 
     const sortedAnnotations = sortAnnotations(annotations, sortType);
     const groupedAnnotations = groupAnnotations(sortedAnnotations);
 
     return (
         <div className="overflow-auto h-full">
-            <div className="flex space-x-4 mb-4">
-                <select
-                    className="select select-bordered w-full max-w-xs"
-                    value={sortType}
-                    onChange={(e) => setSortType(e.target.value as SortType)}
-                >
-                    <option value="default">Default Sort</option>
-                    <option value="extremes">Sort by Extremes</option>
-                </select>
+            <div className="flex flex-col space-y-4 mb-4">
+                <div className="flex justify-between items-center">
+                    <select
+                        className="select select-bordered w-48"
+                        value={sortType}
+                        onChange={(e) => setSortType(e.target.value as SortType)}
+                    >
+                        <option value="default">Default Sort</option>
+                        <option value="extremes">Sort by Extremes</option>
+                    </select>
+                </div>
+                <div className="flex justify-between">
+                    <ValueSelectorDropdown value={leftSelector} onChange={setLeftSelector} />
+                    <ValueSelectorDropdown value={rightSelector} onChange={setRightSelector} />
+                </div>
             </div>
 
             <table className="w-full">
@@ -334,16 +416,16 @@ export const MetricsTable: React.FC<MetricsTableProps> = ({ annotations }) => {
                     </tr>
                 </thead>
                 <tbody>
-                    {/* Most Useful group first */}
                     {groupedAnnotations['Most Useful'] && (
                         <MetricGroup 
                             groupName="Most Useful" 
                             annotations={groupedAnnotations['Most Useful']} 
                             isMostUseful={true}
+                            leftSelector={leftSelector}
+                            rightSelector={rightSelector}
                         />
                     )}
 
-                    {/* Other groups */}
                     {Object.entries(groupedAnnotations)
                         .filter(([groupName]) => groupName !== 'Most Useful')
                         .map(([groupName, groupAnnotations]) => (
@@ -351,10 +433,12 @@ export const MetricsTable: React.FC<MetricsTableProps> = ({ annotations }) => {
                                 key={groupName} 
                                 groupName={groupName} 
                                 annotations={groupAnnotations}
+                                leftSelector={leftSelector}
+                                rightSelector={rightSelector}
                             />
                         ))}
                 </tbody>
             </table>
         </div>
     );
-}; 
+};

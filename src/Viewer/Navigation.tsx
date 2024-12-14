@@ -241,7 +241,7 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = ({
 
                     </td>
                     <td>
-                        <FeatureTimeline
+                        {selectedFeature && <FeatureTimeline
                             allData={allData}
                             scrollPosition={scrollPosition}
                             totalSamples={totalSamples}
@@ -250,6 +250,7 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = ({
                             selectedFeature={selectedFeature}
                             channel={channel}
                         />
+                        }
                     </td>
                 </tr>
             ))}

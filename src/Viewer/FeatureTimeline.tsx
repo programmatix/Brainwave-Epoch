@@ -35,7 +35,7 @@ export const FeatureTimeline: React.FC<FeatureTimelineProps> = ({
             <svg width={width} height="15" onClick={handleClick}>
                 {allData.sleepStages?.map((stage, index) => {
                     const featureValue = stage.Channels[channel]?.[selectedFeature];
-                    const minMax = allData.sleepStageFeatureMinMax?.[selectedFeature];
+                    const minMax = allData.sleepStageFeatureMinMax?.[selectedFeature][channel].forLocalFile.All;
                     const color = minMax ? getColorForValueFromMinMax(featureValue, minMax) : 'gray';
                     return (
                         <rect

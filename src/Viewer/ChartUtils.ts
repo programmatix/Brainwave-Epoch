@@ -1,21 +1,58 @@
 import { Temporal } from "@js-temporal/polyfill";
 import { AllData, FeatureMinMax } from "../Loader/LoaderTypes";
+import { EpochAnnotation } from "./EEGChartAnnotations";
 
 export type KeyGroup = 'Relative bandpowers' | 'Relative bandpowers derived' | 'Absolute bandpowers' | 'Absolute bandpowers derived' | 'Power' | 'Derived' | 'Complexity' | 'Other' | 'Symmetry';
 
-export type LabelContentItem = {
-    key: string;
-    // The actual value, not normalized
-    value: string | number;
-    // The normalized value, between 10 and 90%
-    normalizedValue?: string | number;
+export type NormalizedValue = {
+    // The normalized value, between minUsed and maxUsed
+    normalizedValue?: number;
+
+    // Usually P10 and P90
     minUsed?: number;
     minUsedLabel?: string;
     maxUsed?: number;
     maxUsedLabel?: string;
+
     actualMax?: number;
     actualMin?: number;
+
     color?: string;
+}
+
+export type LabelContentItem = {
+    channel: string,
+    currentEpoch: number,
+    currentEpochStage: string,
+
+    key: string;
+    // The actual value, not normalized
+    value: number;
+
+    normalizedAgainst: {
+        forLocalFile: {
+            All: NormalizedValue;
+            Sleep: NormalizedValue;
+            NonDeepSleep: NormalizedValue;
+            W: NormalizedValue;
+            N1: NormalizedValue;
+            N2: NormalizedValue;
+            N3: NormalizedValue;
+            R: NormalizedValue;
+        };
+        // Looking at min-max values from stats.csv e.g. all files
+        forAllStats: {
+            All: NormalizedValue;
+            Sleep: NormalizedValue;
+            NonDeepSleep: NormalizedValue;
+            W: NormalizedValue;
+            N1: NormalizedValue;
+            N2: NormalizedValue;
+            N3: NormalizedValue;
+            R: NormalizedValue;
+        };
+    }
+
     compValue?: string | number;
     compColor?: string;
     diffPercent?: number;
@@ -37,7 +74,7 @@ export function getColorForValueFromMinMax(value: number, minMax: FeatureMinMax)
     return getColorForValue(value, minMax.p10, minMax.p90);
 }
 
-export function createLabelCanvas(content: LabelContent, width: number, height: number): HTMLCanvasElement {
+export function createLabelCanvas(content: EpochAnnotation[], width: number, height: number): HTMLCanvasElement {
     const canvas = document.createElement('canvas');
     canvas.width = width;
     canvas.height = height;
@@ -53,21 +90,16 @@ export function createLabelCanvas(content: LabelContent, width: number, height: 
     const keyWidth = Math.max(...content.map(({ key }) => ctx.measureText(key + ':').width));
 
     let y = 5;
-    content.forEach(({ key, value, color, compValue, compColor, diffPercent, diffPercentColor }) => {
+    content.forEach(({ key, value, compValue }) => {
         ctx.fillStyle = 'black';
         ctx.fillText(key, 5, y);
 
-        ctx.fillStyle = color || 'black';
+        ctx.fillStyle = 'black';
         ctx.fillText(value.toString(), keyWidth + 10, y);
 
         if (compValue !== undefined) {
-            ctx.fillStyle = compColor || 'black';
+            ctx.fillStyle = 'black';
             ctx.fillText(`vs ${compValue.toString()}`, keyWidth + 100, y);
-        }
-
-        if (diffPercent !== undefined) {
-            ctx.fillStyle = diffPercentColor || 'black';
-            ctx.fillText(diffPercent.toFixed(0) + '%', keyWidth + 200, y);
         }
 
         y += 15;
