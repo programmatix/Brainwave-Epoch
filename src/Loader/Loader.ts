@@ -253,7 +253,11 @@ export function setupFileMenu(onFileLoad: (filePath: string) => Promise<void>) {
     fileMenu.append(new window.nw.MenuItem({
         label: 'New Window',
         click: () => {
-            window.nw.Window.open('index.html', { icon: './logo512.png' });
+            const baseUri = process.env.NWJS_START_URL 
+                ? process.env.NWJS_START_URL.trim()
+                : `${window.location.origin}/build/`;
+            const startUri = `${baseUri}/index.html`;
+            window.nw.Window.open(startUri, { icon: './build/logo512.png' });
         }
     }));
 
@@ -303,6 +307,7 @@ export async function readScorings(filePath: string): Promise<{ scorings: Scorin
 export async function loadFiles(edfPath: string): Promise<AllData> {
     const start = performance.now();
     loaderEvents.emit('log', `${new Date().toISOString()}: Starting to load files`);
+    window.nw.Window.get().title = edfPath;
 
     const sleepStagesPath = edfPath.replace('.edf', '.with_features.csv');
     const postHumansStagesPath = edfPath.replace('.edf', '.post_human.csv');
@@ -544,69 +549,59 @@ async function readStats(sleepStatsPath: string): Promise<{ [key: string]: Stats
     try {
         const response = await fetch(sleepStatsPath);
         const text = await response.text();
-        const rows = text.split('\n').slice(1); // Skip header
+        const lines = text.split('\n');
+        const headerLine = lines[0];
+        const rows = lines.slice(1);
+
+        const headerColumns = headerLine.split(',');
+        const columnIndexes = headerColumns.reduce((acc, col, i) => {
+            acc[col] = i;
+            return acc;
+        }, {} as {[key: string]: number});
 
         const stats: { [key: string]: StatsCSVRow } = {};
 
         rows.forEach(row => {
             if (!row.trim()) return;
-            const [_, column, ...values] = row.split(',');
-            const numericValues = values.map(v => parseFloat(v));
+            const values = row.split(',');
+            const column = values[columnIndexes['Column']];
 
             stats[column] = {
                 Column: column,
-                Mean: numericValues[0],
-                P10: numericValues[1],
-                P90: numericValues[2],
-                Min: numericValues[3],
-                Max: numericValues[4],
-                StdDev: numericValues[5],
-                W_Mean: numericValues[6],
-                W_P10: numericValues[7],
-                W_P90: numericValues[8],
-                W_Min: numericValues[9],
-                W_Max: numericValues[10],
-                W_StdDev: numericValues[11],
-                N1_Mean: numericValues[12],
-                N1_P10: numericValues[13],
-                N1_P90: numericValues[14],
-                N1_Min: numericValues[15],
-                N1_Max: numericValues[16],
-                N1_StdDev: numericValues[17],
-                N2_Mean: numericValues[18],
-                N2_P10: numericValues[19],
-                N2_P90: numericValues[20],
-                N2_Min: numericValues[21],
-                N2_Max: numericValues[22],
-                N2_StdDev: numericValues[23],
-                N3_Mean: numericValues[24],
-                N3_P10: numericValues[25],
-                N3_P90: numericValues[26],
-                N3_Min: numericValues[27],
-                N3_Max: numericValues[28],
-                N3_StdDev: numericValues[29],
-                R_Mean: numericValues[30],
-                R_P10: numericValues[31],
-                R_P90: numericValues[32],
-                R_Min: numericValues[33],
-                R_Max: numericValues[34],
-                R_StdDev: numericValues[35],
-                Sleep_Mean: numericValues[36],
-                Sleep_P10: numericValues[37],
-                Sleep_P90: numericValues[38],
-                Sleep_Min: numericValues[39],
-                Sleep_Max: numericValues[40],
-                Sleep_StdDev: numericValues[41],
-                NonDeepSleep_Mean: numericValues[42],
-                NonDeepSleep_P10: numericValues[43],
-                NonDeepSleep_P90: numericValues[44],
-                NonDeepSleep_Min: numericValues[45],
-                NonDeepSleep_Max: numericValues[46],
-                NonDeepSleep_StdDev: numericValues[47],
+                P10: parseFloat(values[columnIndexes['P10']]),
+                P90: parseFloat(values[columnIndexes['P90']]),
+                Min: parseFloat(values[columnIndexes['Min']]),
+                Max: parseFloat(values[columnIndexes['Max']]),
+                W_P10: parseFloat(values[columnIndexes['W_P10']]),
+                W_P90: parseFloat(values[columnIndexes['W_P90']]),
+                W_Min: parseFloat(values[columnIndexes['W_Min']]),
+                W_Max: parseFloat(values[columnIndexes['W_Max']]),
+                N1_P10: parseFloat(values[columnIndexes['N1_P10']]),
+                N1_P90: parseFloat(values[columnIndexes['N1_P90']]),
+                N1_Min: parseFloat(values[columnIndexes['N1_Min']]),
+                N1_Max: parseFloat(values[columnIndexes['N1_Max']]),
+                N2_P10: parseFloat(values[columnIndexes['N2_P10']]),
+                N2_P90: parseFloat(values[columnIndexes['N2_P90']]),
+                N2_Min: parseFloat(values[columnIndexes['N2_Min']]),
+                N2_Max: parseFloat(values[columnIndexes['N2_Max']]),
+                N3_P10: parseFloat(values[columnIndexes['N3_P10']]),
+                N3_P90: parseFloat(values[columnIndexes['N3_P90']]),
+                N3_Min: parseFloat(values[columnIndexes['N3_Min']]),
+                N3_Max: parseFloat(values[columnIndexes['N3_Max']]),
+                R_P10: parseFloat(values[columnIndexes['R_P10']]),
+                R_P90: parseFloat(values[columnIndexes['R_P90']]),
+                R_Min: parseFloat(values[columnIndexes['R_Min']]),
+                R_Max: parseFloat(values[columnIndexes['R_Max']]),
+                Sleep_P10: parseFloat(values[columnIndexes['Sleep_P10']]),
+                Sleep_P90: parseFloat(values[columnIndexes['Sleep_P90']]),
+                Sleep_Min: parseFloat(values[columnIndexes['Sleep_Min']]),
+                Sleep_Max: parseFloat(values[columnIndexes['Sleep_Max']]),
+                NonDeepSleep_P10: parseFloat(values[columnIndexes['NonDeepSleep_P10']]),
+                NonDeepSleep_P90: parseFloat(values[columnIndexes['NonDeepSleep_P90']]),
+                NonDeepSleep_Min: parseFloat(values[columnIndexes['NonDeepSleep_Min']]),
+                NonDeepSleep_Max: parseFloat(values[columnIndexes['NonDeepSleep_Max']])
             };
         });
-
-        console.log(`stats`, stats);
 
         return stats;
     } catch (error) {

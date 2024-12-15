@@ -27,39 +27,46 @@ type ValueSelector =
   'normalizedAgainst.forAllStats.N3' |
   'normalizedAgainst.forAllStats.R' |
   'currentStage.forLocalFile' |
-  'currentStage.forAllStats';
+  'currentStage.forAllStats' |
+  'currentBroadStage.forLocalFile' |
+  'currentBroadStage.forAllStats';
 
 const ValueTooltip: React.FC<{ 
     annotation: LabelContentItem, 
     selector: ValueSelector,
 }> = ({ annotation }) => {
     const allSelectors: ValueSelector[] = [
-        'currentStage.forLocalFile',
         'currentStage.forAllStats',
-        'normalizedAgainst.forLocalFile.All',
-        'normalizedAgainst.forLocalFile.Sleep',
-        'normalizedAgainst.forLocalFile.NonDeepSleep',
-        'normalizedAgainst.forLocalFile.W',
-        'normalizedAgainst.forLocalFile.N1',
-        'normalizedAgainst.forLocalFile.N2',
-        'normalizedAgainst.forLocalFile.N3',
-        'normalizedAgainst.forLocalFile.R',
+        'currentBroadStage.forAllStats',
         'normalizedAgainst.forAllStats.All',
-        'normalizedAgainst.forAllStats.Sleep',
+        'normalizedAgainst.forAllStats.Sleep', 
         'normalizedAgainst.forAllStats.NonDeepSleep',
         'normalizedAgainst.forAllStats.W',
         'normalizedAgainst.forAllStats.N1',
         'normalizedAgainst.forAllStats.N2',
         'normalizedAgainst.forAllStats.N3',
-        'normalizedAgainst.forAllStats.R'
+        'normalizedAgainst.forAllStats.R',
+        'currentStage.forLocalFile',
+        'currentBroadStage.forLocalFile',
+        'normalizedAgainst.forLocalFile.All',
+        'normalizedAgainst.forLocalFile.Sleep',
+        'normalizedAgainst.forLocalFile.NonDeepSleep', 
+        'normalizedAgainst.forLocalFile.W',
+        'normalizedAgainst.forLocalFile.N1',
+        'normalizedAgainst.forLocalFile.N2',
+        'normalizedAgainst.forLocalFile.N3',
+        'normalizedAgainst.forLocalFile.R'
     ];
 
-    const formatLabel = (selector: ValueSelector): string => { 
+    const formatLabel = (selector: ValueSelector): string => {
         if (selector.startsWith('currentStage')) {
-            return `Current Stage (${annotation.currentEpochStage}) (${selector.includes('Local') ? 'This File' : 'All Files'})`;
+            return `Current Stage (${annotation.currentEpochStage})`;
         }
-        const [, source, stage] = selector.split('.');
-        return `${stage} (${source === 'forLocalFile' ? 'This File' : 'All Files'})`;
+        if (selector.startsWith('currentBroadStage')) {
+            return `Current Broad Stage (${annotation.currentEpochStage})`;
+        }
+        const [, , stage] = selector.split('.');
+        return stage;
     };
 
     return (
@@ -70,11 +77,12 @@ const ValueTooltip: React.FC<{
                 <p>Channel: {annotation.channel}</p>
                 <p>Current Epoch: {annotation.currentEpoch}</p>
                 <p>Current Epoch Stage: {annotation.currentEpochStage}</p>
+                <p>Current Broad Epoch Stage: {stageToBroadStage(annotation.currentEpochStage)}</p>
             </div>
             <table className="table table-xs table-zebra w-full">
                 <thead>
                     <tr>
-                        <th className="whitespace-nowrap">Range</th>
+                        <th className="whitespace-nowrap"></th>
                         <th>Used Min</th>
                         <th>Used Max</th>
                         <th>Min</th>
@@ -83,7 +91,42 @@ const ValueTooltip: React.FC<{
                     </tr>
                 </thead>
                 <tbody>
-                    {allSelectors.map(selector => {
+                    <tr>
+                        <td colSpan={6} className="font-bold bg-base-200">All Files</td>
+                    </tr>
+                    {allSelectors.filter(s => s.includes('forAllStats')).map(selector => {
+                        const normalizedData = selectNormalizedValue(annotation, selector, annotation.currentEpochStage);
+                        return (
+                            <tr key={selector}>
+                                <td className="whitespace-nowrap">{formatLabel(selector)}</td>
+                                <td>{formatNumber(normalizedData.minUsed)}</td>
+                                <td>{formatNumber(normalizedData.maxUsed)}</td>
+                                <td>{formatNumber(normalizedData.actualMin)}</td>
+                                <td>{formatNumber(normalizedData.actualMax)}</td>
+                                <td>
+                                    <div className="relative w-full h-2 bg-gray-200 rounded">
+                                        <div className="absolute h-full rounded" style={{
+                                            width: `${Math.min(100, Math.max(0, ((annotation.value - normalizedData.actualMin) /
+                                                (normalizedData.actualMax - normalizedData.actualMin)) * 100))}%`,
+                                            backgroundColor: normalizedData.color
+                                        }} />
+                                        <div className="absolute h-full border-l border-black" style={{
+                                            left: `${((normalizedData.minUsed - normalizedData.actualMin) /
+                                                (normalizedData.actualMax - normalizedData.actualMin)) * 100}%`
+                                        }} />
+                                        <div className="absolute h-full border-l border-black" style={{
+                                            left: `${((normalizedData.maxUsed - normalizedData.actualMin) /
+                                                (normalizedData.actualMax - normalizedData.actualMin)) * 100}%`
+                                        }} />
+                                    </div>
+                                </td>
+                            </tr>
+                        );
+                    })}
+                    <tr>
+                        <td colSpan={6} className="font-bold bg-base-200">This File</td>
+                    </tr>
+                    {allSelectors.filter(s => s.includes('forLocalFile')).map(selector => {
                         const normalizedData = selectNormalizedValue(annotation, selector, annotation.currentEpochStage);
                         return (
                             <tr key={selector}>
@@ -172,7 +215,23 @@ const pairMetrics = (annotations: LabelContent) => {
     return pairs;  
 };
 
-const stageToSelector = (stage: string, source: 'forLocalFile' | 'forAllStats'): ValueSelector => {
+const stageToBroadStage = (stage: string): string => {
+    const broadStageMap: Record<string, string> = {
+        'W': 'W',
+        'N1': 'NonDeepSleep',
+        'N2': 'NonDeepSleep',
+        'N3': 'Sleep',
+        'R': 'NonDeepSleep'
+    } as const;
+    return broadStageMap[stage] || 'All' as string;
+};
+
+const stageToSelector = (stage: string, source: 'forLocalFile' | 'forAllStats', isBroad: boolean = false): ValueSelector => {
+    if (isBroad) {
+        const broadStage = stageToBroadStage(stage);
+        return `normalizedAgainst.${source}.${broadStage}` as ValueSelector;
+    }
+
     const stageMap: Record<string, ValueSelector> = {
         'W': `normalizedAgainst.${source}.W`,
         'N1': `normalizedAgainst.${source}.N1`,
@@ -185,9 +244,10 @@ const stageToSelector = (stage: string, source: 'forLocalFile' | 'forAllStats'):
 };
 
 const selectNormalizedValue = (item: LabelContentItem, selector: ValueSelector, currentStage: string): NormalizedValue => {
-    if (selector.startsWith('currentStage.') && currentStage) {
+    if (selector.startsWith('currentStage.') || selector.startsWith('currentBroadStage.')) {
         const source = selector.split('.')[1] as 'forLocalFile' | 'forAllStats';
-        selector = stageToSelector(currentStage, source);
+        const isBroad = selector.startsWith('currentBroadStage.');
+        selector = stageToSelector(currentStage, source, isBroad);
     }
     
     const [base, source, stage] = selector.split('.');
@@ -342,6 +402,8 @@ const ValueSelectorDropdown: React.FC<{
     >
         <option value="currentStage.forLocalFile">This file: Current Stage</option>
         <option value="currentStage.forAllStats">All files: Current Stage</option>
+        <option value="currentBroadStage.forLocalFile">This file: Current Broad Stage</option>
+        <option value="currentBroadStage.forAllStats">All files: Current Broad Stage</option>
         <optgroup label="This File">
             <option value="normalizedAgainst.forLocalFile.All">This file: All Stages</option>
             <option value="normalizedAgainst.forLocalFile.Sleep">This file: Sleep</option>
@@ -368,7 +430,7 @@ const ValueSelectorDropdown: React.FC<{
 export const MetricsTable: React.FC<MetricsTableProps> = ({ annotations }) => {
     const [sortType, setSortType] = useState<SortType>('default');
     const [leftSelector, setLeftSelector] = useState<ValueSelector>('currentStage.forAllStats');
-    const [rightSelector, setRightSelector] = useState<ValueSelector>('normalizedAgainst.forAllStats.All');
+    const [rightSelector, setRightSelector] = useState<ValueSelector>('currentBroadStage.forAllStats');
 
     const sortedAnnotations = sortAnnotations(annotations, sortType);
     const groupedAnnotations = groupAnnotations(sortedAnnotations);

@@ -71,7 +71,7 @@ export const AppEEG: React.FC = () => {
                 <div className="h-full">
                     {isLoading ? (
                         <div className="flex justify-center items-center h-full">
-                            <div className="loading loading-spinner loading-lg"></div>
+                            <div className="loading loading-spinner loading-lg">Loading...</div>
                         </div>
                     ) : allData && (
                         <ErrorBoundary>

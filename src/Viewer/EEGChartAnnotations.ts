@@ -110,16 +110,6 @@ export function generateAnnotationsForLeft(
         const value = channelData[key as keyof ProcessedSleepStageEntryFeatures];
         if (typeof value === 'number') {
             const minMax = allData.sleepStageFeatureMinMax[signal.label][key as keyof ProcessedSleepStageEntryFeatures];
-            const normalizedValue: NormalizedValue = {
-                normalizedValue: ((value - minMax.forAllStats.All.p10) / (minMax.forAllStats.All.p90 - minMax.forAllStats.All.p10)),
-                minUsed: minMax.forAllStats.All.p10,
-                minUsedLabel: '10%', 
-                maxUsed: minMax.forAllStats.All.p90,
-                maxUsedLabel: '90%',
-                actualMin: minMax.forAllStats.All.min,
-                actualMax: minMax.forAllStats.All.max,
-                color: getColorForValueFromMinMax(value, minMax.forAllStats.All)
-            };
 
             const compValue = compareEpoch !== null ? allData.sleepStages[compareEpoch]?.Channels[signal.label][key as keyof ProcessedSleepStageEntryFeatures] : undefined;
             const compColor = compValue !== undefined ? getColorForValueFromMinMax(compValue as number, minMax.forAllStats.All) : undefined;
@@ -136,7 +126,7 @@ export function generateAnnotationsForLeft(
                 value: value,
                 normalizedAgainst: {
                     forLocalFile: {
-                        All: normalizedValue,
+                        All: createNormalizedValue(value, minMax.forLocalFile.All),
                         Sleep: createNormalizedValue(value, minMax.forLocalFile.Sleep),
                         NonDeepSleep: createNormalizedValue(value, minMax.forLocalFile.NonDeepSleep),
                         W: createNormalizedValue(value, minMax.forLocalFile.W),
@@ -146,7 +136,7 @@ export function generateAnnotationsForLeft(
                         R: createNormalizedValue(value, minMax.forLocalFile.R)
                     },
                     forAllStats: {
-                        All: normalizedValue,
+                        All: createNormalizedValue(value, minMax.forAllStats.All),
                         Sleep: createNormalizedValue(value, minMax.forAllStats.Sleep),
                         NonDeepSleep: createNormalizedValue(value, minMax.forAllStats.NonDeepSleep),
                         W: createNormalizedValue(value, minMax.forAllStats.W),
@@ -171,6 +161,18 @@ export function generateAnnotationsForLeft(
 }
 
 function createNormalizedValue(value: number, minMax: FeatureMinMax): NormalizedValue {
+    if (!minMax) { 
+        return {
+            normalizedValue: -999,
+            minUsed: -999,
+            minUsedLabel: 'N/A',
+            maxUsed: -999,
+            maxUsedLabel: 'N/A',
+            actualMin: -999,
+            actualMax: -999,
+            color: 'red'
+        }
+    }
     return {
         normalizedValue: ((value - minMax.p10) / (minMax.p90 - minMax.p10)),
         minUsed: minMax.p10,
