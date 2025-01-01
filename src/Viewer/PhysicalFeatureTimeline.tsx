@@ -2,24 +2,22 @@ import React from 'react';
 import { AllData, ProcessedSleepStages } from '../Loader/LoaderTypes';
 import { getColorForValue, getColorForValueFromMinMax } from './ChartUtils';
 
-interface FeatureTimelineProps {
+interface PhysicalFeatureTimelineProps {
     allData: AllData;
     scrollPosition: number;
     totalSamples: number;
     width: number;
     onTimelineClick: (position: number) => void;
     selectedFeature: string;
-    channel: string;
 }
 
-export const FeatureTimeline: React.FC<FeatureTimelineProps> = ({
+export const PhysicalFeatureTimeline: React.FC<PhysicalFeatureTimelineProps> = ({
     allData,
     scrollPosition,
-    totalSamples,  
+    totalSamples,
     width,
     onTimelineClick,
     selectedFeature,
-    channel,
 }) => {
     const handleClick = (e: React.MouseEvent<SVGSVGElement>) => {
         const rect = e.currentTarget.getBoundingClientRect();
@@ -34,9 +32,7 @@ export const FeatureTimeline: React.FC<FeatureTimelineProps> = ({
         <div>
             <svg width={width} height="15" onClick={handleClick}>
                 {allData.sleepStages?.map((stage, index) => {
-                    const featureValue = stage.Channels[channel]?.[selectedFeature];
-                    const minMax = allData.sleepStageFeatureMinMax?.[channel][selectedFeature].forLocalFile.All;
-                    const color = minMax ? getColorForValueFromMinMax(featureValue, minMax) : 'gray';
+                    const featureValue = stage.physicalFeatures?.[selectedFeature];
                     return (
                         <rect
                             key={index}
@@ -44,7 +40,7 @@ export const FeatureTimeline: React.FC<FeatureTimelineProps> = ({
                             y="0"
                             width={(1 / allData.sleepStages.length) * width}
                             height="15"
-                            fill={color}
+                            fill={'blue'}
                         />
                     );
                 })}

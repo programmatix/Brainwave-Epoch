@@ -2,7 +2,7 @@ import { Temporal } from "@js-temporal/polyfill";
 import { AllData, FeatureMinMax } from "../Loader/LoaderTypes";
 import { EpochAnnotation } from "./EEGChartAnnotations";
 
-export type KeyGroup = 'Relative bandpowers' | 'Relative bandpowers derived' | 'Absolute bandpowers' | 'Absolute bandpowers derived' | 'Power' | 'Derived' | 'Complexity' | 'Other' | 'Symmetry';
+export type KeyGroup = 'Relative bandpowers' | 'Relative bandpowers derived' | 'Absolute bandpowers' | 'Absolute bandpowers derived' | 'Power' | 'Derived' | 'Complexity' | 'Other' | 'Symmetry' | 'Frequency';
 
 export type NormalizedValue = {
     // The normalized value, between minUsed and maxUsed

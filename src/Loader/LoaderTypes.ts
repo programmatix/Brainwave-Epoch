@@ -175,6 +175,12 @@ export type ProcessedSleepStageEntry = {
     SettlingTiredVsWiredPrediction?: number;
     SettlingManualScore?: number;
     SettlingEventVersion?: string;
+    physicalFeatures?: {
+        [key: string]: number;
+    };
+    finalWakeModel?: {
+        [key: string]: number;
+    };
 };
 
 export type ProcessedSleepStages = ProcessedSleepStageEntry[];

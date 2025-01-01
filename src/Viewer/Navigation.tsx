@@ -18,6 +18,8 @@ import { MarksTimeline } from './MarksTimeline';
 import { MicrowakingsTimeline } from './MicrowakingsTimeline';
 import { VideoTimeline } from '../Videos/VideoTimeline';
 import { StageTimeline } from './StageTimeline';
+import { PhysicalFeatureTimeline } from './PhysicalFeatureTimeline';
+import { FinalWakeModelFeatureTimeline } from './FinalWakeModelFeatureTimeline';
 
 interface TimelineNavigationProps {
     allData: AllData;
@@ -40,6 +42,8 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = ({
 }) => {
     const [epochInput, setEpochInput] = useState('');
     const [selectedFeature, setSelectedFeature] = useState<string>('');
+    const [selectedPhysicalFeature, setSelectedPhysicalFeature] = useState<string>('');
+    const [selectedFinalWakeModelFeature, setSelectedFinalWakeModelFeature] = useState<string>('');
     const { scorings, marks } = useStore((state: StoreState) => ({
         scorings: state.scorings,
         marks: state.marks,
@@ -218,10 +222,10 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = ({
                         totalSamples={totalSamples}
                         width={TIMELINE_WIDTH}
                         onTimelineClick={handleTimelineClick}
-                    />
+                    /> 
                 </td>
             </tr>}
-            {Object.keys(allData.sleepStages?.[0]?.Channels || {}).map((channel, index) => (
+            {Object.keys(allData.sleepStages?.[0]?.Channels || {}).filter(channel => channel !== 'Aggregated').map((channel, index) => (
                 <tr key={`feature-${channel}`}>
                     <td>Feature Timeline {channel}
 
@@ -254,6 +258,68 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = ({
                     </td>
                 </tr>
             ))}
+            {/* {Object.keys(allData.sleepStages?.[0]?.finalWakeModel || {}).map((feature, index) => ( */}
+                <tr>
+                    <td>Final Wake Model
+
+                        {/* {index == 0 && <div className="flex items-center space-x-2 mb-2">
+                            <select
+                                value={selectedFinalWakeModelFeature}
+                                onChange={(e) => setSelectedFinalWakeModelFeature(e.target.value)}
+                                className="select select-bordered w-full max-w-xs"
+                            >
+                                {Object.keys(allData.sleepStages?.[0]?.finalWakeModel || {}).map((feature) => (
+                                    <option key={feature} value={feature}>
+                                        {feature}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>} */}
+
+                    </td>
+                    <td>
+                        <FinalWakeModelFeatureTimeline
+                            allData={allData}
+                            scrollPosition={scrollPosition}
+                            totalSamples={totalSamples}
+                            width={TIMELINE_WIDTH}
+                            onTimelineClick={handleTimelineClick}
+                        />
+                    </td>
+                </tr>
+            {/* ))} */}
+            {/* {Object.keys(allData.sleepStages?.[0]?.physicalFeatures || {}).map((feature, index) => (
+                <tr key={`feature-${feature}`}>
+                    <td>Feature Timeline {feature}
+
+                        {index == 0 && <div className="flex items-center space-x-2 mb-2">
+                            <select
+                                value={selectedPhysicalFeature}
+                                onChange={(e) => setSelectedPhysicalFeature(e.target.value)}
+                                className="select select-bordered w-full max-w-xs"
+                            >
+                                {Object.keys(allData.sleepStages?.[0]?.physicalFeatures || {}).map((feature) => (
+                                    <option key={feature} value={feature}>
+                                        {feature}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>}
+
+                    </td>
+                    <td>
+                        {selectedPhysicalFeature && <PhysicalFeatureTimeline
+                            allData={allData}
+                            scrollPosition={scrollPosition}
+                            totalSamples={totalSamples}
+                            width={TIMELINE_WIDTH}
+                            onTimelineClick={handleTimelineClick}
+                            selectedFeature={selectedPhysicalFeature}
+                        />
+                        }
+                    </td>
+                </tr>
+            ))} */}
             {allData.sleepStages && <tr>
                 <td>Aggregated YASA Hypnogram</td>
                 <td>

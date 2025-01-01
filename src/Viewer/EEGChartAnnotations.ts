@@ -60,25 +60,18 @@ export function getOrderedKeys(channelData: any): string[] {
     }
 
     const orderedKeys = ["eeg_sdelta", "eeg_fdelta", "eeg_theta", "eeg_alpha", "eeg_sigma", "eeg_beta",
-        "eeg_sdeltaabs", "eeg_fdeltaabs", "eeg_thetaabs", "eeg_alphaabs", "eeg_betaabs",
-        "eeg_sdeltaabs_s", "eeg_fdeltaabs_s", "eeg_thetaabs_s", "eeg_alphaabs_s", "eeg_betaabs_s",
-        "eeg_sdelta_s", "eeg_fdelta_s", "eeg_theta_s", "eeg_alpha_s", "eeg_beta_s",
-        "eeg_sdelta_s", "eeg_fdelta_s", "eeg_theta_s", "eeg_alpha_s", "eeg_beta_s",
-        "eeg_fdeltaab", "eeg_thetaab", "eeg_alphaab", "eeg_betaab", "eeg_fdeltaaa", "eeg_thetaaa", "eeg_alphaaa", "eeg_betaaa",
-        "eeg_fdeltaab_s", "eeg_thetaab_s", "eeg_alphaab_s", "eeg_betaab_s", "eeg_fdeltaaa_s", "eeg_thetaaa_s", "eeg_alphaaa_s", "eeg_betaaa_s"
+        "eeg_sdeltaabs", "eeg_fdeltaabs", "eeg_thetaabs", "eeg_alphaabs", "eeg_sigmaabs", "eeg_betaabs",
+        "eeg_sdeltaabs_s", "eeg_fdeltaabs_s", "eeg_thetaabs_s", "eeg_alphaabs_s", "eeg_sigmaabs_s", "eeg_betaabs_s",
+        "eeg_sdelta_s", "eeg_fdelta_s", "eeg_theta_s", "eeg_alpha_s", "eeg_sigma_s", "eeg_beta_s",
+        "eeg_sdelta_s", "eeg_fdelta_s", "eeg_theta_s", "eeg_alpha_s", "eeg_sigma_s", "eeg_beta_s",
+        "eeg_fdeltaab", "eeg_thetaab", "eeg_alphaab", "eeg_betaab", "eeg_fdeltaaa", "eeg_thetaaa", "eeg_alphaaa", "eeg_sigmaaa", "eeg_betaaa",
+        "eeg_fdeltaab_s", "eeg_thetaab_s", "eeg_alphaab_s", "eeg_betaab_s", "eeg_fdeltaaa_s", "eeg_thetaaa_s", "eeg_alphaaa_s", "eeg_sigmaaa_s", "eeg_betaaa_s"
     ];
     const allKeys = new Set([...orderedKeys, ...Object.keys(channelData).filter(key => key.includes('eeg_'))]);
 
     const out = Array.from(allKeys).filter(key =>
         !key.includes('p2') &&
-        !key.includes('c7') &&
-        !key.includes('eeg_db') &&
-        !key.includes('eeg_ds') &&
-        !key.includes('eeg_dt') &&
-        !key.includes('eeg_hcomp') &&
-        !key.includes('eeg_hmob') &&
-        !key.includes('eeg_sigma') &&
-        !key.includes('eeg_std')
+        !key.includes('c7')
     );
 
     return out;
@@ -189,19 +182,22 @@ function groupKey(key: string): { keyGroup: KeyGroup, scaled: boolean, mostUsefu
     // Not sure if scaled makes sense anymore given I've added scaling against all the NormalizedValues
     const scaled = key.endsWith("_s");
 
-    if (key.includes('eeg_sdeltaabs') || key.includes('eeg_fdeltaabs') || key.includes('eeg_thetaabs') || key.includes('eeg_alphaabs') || key.includes('eeg_betaabs')) {
+    if (key.includes('eeg_sdeltaabs') || key.includes('eeg_fdeltaabs') || key.includes('eeg_thetaabs') || key.includes('eeg_alphaabs') || key.includes('eeg_sigmaabs') || key.includes('eeg_betaabs')) {
         if (key.includes('absab') || key.includes('absaa')) {
             return { keyGroup: 'Absolute bandpowers derived', scaled, mostUseful: false };
         }
         return { keyGroup: 'Absolute bandpowers', scaled, mostUseful: false };
     }
-    if (key.includes('eeg_sdelta') || key.includes('eeg_fdelta') || key.includes('eeg_theta') || key.includes('eeg_alpha') || key.includes('eeg_beta')) {
+    if (key.includes('eeg_sdelta') || key.includes('eeg_fdelta') || key.includes('eeg_theta') || key.includes('eeg_alpha') || key.includes('eeg_sigma') || key.includes('eeg_beta')) {
         if (key.includes('ab') || key.includes('aa')) {
             return { keyGroup: 'Relative bandpowers derived', scaled, mostUseful: false };
         }
         return { keyGroup: 'Relative bandpowers', scaled, mostUseful: true };
     }
-    if (key.includes('petrosian') || key.includes('nzc') || key.includes('perm') || key.includes('perment') || key.includes('specent') || key.includes('svdent') || key.includes('higuchi')) {
+    if (key.includes('hmob') || key.includes('spectral_centroid')) {
+        return { keyGroup: 'Frequency', scaled, mostUseful: false };
+    }
+    if (key.includes('petrosian') || key.includes('nzc') || key.includes('perm') || key.includes('perment') || key.includes('specent') || key.includes('svdent') || key.includes('higuchi') || key.includes("hcomp")) {
         const mostUseful = key.includes("petrosian")
         return { keyGroup: 'Complexity', scaled, mostUseful };
     }

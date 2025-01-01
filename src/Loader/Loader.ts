@@ -78,7 +78,7 @@ export async function readEDFPlus(filePath: string): Promise<EDFData> {
     return { filePath, header, signals, records };
 }
 
-export async function readSleepStages(filePath: string, postHumansStagesPath: string): Promise<ProcessedSleepStages | undefined> {
+export async function readSleepStages(filePath: string, postHumansStagesPath: string, physicalFeaturesPath: string, finalWakeModelPath: string): Promise<ProcessedSleepStages | undefined> {
     try {
         console.time('readSleepStages');
         let sleepStagesData;
@@ -90,6 +90,30 @@ export async function readSleepStages(filePath: string, postHumansStagesPath: st
             console.log('Using original stages file');
         }
         console.timeLog('readSleepStages', 'File read');
+
+        let parsedPhysicalFeatures: any[]
+        try {
+            const physicalFeaturesData = await fs.readFile(physicalFeaturesPath, 'utf8');
+            parsedPhysicalFeatures = parse(physicalFeaturesData, {
+                columns: true,
+                skip_empty_lines: true
+            });
+        }
+        catch (error) {
+            console.info(`Error reading PhysicalFeatures file: ${error.message}`);
+        }
+
+        let parsedFinalWakeModel: any[]
+        try {
+            const finalWakeModelData = await fs.readFile(finalWakeModelPath, 'utf8');
+            parsedFinalWakeModel = parse(finalWakeModelData, {
+                columns: true,
+                skip_empty_lines: true
+            });
+        }
+        catch (error) {
+            console.info(`Error reading FinalWakeModel file: ${error.message}`);
+        }
 
         const parsedSleepStages: any[] = parse(sleepStagesData, {
             columns: true,
@@ -117,12 +141,15 @@ export async function readSleepStages(filePath: string, postHumansStagesPath: st
                 }, {} as ChannelData);
         };
 
-        const result = parsedSleepStages.map(stage => {
+        const result = parsedSleepStages.map((stage, index) => {
             const [datePart, timePart] = stage.Timestamp.split(' ');
             const [timeWithNanos, offset] = timePart.split('+');
             const [time, nanos] = timeWithNanos.split('.');
             const [year, month, day] = datePart.split('-');
             const [hour, minute, second] = time.split(':');
+
+            const physicalFeatures = parsedPhysicalFeatures?.[index];
+            const finalWakeModel = parsedFinalWakeModel?.[index];
 
             const timestamp = Temporal.ZonedDateTime.from({
                 year: parseInt(year),
@@ -175,7 +202,8 @@ export async function readSleepStages(filePath: string, postHumansStagesPath: st
                 SettlingTiredVsWiredPrediction: parseFloat(stage.SettlingTiredVsWiredPrediction),
                 SettlingManualScore: parseFloat(stage.SettlingManualScore),
                 SettlingEventVersion: stage.SettlingEventVersion,
-
+                physicalFeatures,
+                finalWakeModel
             };
 
             return processed;
@@ -253,7 +281,7 @@ export function setupFileMenu(onFileLoad: (filePath: string) => Promise<void>) {
     fileMenu.append(new window.nw.MenuItem({
         label: 'New Window',
         click: () => {
-            const baseUri = process.env.NWJS_START_URL 
+            const baseUri = process.env.NWJS_START_URL
                 ? process.env.NWJS_START_URL.trim()
                 : `${window.location.origin}/build/`;
             const startUri = `${baseUri}/index.html`;
@@ -311,6 +339,7 @@ export async function loadFiles(edfPath: string): Promise<AllData> {
 
     const sleepStagesPath = edfPath.replace('.edf', '.with_features.csv');
     const postHumansStagesPath = edfPath.replace('.edf', '.post_human.csv');
+    const physicalFeaturesPath = edfPath.replace('.edf', '.physical_features.csv');
     const slowWaveEventsPath = edfPath.replace('.edf', '.sw_summary.csv');
     const nightEventsPath = edfPath.replace('.edf', '.night_events.csv');
     const fitbitHypnogramPath = edfPath.replace('.edf', '.fitbit_hypnogram.csv');
@@ -319,10 +348,11 @@ export async function loadFiles(edfPath: string): Promise<AllData> {
     const microwakingsPath = edfPath.replace('.edf', '.microwakings.csv');
     // Completely deviating from original goal of making this a general purpose utility..
     const sleepStatsPath = "C:\\dev\\play\\brainwave-data\\stats.csv";
+    const finalWakeModelPath = edfPath.replace('.edf', '.final_wake_model.csv');
 
     const [stats, processedStages, raw, slowWaveEvents, nightEvents, fitbitHypnogram, spindleEvents, scorings, microwakings] = await Promise.all([
         readStats(sleepStatsPath),
-        readSleepStages(sleepStagesPath, postHumansStagesPath),
+        readSleepStages(sleepStagesPath, postHumansStagesPath, physicalFeaturesPath, finalWakeModelPath),
         readEDFPlus(edfPath),
         readSlowWaveEvents(slowWaveEventsPath),
         readNightEvents(nightEventsPath),
@@ -557,7 +587,7 @@ async function readStats(sleepStatsPath: string): Promise<{ [key: string]: Stats
         const columnIndexes = headerColumns.reduce((acc, col, i) => {
             acc[col] = i;
             return acc;
-        }, {} as {[key: string]: number});
+        }, {} as { [key: string]: number });
 
         const stats: { [key: string]: StatsCSVRow } = {};
 
@@ -630,7 +660,7 @@ export function findMainChannel(sleepStages: ProcessedSleepStages): string | und
     if (filteredChannels.length === 1) {
         return filteredChannels[0];
     }
-    
+
     if (filteredChannels.includes('Fpz')) {
         return 'Fpz';
     }
