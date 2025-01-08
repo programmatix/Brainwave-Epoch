@@ -100,7 +100,11 @@ export function generateAnnotationsForLeft(
     const orderedKeys = getOrderedKeys(channelData);
 
     orderedKeys.filter(key => key.includes('eeg_')).forEach(key => {
+        const scaledKey = key.endsWith("_s") ? key : key + "_s";
+
         const value = channelData[key as keyof ProcessedSleepStageEntryFeatures];
+        const scaledValue = channelData[scaledKey as keyof ProcessedSleepStageEntryFeatures];
+
         if (typeof value === 'number') {
             const minMax = allData.sleepStageFeatureMinMax[signal.label][key as keyof ProcessedSleepStageEntryFeatures];
 
@@ -117,6 +121,7 @@ export function generateAnnotationsForLeft(
                 currentEpochStage: sleepStage?.Stage,
                 key,
                 value: value,
+                scaledValue: scaledValue,
                 normalizedAgainst: {
                     forLocalFile: {
                         All: createNormalizedValue(value, minMax.forLocalFile.All),

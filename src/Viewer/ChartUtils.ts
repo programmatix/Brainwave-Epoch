@@ -28,6 +28,8 @@ export type LabelContentItem = {
     key: string;
     // The actual value, not normalized
     value: number;
+    // The _s values, e.g. eeg_sdelta_s
+    scaledValue?: number;
 
     normalizedAgainst: {
         forLocalFile: {

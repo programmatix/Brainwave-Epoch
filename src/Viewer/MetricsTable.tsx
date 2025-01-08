@@ -74,6 +74,7 @@ const ValueTooltip: React.FC<{
             <div className="mb-4">
                 <p>Key: {annotation.key}</p>
                 <p>Value: {formatNumber(annotation.value)}</p>
+                <p>Scaled Value (_s): {formatNumber(annotation.scaledValue)}</p>
                 <p>Channel: {annotation.channel}</p>
                 <p>Current Epoch: {annotation.currentEpoch}</p>
                 <p>Current Epoch Stage: {annotation.currentEpochStage}</p>
