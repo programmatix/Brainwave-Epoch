@@ -20,7 +20,7 @@ import { VideoTimeline } from '../Videos/VideoTimeline';
 import { StageTimeline } from './StageTimeline';
 import { PhysicalFeatureTimeline } from './PhysicalFeatureTimeline';
 import { FinalWakeModelFeatureTimeline } from './FinalWakeModelFeatureTimeline';
-
+import { ArtifactsTimeline } from './ArtifactsTimeline';
 interface TimelineNavigationProps {
     allData: AllData;
     scrollPosition: number;
@@ -381,6 +381,18 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = ({
                         width={TIMELINE_WIDTH}
                         onTimelineClick={handleTimelineClick}
                         allData={allData}
+                    />
+                </td>
+            </tr>}
+            {allData.artifacts && <tr>
+                <td>Artifacts</td>
+                <td>
+                    <ArtifactsTimeline
+                        allData={allData}
+                        scrollPosition={scrollPosition}
+                        totalSamples={totalSamples}
+                        width={TIMELINE_WIDTH}
+                        onTimelineClick={handleTimelineClick}
                     />
                 </td>
             </tr>}

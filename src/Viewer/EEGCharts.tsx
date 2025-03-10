@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { Chart, ChartConfiguration, registerables } from 'chart.js';
 import annotationPlugin from 'chartjs-plugin-annotation';
-import { AllData, Microwaking } from '../Loader/LoaderTypes';
+import { AllData, Artifact, Microwaking } from '../Loader/LoaderTypes';
 import { FitbitHypnogramChart } from './FitbitHypnogramChart';
 import { NightEventsChart } from './NightEventsChart';
 import { ComparisonControls } from './ComparisonControls';
@@ -13,6 +13,7 @@ import { parseDateString } from '../Loader/Loader';
 import { Slider } from './Slider';
 import { MetricsTable } from './MetricsTable';
 import { detectBlinks } from '../BlinkDetection/BlinkDetector';
+import { VideoViewer } from '../Videos/VideoViewer';
 
 Chart.register(...registerables, annotationPlugin);
 
@@ -35,6 +36,7 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition })
     const [showTable, setShowTable] = useState(true);
     const [yAxisRange, setYAxisRange] = useState(100);
     const [showBlinks, setShowBlinks] = useState(false);
+    const [showArtifacts, setShowArtifacts] = useState(true);
     const { handleChartClick, marks, deleteMark } = useStore((state: StoreState) => ({
         handleChartClick: state.handleChartClick,
         marks: state.marks,
@@ -216,6 +218,46 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition })
 
             console.log(`blinkAnnotations`, blinkAnnotations)
 
+            // Add artifact annotations
+            const artifactAnnotations = showArtifacts ? allData.artifacts?.map((artifact: Artifact, artifactIndex: number) => {
+                const artifactStartSample = artifact.start - scrollPosition;
+                const artifactEndSample = artifact.end - scrollPosition;
+                
+                // Only show artifacts that are visible in the current view
+                if (artifactEndSample < 0 || artifactStartSample > samplesToShow) {
+                    return null;
+                }
+                
+                // Adjust to ensure we only show the visible portion of the artifact
+                const visibleStartSample = Math.max(0, artifactStartSample);
+                const visibleEndSample = Math.min(samplesToShow, artifactEndSample);
+                
+                return [`artifact${artifactIndex}`, {
+                    type: 'box',
+                    xMin: visibleStartSample,
+                    xMax: visibleEndSample,
+                    yMin: signal.label === 'Artifacts' ? 0 : yMin,
+                    yMax: signal.label === 'Artifacts' ? 1 : yMax,
+                    backgroundColor: 'rgba(255, 0, 0, 0.2)',
+                    borderColor: 'rgba(255, 0, 0, 0.8)',
+                    borderWidth: 1,
+                    borderDash: [5, 5],
+                    label: {
+                        content: 'Artifact',
+                        display: false,
+                        position: 'top'
+                    },
+                    enter: ({ element }) => {
+                        element.label.options.display = true;
+                        element.chart.update('none');
+                    },
+                    leave: ({ element }) => {
+                        element.label.options.display = false;
+                        element.chart.update('none');
+                    }
+                }];
+            }).filter(Boolean) || [] : [];
+
             const config: ChartConfiguration = {
                 type: 'line',
                 data: {
@@ -242,8 +284,8 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition })
                         },
                         y: {
                             title: { display: true, text: `${signal.label} (${signal.physicalDimension})` },
-                            min: yMin,
-                            max: yMax,
+                            min: signal.label == 'Artifacts' ? 0 : yMin,
+                            max: signal.label == 'Artifacts' ? 1 : yMax,
                             position: 'left',
                             grid: {
                                 color: 'rgba(0, 0, 0, 0.1)'
@@ -264,6 +306,7 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition })
                                 ...markAnnotations,
                                 ...microwakingAnnotations,
                                 ...blinkAnnotations,
+                                ...Object.fromEntries(artifactAnnotations),
 
                                 ...(showEpochInfo ? generateAnnotations(
                                     allData,
@@ -346,7 +389,7 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition })
         return () => {
             newCharts.forEach(chart => chart?.destroy());
         };
-    }, [allData, scrollPosition, compareEpoch, showSlowWaveEvents, showSpindleEvents, showEpochInfo, handleChartClick, marks, deleteMark, yAxisRange, showBlinks]);
+    }, [allData, scrollPosition, compareEpoch, showSlowWaveEvents, showSpindleEvents, showEpochInfo, handleChartClick, marks, deleteMark, yAxisRange, showBlinks, showArtifacts]);
 
     const signalsToShow = allData.processedEDF.signals.filter(signal => signal.label !== 'EDF Annotations');
 
@@ -377,6 +420,8 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition })
         compareEpoch,
         signalsToShow[0]
     );
+
+    const currentTime = allData.processedEDF.startDate.add({ seconds: Math.floor(scrollPosition / samplesPerSecond) });
 
 
     return (
@@ -434,6 +479,15 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition })
                     />
                     <span>Show Blinks</span>
                 </label>
+                <label className="flex items-center space-x-2">
+                    <input
+                        type="checkbox"
+                        checked={showArtifacts}
+                        onChange={() => setShowArtifacts(!showArtifacts)}
+                        className="toggle toggle-primary"
+                    />
+                    <span>Show Artifacts</span>
+                </label>
                 <div className="flex items-center space-x-2">
                     <span>Y-Axis Range: ±{yAxisRange}</span>
                     <Slider
@@ -476,6 +530,24 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition })
                             </div>
                         );
                     })}
+
+                    {/* <button
+                        className="collapse-title text-xl font-medium flex items-center gap-2 w-full"
+                        onClick={() => setShowVideo(!showVideo)}
+                    >
+                        <span className="text-2xl">{showVideo ? '▼' : '▶'}</span>
+                        Video
+                    </button> */}
+                    
+                        <div className="collapse-content">
+                            <VideoViewer
+                                videoFiles={allData.videos}
+                                startTime={allData.processedEDF.startDate}
+                                duration={allData.processedEDF.duration}
+                                currentTime={currentTime}
+                                secondsToShow={SECONDS_PER_EPOCH}
+                            />
+                        </div>
                 </div>
             </div>
         </div>

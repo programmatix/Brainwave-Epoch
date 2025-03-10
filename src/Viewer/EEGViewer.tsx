@@ -13,7 +13,7 @@ interface EEGViewerProps {
 const EEGViewer: React.FC<EEGViewerProps> = ({ allData }) => {
   const [scrollPosition, setScrollPosition] = useState(0);
   const [showScoring, setShowScoring] = useState(false);
-  const [showVideo, setShowVideo] = useState(false);
+  const [showVideo, setShowVideo] = useState(true);
 
   const samplesPerSecond = allData.processedEDF.signals[0]?.samplingRate || 1;
   const totalSamples = allData.processedEDF.signals[0]?.samples.length || 0;
@@ -50,27 +50,6 @@ const EEGViewer: React.FC<EEGViewerProps> = ({ allData }) => {
                 const currentEpoch = Math.floor(scrollPosition / samplesPerEpoch);
                 setScrollPosition(Math.min(totalSamples - 1, (currentEpoch + 1) * samplesPerEpoch));
               }}
-            />
-          </div>
-        )}
-      </div>
-
-      <div className="collapse bg-base-200">
-        <button 
-          className="collapse-title text-xl font-medium flex items-center gap-2 w-full"
-          onClick={() => setShowVideo(!showVideo)}
-        >
-          <span className="text-2xl">{showVideo ? '▼' : '▶'}</span>
-          Video
-        </button>
-        {showVideo && (
-          <div className="collapse-content">
-            <VideoViewer
-              videoFiles={allData.videos}
-              startTime={allData.processedEDF.startDate}
-              duration={allData.processedEDF.duration}
-              currentTime={currentTime}
-              secondsToShow={SECONDS_PER_EPOCH}
             />
           </div>
         )}

@@ -1,7 +1,7 @@
 import { Temporal } from '@js-temporal/polyfill';
 import { parse } from 'csv-parse/sync';
 import { promises as fs } from 'fs';
-import { AllData, EDFData, EDFHeader, EDFSignal, FitbitHypnogram, GroupedSlowWaveEvents, GroupedSpindleEvents, NightEvents, ProcessedEDFData, ProcessedSleepStageEntry, ProcessedSleepStages, SignalData, SlowWaveEvents, SpindleEvents, TimeLabel, SleepStageFeatureMinMax, ProcessedSleepStageEntryFeatures, ChannelData, Scorings, ScoringEntry, ScoringTag, Mark, Microwaking, Microwakings, StageFeatureMinMax, StatsCSVRow, FeatureMinMax } from './LoaderTypes';
+import { AllData, EDFData, EDFHeader, EDFSignal, FitbitHypnogram, GroupedSlowWaveEvents, GroupedSpindleEvents, NightEvents, ProcessedEDFData, ProcessedSleepStageEntry, ProcessedSleepStages, SignalData, SlowWaveEvents, SpindleEvents, TimeLabel, SleepStageFeatureMinMax, ProcessedSleepStageEntryFeatures, ChannelData, Scorings, ScoringEntry, ScoringTag, Mark, Microwaking, Microwakings, StageFeatureMinMax, StatsCSVRow, FeatureMinMax, Artifacts } from './LoaderTypes';
 
 
 import { EventEmitter } from 'events';
@@ -346,11 +346,12 @@ export async function loadFiles(edfPath: string): Promise<AllData> {
     const spindleEventsPath = edfPath.replace('.edf', '.spindle_summary.csv');
     const scoringsPath = edfPath.replace('.edf', '.scorings.json');
     const microwakingsPath = edfPath.replace('.edf', '.microwakings.csv');
+    const artifactsPath = edfPath.replace('.edf', '.artifacts.csv');
     // Completely deviating from original goal of making this a general purpose utility..
     const sleepStatsPath = "C:\\dev\\play\\brainwave-data\\stats.csv";
     const finalWakeModelPath = edfPath.replace('.edf', '.final_wake_model.csv');
 
-    const [stats, processedStages, raw, slowWaveEvents, nightEvents, fitbitHypnogram, spindleEvents, scorings, microwakings] = await Promise.all([
+    const [stats, processedStages, raw, slowWaveEvents, nightEvents, fitbitHypnogram, spindleEvents, scorings, microwakings, artifacts] = await Promise.all([
         readStats(sleepStatsPath),
         readSleepStages(sleepStagesPath, postHumansStagesPath, physicalFeaturesPath, finalWakeModelPath),
         readEDFPlus(edfPath),
@@ -359,7 +360,8 @@ export async function loadFiles(edfPath: string): Promise<AllData> {
         readFitbitHypnogram(fitbitHypnogramPath),
         readSpindleEvents(spindleEventsPath),
         readScorings(scoringsPath),
-        readMicrowakings(microwakingsPath)
+        readMicrowakings(microwakingsPath),
+        readArtifacts(artifactsPath)
     ]);
 
     loaderEvents.emit('log', `${new Date().toISOString()}: Processing EDF data...`);
@@ -388,7 +390,8 @@ export async function loadFiles(edfPath: string): Promise<AllData> {
         scorings: scorings.scorings,
         marks: scorings.marks,
         microwakings,
-        videos
+        videos,
+        artifacts
     };
 
     return allData;
@@ -503,6 +506,27 @@ export async function readMicrowakings(filePath: string): Promise<Microwakings |
         return microwakings;
     } catch (error) {
         console.error(`Error reading Microwakings file: ${error.message}`);
+        return undefined;
+    }
+}
+
+export async function readArtifacts(filePath: string): Promise<Artifacts | undefined> {
+    try {
+        console.time('readArtifacts');
+        const data = await fs.readFile(filePath, 'utf8');
+        const parsedData = parse(data, {
+            columns: true,
+            skip_empty_lines: true
+        });
+
+        const artifacts: Artifacts = parsedData.map((entry: any) => ({
+            start: parseInt(entry.start),
+            end: parseInt(entry.end),
+        }));
+        console.timeEnd('readArtifacts');
+        return artifacts;
+    } catch (error) {
+        console.error(`Error reading Artifacts file: ${error.message}`);
         return undefined;
     }
 }

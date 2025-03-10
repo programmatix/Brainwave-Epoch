@@ -1,6 +1,6 @@
 import { Chart, ChartConfiguration, registerables } from 'chart.js';
 import annotationPlugin from 'chartjs-plugin-annotation';
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Temporal } from '@js-temporal/polyfill';
 import { VideoFile } from './Videos';
 
@@ -11,13 +11,17 @@ interface VideoFilmstripChartProps {
     currentTime: Temporal.ZonedDateTime;
     secondsToShow: number;
     onVideoClick: (video: VideoFile) => void;
+    currentVideoTime?: number;
+    currentVideo?: VideoFile | null;
 }
 
 export const VideoFilmstrip: React.FC<VideoFilmstripChartProps> = ({
     videoFiles,
     currentTime,
     secondsToShow,
-    onVideoClick
+    onVideoClick,
+    currentVideoTime,
+    currentVideo
 }) => {
     const chartRef = useRef<HTMLCanvasElement | null>(null);
     const chartInstance = useRef<Chart | null>(null);
@@ -39,6 +43,45 @@ export const VideoFilmstrip: React.FC<VideoFilmstripChartProps> = ({
             const videoTime = video.timestamp.epochSeconds;
             return videoTime >= visibleStartTime && videoTime <= visibleEndTime;
         });
+
+        const annotations: any = {};
+        
+        visibleVideos.forEach((video, index) => {
+            annotations[`video-${index}`] = {
+                type: 'box',
+                xMin: video.timestamp.epochSeconds,
+                xMax: video.timestamp.epochSeconds + 1,
+                yMin: 0,
+                yMax: 1,
+                backgroundColor: 'rgba(255, 99, 132, 0.3)',
+                borderColor: 'rgba(255, 99, 132, 0.8)',
+                borderWidth: 2,
+                label: {
+                    content: video.name,
+                    enabled: true,
+                    position: 'start',
+                    font: {
+                        size: 12
+                    },
+                    color: 'black'
+                },
+                click: () => onVideoClick(video),
+            };
+        });
+        
+        if (currentVideoTime !== undefined && currentVideo) {
+            const playbackPosition = currentVideo.timestamp.epochSeconds + currentVideoTime;
+            annotations['playback-position'] = {
+                type: 'line',
+                xMin: playbackPosition,
+                xMax: playbackPosition,
+                yMin: 0,
+                yMax: 1,
+                borderColor: 'rgba(0, 0, 255, 0.8)',
+                borderWidth: 2,
+                borderDash: [6, 6],
+            };
+        }
 
         const config: ChartConfiguration = {
             type: 'line',
@@ -65,45 +108,37 @@ export const VideoFilmstrip: React.FC<VideoFilmstripChartProps> = ({
                     y: {
                         title: { display: true, text: 'Videos' },
                         min: 0,
-                        max: 1
+                        max: 1,
+                        position: 'left',
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.1)'
+                        }
                     }
                 },
+                layout: {
+                    padding: {
+                        left: 57,
+                        right: 20,
+                    }
+                },
+                animation: false,
                 plugins: {
                     legend: {
                         display: false
                     },
                     annotation: {
-                        annotations: visibleVideos.map((video, index) => ({
-                            type: 'box',
-                            xMin: video.timestamp.epochSeconds,
-                            xMax: video.timestamp.epochSeconds + 1, // Adjust width as needed
-                            yMin: 0,
-                            yMax: 1,
-                            backgroundColor: 'rgba(255, 99, 132, 0.3)',
-                            borderColor: 'rgba(255, 99, 132, 0.8)',
-                            borderWidth: 2,
-                            label: {
-                                content: video.name,
-                                enabled: true,
-                                position: 'start',
-                                font: {
-                                    size: 12
-                                },
-                                color: 'black'
-                            },
-                            click: () => onVideoClick(video),
-                        }))
+                        annotations: annotations
                     },
                     tooltip: {
                         enabled: true,
                         callbacks: {
                             title: (tooltipItems) => {
                                 const video = visibleVideos[tooltipItems[0].dataIndex];
-                                return video.name;
+                                return video?.name || '';
                             },
                             label: (tooltipItem) => {
                                 const video = visibleVideos[tooltipItem.dataIndex];
-                                return `Time: ${video.timestamp.toLocaleString()}`;
+                                return video ? `Time: ${video.timestamp.toLocaleString()}` : '';
                             }
                         }
                     }
@@ -118,7 +153,7 @@ export const VideoFilmstrip: React.FC<VideoFilmstripChartProps> = ({
                 chartInstance.current.destroy();
             }
         };
-    }, [videoFiles, currentTime, secondsToShow, onVideoClick]);
+    }, [videoFiles, currentTime, secondsToShow, onVideoClick, currentVideoTime, currentVideo]);
 
     return (
         <div className="w-full" style={{ height: '100px' }}>

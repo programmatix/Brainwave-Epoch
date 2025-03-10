@@ -289,6 +289,7 @@ export type AllData = {
     marks?: Mark[];
     microwakings?: Microwakings;
     videos?: VideoFile[];
+    artifacts?: Artifacts;
 };
 
 // Add this new type
@@ -298,3 +299,12 @@ export type Microwaking = {
 };
 
 export type Microwakings = Microwaking[];
+
+// These are sample indexes
+export type Artifact = {
+    start: number;
+    end: number;
+};
+
+export type Artifacts = Artifact[];
+
