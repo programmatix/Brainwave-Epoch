@@ -126,7 +126,7 @@ export const ScoringComponent: React.FC<ScoringComponentProps> = ({ scrollPositi
         </div>
       </div>
 
-      <div className="mt-4 grid grid-cols-2 gap-4">
+      {/* <div className="mt-4 grid grid-cols-2 gap-4">
         <div>
           <h3 className="text-lg font-semibold mb-2">Predictions</h3>
           <ul className="space-y-1">
@@ -151,7 +151,7 @@ export const ScoringComponent: React.FC<ScoringComponentProps> = ({ scrollPositi
             ))}
           </ul>
         </div>
-      </div>
+      </div> */}
     </div>
   );
 };
