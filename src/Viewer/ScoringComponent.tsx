@@ -85,24 +85,27 @@ export const ScoringComponent: React.FC<ScoringComponentProps> = ({ scrollPositi
       <div className="flex flex-col space-y-4 mb-2">
         <div className="flex items-center space-x-4 p-2 border rounded-md bg-gray-50">
           <div className="font-semibold">Stage:</div>
+          <p className="mb-2">Stage an epoch.  Used for the YASA-like model.  Saved to  raw.scorings.json.</p>
           <select
             value={currentScoring}
             onChange={(e) => setCurrentScoring(e.target.value as ScoringEntry['stage'])}
             className="select select-bordered w-full max-w-xs"
           >
-            {SCORING_OPTIONS.map(option => (
-              <option key={option} value={option}>{option}</option>
+            {SCORING_OPTIONS.map((option, idx) => (
+              <option key={idx} value={option}>{option} (shortcut key: {idx + 1})</option>
             ))}
           </select>
           {currentEpochScoring ? (
-            <span className="text-green-500">✓</span>
+            <span className="text-green-500">✓ (epoch is staged)</span>
           ) : (
-            <span className="text-red-500">✗</span>
+            <span>Epoch not yet staged</span>
           )}
+          <p>Press space to save to file and go to next epoch</p>
         </div>
 
         <div className="p-2 border rounded-md bg-gray-50">
           <div className="font-semibold mb-2">Tags:</div>
+          <p className="mb-2">Tag an epoch.  Also get saved to raw.scorings.json when space pressed.</p>
           <div className="grid grid-cols-2 gap-2">
             {TAG_OPTIONS.map(({ tag, description }) => (
               <label key={tag} className="flex items-center space-x-2">
@@ -119,17 +122,21 @@ export const ScoringComponent: React.FC<ScoringComponentProps> = ({ scrollPositi
         </div>
         
         <div className="flex items-center space-x-4 p-2 border rounded-md bg-gray-50">
-          <div className="font-semibold">Marking Mode:</div>
+          <div className="font-semibold">EEG Graph Marking Mode:</div>
+          <p className="mb-2">Handle graph clicks.  Also get saved to raw.scorings.json.  Artifacts are used for regression tests so set it safely after the real start.  Microwakings are also used for artifact regression so don't need to set both.</p>
           <select
             value={markingMode}
             onChange={(e) => setMarkingMode(e.target.value as StoreState['markingMode'])}
             className="select select-bordered"
           >
             <option value="None">None</option>
+            <option value="ArtifactStart">Artifact Start</option>
+            <option value="ArtifactEnd">Artifact End</option>
             <option value="MicrowakingStart">Microwaking Start</option>
             <option value="MicrowakingEnd">Microwaking End</option>
-            <option value="StartExclusion">Start Exclusion</option>
-            <option value="EndExclusion">End Exclusion</option>
+            {/* Removing as I don't recall what these are used for  */}
+            {/* <option value="StartExclusion">Start Exclusion</option>
+            <option value="EndExclusion">End Exclusion</option> */}
           </select>
         </div>
       </div>

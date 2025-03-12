@@ -261,7 +261,7 @@ export type ScoringTag = {
     channel: string
     scoredAt: string
     timestamp: string
-    type: 'MicrowakingStart' | 'MicrowakingEnd'
+    type: string
   }
   
   export type ScoringEntry = {

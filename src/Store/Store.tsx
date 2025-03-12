@@ -29,7 +29,7 @@ export interface StoreState {
     allData: AllData | null
     marks: Mark[]
     scorings: Scorings
-    markingMode: 'None' | 'MicrowakingStart' | 'MicrowakingEnd' | 'StartExclusion' | 'EndExclusion'
+    markingMode: string
     saveScoring: (newScoring: ScoringEntry) => void
     updateMarks: (newMarks: Mark[]) => void
     updateScorings: (newScorings: Scorings) => void
@@ -47,26 +47,32 @@ export const useStore = create<StoreState>()(devtools((set) => ({
     handleChartClick: (timestamp: Temporal.ZonedDateTime, channel: string) => {
         console.log("handleChartClick", timestamp, channel)
         set((state) => {
-            if (state.markingMode === 'MicrowakingEnd') {
+            if (state.markingMode.endsWith('Start')) {
+                const nextMarkType = state.markingMode.replace('Start', 'End')
                 const mark: Mark = {
                     timestamp: timestamp.toInstant().toString(),
                     scoredAt: Temporal.Now.zonedDateTimeISO().toInstant().toString(),
                     channel,
-                    type: 'MicrowakingEnd'
+                    type: state.markingMode
                 }
                 const updatedMarks = state.marks.concat(mark)
                 saveToFile(state.scorings, updatedMarks, state.allData)
-                return { marks: updatedMarks, markingMode: 'MicrowakingStart' }
-            } else {
+                return { marks: updatedMarks, markingMode: nextMarkType }
+            }
+            else if (state.markingMode.endsWith('End')) {
+                const nextMarkType = state.markingMode.replace('End', 'Start')
                 const mark: Mark = {
                     timestamp: timestamp.toInstant().toString(),
                     scoredAt: Temporal.Now.zonedDateTimeISO().toInstant().toString(),
                     channel,
-                    type: 'MicrowakingStart'
+                    type: state.markingMode
                 }
                 const updatedMarks = state.marks.concat(mark)
                 saveToFile(state.scorings, updatedMarks, state.allData)
-                return { marks: updatedMarks, markingMode: 'MicrowakingEnd' }
+                return { marks: updatedMarks, markingMode: nextMarkType }
+            }
+            else {
+                throw new Error(`Invalid marking mode: ${state.markingMode}`)
             }
         })
     },
