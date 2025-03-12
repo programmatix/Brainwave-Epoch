@@ -99,6 +99,8 @@ export function generateAnnotationsForLeft(
 
     const orderedKeys = getOrderedKeys(channelData);
 
+    console.log("Ordered keys:", orderedKeys, allData);
+
     orderedKeys.filter(key => key.includes('eeg_')).forEach(key => {
         const scaledKey = key.endsWith("_s") ? key : key + "_s";
 
@@ -155,6 +157,8 @@ export function generateAnnotationsForLeft(
         }
     });
 
+    console.log("Left chart table:", content);
+
     return content;
 }
 
@@ -191,13 +195,13 @@ function groupKey(key: string): { keyGroup: KeyGroup, scaled: boolean, mostUsefu
         if (key.includes('absab') || key.includes('absaa')) {
             return { keyGroup: 'Absolute bandpowers derived', scaled, mostUseful: false };
         }
-        return { keyGroup: 'Absolute bandpowers', scaled, mostUseful: false };
+        return { keyGroup: 'Absolute bandpowers', scaled, mostUseful: true };
     }
     if (key.includes('eeg_sdelta') || key.includes('eeg_fdelta') || key.includes('eeg_theta') || key.includes('eeg_alpha') || key.includes('eeg_sigma') || key.includes('eeg_beta')) {
         if (key.includes('ab') || key.includes('aa')) {
             return { keyGroup: 'Relative bandpowers derived', scaled, mostUseful: false };
         }
-        return { keyGroup: 'Relative bandpowers', scaled, mostUseful: true };
+        return { keyGroup: 'Relative bandpowers', scaled, mostUseful: false };
     }
     if (key.includes('hmob') || key.includes('spectral_centroid')) {
         return { keyGroup: 'Frequency', scaled, mostUseful: false };

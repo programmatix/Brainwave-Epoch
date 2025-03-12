@@ -37,6 +37,7 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition })
     const [yAxisRange, setYAxisRange] = useState(100);
     const [showBlinks, setShowBlinks] = useState(false);
     const [showArtifacts, setShowArtifacts] = useState(true);
+    const [artifactMode, setArtifactMode] = useState('annotate');
     const { handleChartClick, marks, deleteMark } = useStore((state: StoreState) => ({
         handleChartClick: state.handleChartClick,
         marks: state.marks,
@@ -101,7 +102,13 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition })
             const ctx = chartRefs.current[index]?.getContext('2d');
             if (!ctx) return null;
 
-            const data = signal.samples.slice(scrollPosition, scrollPosition + samplesToShow);
+            const data = artifactMode === 'remove' ? signal.samples.slice(scrollPosition, scrollPosition + samplesToShow).map((value, index) => {
+                const sampleIndex = scrollPosition + index;
+                const isInArtifact = allData.artifacts?.some(artifact => 
+                    sampleIndex >= artifact.start && sampleIndex <= artifact.end
+                ) || false;
+                return isInArtifact ? NaN : value;
+            }) : signal.samples.slice(scrollPosition, scrollPosition + samplesToShow);
 
             const datasets = [{
                 label: signal.label,
@@ -109,18 +116,28 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition })
                 borderColor: `hsl(${index * 360 / signalsToShow.length}, 100%, 50%)`,
                 pointRadius: 0,
                 borderWidth: 1.5,
+                spanGaps: true,
             }];
 
             if (compareEpoch !== null) {
                 const compareStartSample = compareEpoch * SECONDS_PER_EPOCH * samplesPerSecond;
-                const compareData = signal.samples.slice(compareStartSample, compareStartSample + samplesToShow);
+                const compareData = artifactMode === 'remove' ? 
+                    signal.samples.slice(compareStartSample, compareStartSample + samplesToShow).map((value, index) => {
+                        const sampleIndex = compareStartSample + index;
+                        const isInArtifact = allData.artifacts?.some(artifact => 
+                            sampleIndex >= artifact.start && sampleIndex <= artifact.end
+                        ) || false;
+                        return isInArtifact ? NaN : value;
+                    }) : 
+                    signal.samples.slice(compareStartSample, compareStartSample + samplesToShow);
+                
                 datasets.push({
                     label: `${signal.label} (Compare)`,
                     data: compareData,
                     borderColor: `hsla(${index * 360 / signalsToShow.length}, 100%, 50%, 0.5)`,
                     pointRadius: 0,
                     borderWidth: 1.5,
-                    //borderDash: [5, 5],
+                    spanGaps: true,
                 });
             }
 
@@ -219,7 +236,7 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition })
             console.log(`blinkAnnotations`, blinkAnnotations)
 
             // Add artifact annotations
-            const artifactAnnotations = showArtifacts ? allData.artifacts?.map((artifact: Artifact, artifactIndex: number) => {
+            const artifactAnnotations = artifactMode === 'annotate' ? allData.artifacts?.map((artifact: Artifact, artifactIndex: number) => {
                 const artifactStartSample = artifact.start - scrollPosition;
                 const artifactEndSample = artifact.end - scrollPosition;
                 
@@ -389,7 +406,7 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition })
         return () => {
             newCharts.forEach(chart => chart?.destroy());
         };
-    }, [allData, scrollPosition, compareEpoch, showSlowWaveEvents, showSpindleEvents, showEpochInfo, handleChartClick, marks, deleteMark, yAxisRange, showBlinks, showArtifacts]);
+    }, [allData, scrollPosition, compareEpoch, showSlowWaveEvents, showSpindleEvents, showEpochInfo, handleChartClick, marks, deleteMark, yAxisRange, showBlinks, showArtifacts, artifactMode]);
 
     const signalsToShow = allData.processedEDF.signals.filter(signal => signal.label !== 'EDF Annotations');
 
@@ -487,6 +504,18 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition })
                         className="toggle toggle-primary"
                     />
                     <span>Show Artifacts</span>
+                </label>
+                <label className="flex items-center space-x-2">
+                    <span>Artifacts:</span>
+                    <select 
+                        className="select select-bordered select-sm"
+                        value={artifactMode}
+                        onChange={(e) => setArtifactMode(e.target.value)}
+                    >
+                        <option value="ignore">Ignore</option>
+                        <option value="remove">Remove</option>
+                        <option value="annotate">Annotate</option>
+                    </select>
                 </label>
                 <div className="flex items-center space-x-2">
                     <span>Y-Axis Range: ±{yAxisRange}</span>

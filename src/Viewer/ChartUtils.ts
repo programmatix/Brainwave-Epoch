@@ -117,7 +117,7 @@ export function sampleIndexToTime(allData: AllData, index: number): Temporal.Zon
     const seconds = Math.floor(totalSeconds % 60);
     const milliseconds = Math.floor((totalSeconds % 1) * 1000);
 
-    console.log(`totalSeconds`, totalSeconds, `minutes`, minutes, `seconds`, seconds, `milliseconds`, milliseconds, `index`, index, `samplingRate`, samplingRate, `startDate`, allData.processedEDF.startDate);
+    //console.log(`totalSeconds`, totalSeconds, `minutes`, minutes, `seconds`, seconds, `milliseconds`, milliseconds, `index`, index, `samplingRate`, samplingRate, `startDate`, allData.processedEDF.startDate);
 
     return allData.processedEDF.startDate.add({ minutes, seconds, milliseconds });
 }
