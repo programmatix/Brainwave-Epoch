@@ -82,36 +82,44 @@ export const ScoringComponent: React.FC<ScoringComponentProps> = ({ scrollPositi
 
   return (
     <div className="table" id="scoring-component">
-      <div className="flex items-center space-x-2 mb-2">
-        <select
-          value={currentScoring}
-          onChange={(e) => setCurrentScoring(e.target.value as ScoringEntry['stage'])}
-          className="select select-bordered w-full max-w-xs"
-        >
-          {SCORING_OPTIONS.map(option => (
-            <option key={option} value={option}>{option}</option>
-          ))}
-        </select>
-        <div className="flex items-center space-x-2">
-          {TAG_OPTIONS.map(({ tag, description }) => (
-            <label key={tag} className="flex items-center space-x-1">
-              <input
-                type="checkbox"
-                checked={currentTags.includes(tag)}
-                onChange={() => setCurrentTags(prev => prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag])}
-              />
-              <span>{description}</span>
-            </label>
-          ))}
+      <div className="flex flex-col space-y-4 mb-2">
+        <div className="flex items-center space-x-4 p-2 border rounded-md bg-gray-50">
+          <div className="font-semibold">Stage:</div>
+          <select
+            value={currentScoring}
+            onChange={(e) => setCurrentScoring(e.target.value as ScoringEntry['stage'])}
+            className="select select-bordered w-full max-w-xs"
+          >
+            {SCORING_OPTIONS.map(option => (
+              <option key={option} value={option}>{option}</option>
+            ))}
+          </select>
+          {currentEpochScoring ? (
+            <span className="text-green-500">✓</span>
+          ) : (
+            <span className="text-red-500">✗</span>
+          )}
         </div>
-        {currentEpochScoring ? (
-          <span className="text-green-500">✓</span>
-        ) : (
-          <span className="text-red-500">✗</span>
-        )}
+
+        <div className="p-2 border rounded-md bg-gray-50">
+          <div className="font-semibold mb-2">Tags:</div>
+          <div className="grid grid-cols-2 gap-2">
+            {TAG_OPTIONS.map(({ tag, description }) => (
+              <label key={tag} className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  checked={currentTags.includes(tag)}
+                  onChange={() => setCurrentTags(prev => prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag])}
+                  className="checkbox checkbox-sm"
+                />
+                <span>{description}</span>
+              </label>
+            ))}
+          </div>
+        </div>
         
-        <div className="flex items-center space-x-2">
-          <span>Marking Mode:</span>
+        <div className="flex items-center space-x-4 p-2 border rounded-md bg-gray-50">
+          <div className="font-semibold">Marking Mode:</div>
           <select
             value={markingMode}
             onChange={(e) => setMarkingMode(e.target.value as StoreState['markingMode'])}
