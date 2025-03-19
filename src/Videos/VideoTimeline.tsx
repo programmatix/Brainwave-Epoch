@@ -20,11 +20,14 @@ export const VideoTimeline: React.FC<VideoTimelineProps> = ({
   width,
   onTimelineClick,
 }) => {
+  const start = allData.processedEDF.startDate.epochMilliseconds
+
   return (
     <div>
       <svg width={width} height="30">
         {videoFiles.map((video, index) => {
-          const startX = ((video.timestamp - startTime.epochMilliseconds) / duration) * width;
+          const startX = ((video.timestamp - start) / 1000 / duration) * width;
+          //console.info("VideoTimeline", video.name, video.timestamp, startX, start)
           return (
             <rect
               key={index}
@@ -34,7 +37,7 @@ export const VideoTimeline: React.FC<VideoTimelineProps> = ({
               height="20"
               fill="blue"
               onClick={() => {
-                const epoch = Math.floor((video.timestamp - allData.processedEDF.startDate.epochMilliseconds) / SECONDS_PER_EPOCH);
+                const epoch = Math.floor((video.timestamp - start) / SECONDS_PER_EPOCH);
                 onTimelineClick(epoch);
               }}
             />

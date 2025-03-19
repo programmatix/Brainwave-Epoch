@@ -65,9 +65,8 @@ export const AppEEG: React.FC = () => {
     return (
         <div className="h-full">
             <div className="flex flex-col h-full">
-                {scorings == undefined && <div>No scorings</div>}
-                {scorings != undefined && <div>Has scorings</div>}
-                {bears}
+                {/* {scorings == undefined && <div>No scorings</div>}
+                {scorings != undefined && <div>Has scorings</div>} */}
                 <div className="h-full">
                     {isLoading ? (
                         <div className="flex justify-center items-center h-full">
@@ -81,7 +80,7 @@ export const AppEEG: React.FC = () => {
                         </ErrorBoundary>
                     )}
                 </div>
-                <LogContainer logs={logs} />
+                {/* <LogContainer logs={logs} /> */}
             </div>
         </div>
     );

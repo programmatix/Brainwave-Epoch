@@ -44,10 +44,11 @@ export const VideoFilmstrip: React.FC<VideoFilmstripChartProps> = ({
         }
 
         const visibleStartTime = currentTime.epochMilliseconds;
-        const visibleEndTime = visibleStartTime + secondsToShow;
+        const visibleEndTime = visibleStartTime + secondsToShow * 1000;
 
         const visibleVideos = videoFiles.filter(video => {
             const videoTime = video.timestamp;
+            console.info(`VideoFilmstrip visibleVideos`, video.name, videoTime, visibleStartTime, visibleEndTime)
             return videoTime >= visibleStartTime && videoTime <= visibleEndTime;
         });
 

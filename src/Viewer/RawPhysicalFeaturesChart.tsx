@@ -65,6 +65,8 @@ export const RawPhysicalFeaturesChart: React.FC<RawPhysicalFeaturesChartProps> =
                 lastVisibleIdx = midIdx;
             }
         }
+
+        console.info(`RawPhysicalFeaturesChart firstVisibleIdx=${firstVisibleIdx} lastVisibleIdx=${lastVisibleIdx} startTime=${startTime} endTimeVisible=${endTimeVisible} samplesToShow=${samplesToShow} samplesPerSecond=${samplesPerSecond} scrollPosition=${scrollPosition}`)
         
         return allData.rawPhysicalFeatures.slice(firstVisibleIdx, lastVisibleIdx + 1);
     }, [allData.rawPhysicalFeatures, startTime, scrollPosition, samplesPerSecond, samplesToShow]);

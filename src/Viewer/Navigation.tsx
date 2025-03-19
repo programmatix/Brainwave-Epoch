@@ -176,350 +176,254 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = React.memo(
     const startDate = allData.processedEDF.startDate.epochSeconds;
 
     return (
-        <div className="table" id="timeline-navigation">
-            <div className="flex items-center space-x-2 mb-2">
-                <input
-                    type="text"
-                    value={epochInput}
-                    onChange={(e) => setEpochInput(e.target.value)}
-                    placeholder="Enter epoch index"
-                    className="border p-1"
-                />
-                <button onClick={handleSetEpoch} className="bg-blue-500 text-white p-1 rounded">Set Epoch</button>
-                <button onClick={handlePrevEpoch} className="bg-blue-500 text-white p-1 rounded">Prev Epoch (q)</button>
-                <button onClick={handleNextEpoch} className="bg-blue-500 text-white p-1 rounded">Next Epoch (e)</button>
-                <button onClick={handleRandomEpoch} className="bg-green-500 text-white p-1 rounded">Random Epoch (r)</button>
-                <button onClick={handleFirstUnscoredEpoch} className="bg-purple-500 text-white p-1 rounded">First Unscored</button>
-                <button onClick={handlePrevUnscoredEpoch} className="bg-purple-500 text-white p-1 rounded">Prev Unscored</button>
-                <button onClick={handleNextUnscoredEpoch} className="bg-purple-500 text-white p-1 rounded">Next Unscored</button>
-                <button onClick={handlePrevScoredMicrowake} className="bg-purple-500 text-white p-1 rounded">Prev Scored Microwake</button>
-                <button onClick={handleNextScoredMicrowake} className="bg-purple-500 text-white p-1 rounded">Next Scored Microwake</button>
-                <button
-                    onClick={() => setIsAutoScrolling(prev => !prev)}
-                    className={`${isAutoScrolling ? 'bg-red-500' : 'bg-green-500'} text-white p-1 rounded`}
-                >
-                    {isAutoScrolling ? 'Stop AutoScroll' : 'Start AutoScroll (a)'}
-                </button>
-            </div>
-            {allData.slowWaveEvents && allData.spindleEvents && Object.keys(allData.slowWaveEvents).map(channel => (
-                <tr key={`combined-${channel}`}>
-                    <td className="w-128">Slow Waves & Spindles {channel}</td>
-                    <td>
-                        <CombinedSlowWaveSpindleTimeline
-                            key={channel}
-                            allData={allData}
-                            channel={channel}
-                            scrollPosition={scrollPosition}
-                            totalSamples={totalSamples}
-                            width={TIMELINE_WIDTH}
-                            onTimelineClick={handleTimelineClick}
+        <div className="timeline-navigation bg-gray-100 p-4 rounded-lg shadow-md">
+            <div className="navigation-controls bg-white p-3 rounded-md shadow mb-4">
+                <div className="flex flex-wrap items-center gap-2 mb-2">
+                    <div className="flex items-center">
+                        <input
+                            type="text"
+                            value={epochInput}
+                            onChange={(e) => setEpochInput(e.target.value)}
+                            placeholder="Epoch #"
+                            className="border border-gray-300 rounded-l px-3 py-2 w-20 focus:outline-none focus:ring-2 focus:ring-blue-400"
                         />
-                    </td>
-                </tr>
-            ))}
-            {allData.nightEvents && <tr>
-                <td className="w-128">Night Events</td>
-                <td>
-                    <NightEventsTimeline
-                        allData={allData}
-                        scrollPosition={scrollPosition}
-                        totalSamples={totalSamples}
-                        width={TIMELINE_WIDTH}
-                        onTimelineClick={handleTimelineClick}
-                    /> 
-                </td>
-            </tr>}
-            {Object.keys(allData.sleepStages?.[0]?.Channels || {}).filter(channel => channel !== 'Aggregated').map((channel, index) => (
-                <tr key={`feature-${channel}`}>
-                    <td className="w-128">
-                        <div className="flex items-center space-x-2 mb-2">
-                            Feature Timeline {channel}
-
-                        {index == 0 && <div className="flex items-center space-x-2 mb-2">
-                            <select
-                                value={selectedFeature}
-                                onChange={(e) => setSelectedFeature(e.target.value)}
-                                className="select select-bordered w-full max-w-xs"
-                            >
-                                {getOrderedKeys(getFirstNonAggregatedChannel(allData)).map((feature) => (
-                                    <option key={feature} value={feature}>
-                                        {feature}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>}
+                        <button 
+                            onClick={handleSetEpoch} 
+                            className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-r transition-colors"
+                        >
+                            Go
+                        </button>
                     </div>
-
-                    </td>
-                    <td>
-                        {selectedFeature && <FeatureTimeline
-                            allData={allData}
-                            scrollPosition={scrollPosition}
-                            totalSamples={totalSamples}
-                            width={TIMELINE_WIDTH}
-                            onTimelineClick={handleTimelineClick}
-                            selectedFeature={selectedFeature}
-                            channel={channel}
-                        />
-                        }
-                    </td>
-                </tr>
-            ))}
-            {/* {Object.keys(allData.sleepStages?.[0]?.finalWakeModel || {}).map((feature, index) => ( */}
-                {/* <tr>
-                    <td className="w-128">Final Wake Model */}
-
-                        {/* {index == 0 && <div className="flex items-center space-x-2 mb-2">
-                            <select
-                                value={selectedFinalWakeModelFeature}
-                                onChange={(e) => setSelectedFinalWakeModelFeature(e.target.value)}
-                                className="select select-bordered w-full max-w-xs"
-                            >
-                                {Object.keys(allData.sleepStages?.[0]?.finalWakeModel || {}).map((feature) => (
-                                    <option key={feature} value={feature}>
-                                        {feature}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>} */}
-
-                    {/* </td>
-                    <td>
-                        <FinalWakeModelFeatureTimeline
-                            allData={allData}
-                            scrollPosition={scrollPosition}
-                            totalSamples={totalSamples}
-                            width={TIMELINE_WIDTH}
-                            onTimelineClick={handleTimelineClick}
-                        />
-                    </td>
-                </tr> */}
-            {/* ))} */}
-            {/* {Object.keys(allData.sleepStages?.[0]?.physicalFeatures || {}).map((feature, index) => (
-                <tr key={`feature-${feature}`}>
-                    <td>Feature Timeline {feature}
-
-                        {index == 0 && <div className="flex items-center space-x-2 mb-2">
-                            <select
-                                value={selectedPhysicalFeature}
-                                onChange={(e) => setSelectedPhysicalFeature(e.target.value)}
-                                className="select select-bordered w-full max-w-xs"
-                            >
-                                {Object.keys(allData.sleepStages?.[0]?.physicalFeatures || {}).map((feature) => (
-                                    <option key={feature} value={feature}>
-                                        {feature}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>}
-
-                    </td>
-                    <td>
-                        {selectedPhysicalFeature && <PhysicalFeatureTimeline
-                            allData={allData}
-                            scrollPosition={scrollPosition}
-                            totalSamples={totalSamples}
-                            width={TIMELINE_WIDTH}
-                            onTimelineClick={handleTimelineClick}
-                            selectedFeature={selectedPhysicalFeature}
-                        />
-                        }
-                    </td>
-                </tr>
-            ))} */}
-            {allData.sleepStages && <tr>
-                <td className="w-128">Aggregated YASA Hypnogram</td>
-                <td>
-                    <SleepStageTimeline
-                        sleepStages={allData.sleepStages}
-                        scrollPosition={scrollPosition}
-                        totalSamples={totalSamples}
-                        samplesPerSecond={samplesPerSecond}
-                        samplesPerEpoch={samplesPerEpoch}
-                        width={TIMELINE_WIDTH}
-                        onTimelineClick={handleTimelineClick}
-                    />
-                </td>
-            </tr>}
-            {/* {allData.sleepStages && <tr>
-                <td className="w-128">Predicted Sleep Stages</td>
-                <td>
-                    <PredictedSleepStageTimeline
-                        sleepStages={allData.sleepStages}
-                        scrollPosition={scrollPosition}
-                        totalSamples={totalSamples}
-                        width={TIMELINE_WIDTH}
-                        onTimelineClick={handleTimelineClick}
-                    />
-                </td>
-            </tr>} */}
-            {/* {scorings && <tr>
-                <td className="w-128">Scored Epochs</td>
-                <td>
-                    <ScoredEpochsTimeline
-                        scorings={scorings}
-                        scrollPosition={scrollPosition}
-                        totalSamples={totalSamples}
-                        samplesPerEpoch={samplesPerEpoch}
-                        width={TIMELINE_WIDTH}
-                        onTimelineClick={handleTimelineClick}
-                    />
-                </td>
-            </tr>}
-            {marks && <tr>
-                <td className="w-128">Marked Epochs</td>
-                <td>
-                    <MarksTimeline
-                        scrollPosition={scrollPosition}
-                        totalSamples={totalSamples}
-                        samplesPerEpoch={samplesPerEpoch}
-                        width={TIMELINE_WIDTH}
-                        onTimelineClick={handleTimelineClick}
-                    />
-                </td>
-            </tr>} */}
-            {allData.fitbitHypnogram && <tr>
-                <td className="w-128">Fitbit Hypnogram</td>
-                <td>
-                    <FitbitHypnogramTimeline
-                        fitbitHypnogram={allData.fitbitHypnogram}
-                        scrollPosition={scrollPosition}
-                        totalSamples={totalSamples}
-                        width={TIMELINE_WIDTH}
-                        onTimelineClick={handleTimelineClick}
-                        allData={allData}
-                    />
-                </td>
-            </tr>}
-            {allData.artifacts && <tr>
-                <td className="w-128">Artifacts</td>
-                <td>
-                    <ArtifactsTimeline
-                        allData={allData}
-                        scrollPosition={scrollPosition}
-                        totalSamples={totalSamples}
-                        width={TIMELINE_WIDTH}
-                        onTimelineClick={handleTimelineClick}
-                    />
-                </td>
-            </tr>}
-            {allData.rawPhysicalFeatures && <tr>
-                <td className="w-128">Movement</td>
-                <td>
-                    <RawPhysicalFeaturesTimeline
-                        allData={allData}
-                        scrollPosition={scrollPosition}
-                        totalSamples={totalSamples}
-                        width={TIMELINE_WIDTH}
-                        onTimelineClick={handleTimelineClick}
-                    />
-                </td>
-            </tr>}
-            {/* {allData.predictedAwakeTimeline && <tr>
-                <td>Predicted Awake</td>
-                <td>
-                    <PredictedAwakeTimeline
-                        sleepStages={allData.predictedAwakeTimeline}
-                        scrollPosition={scrollPosition}
-                        totalSamples={totalSamples}
-                        width={TIMELINE_WIDTH}
-                        onTimelineClick={handleTimelineClick}
-                    />
-                </td>
-            </tr>}
-            {allData.definiteAwakeSleepTimeline && <tr>
-                <td>Definite Awake/Probably Sleep</td>
-                <td>
-                    <DefiniteAwakeSleepTimeline
-                        sleepStages={allData.definiteAwakeSleepTimeline}
-                        scrollPosition={scrollPosition}
-                        totalSamples={totalSamples}
-                        width={TIMELINE_WIDTH}
-                        onTimelineClick={handleTimelineClick}
-                    />
-                </td>
-            </tr>} */}
-            {/* <tr> */}
-                {/* <td className="w-128">SettlingScorePrediction</td>
-                <td>
-                    <StageTimeline
-                        sleepStages={allData.sleepStages}
-                        scrollPosition={scrollPosition}
-                        totalSamples={totalSamples}
-                        width={TIMELINE_WIDTH}
-                        onTimelineClick={handleTimelineClick}
-                        field="SettlingScorePrediction"
-                        color="red"
-                    />
-                </td>
-            </tr>
-            <tr>
-                <td className="w-128">SettlingV4ScorePrediction</td>
-                <td>
-                    <StageTimeline
-                        sleepStages={allData.sleepStages}
-                        scrollPosition={scrollPosition}
-                        totalSamples={totalSamples}
-                        width={TIMELINE_WIDTH}
-                        onTimelineClick={handleTimelineClick}
-                        field="SettlingV4ScorePrediction"
-                        color="red"
-                    />
-                </td>
-            </tr>
-            <tr>
-                <td className="w-128">SettlingTiredVsWiredPrediction</td>
-                <td>
-                    <StageTimeline
-                        sleepStages={allData.sleepStages}
-                        scrollPosition={scrollPosition}
-                        totalSamples={totalSamples}
-                        width={TIMELINE_WIDTH}
-                        onTimelineClick={handleTimelineClick}
-                        field="SettlingTiredVsWiredPrediction"
-                        color="red"
-                    />
-                </td>
-            </tr> */}
-            <tr>
-                <td className="w-128">SettlingManualScore</td>
-                <td>
-                    <StageTimeline
-                        sleepStages={allData.sleepStages}
-                        scrollPosition={scrollPosition}
-                        totalSamples={totalSamples}
-                        width={TIMELINE_WIDTH}
-                        onTimelineClick={handleTimelineClick}
-                        field="SettlingManualScore"
-                        color="red"
-                    />
-                </td>
-            </tr>
-            {allData.microwakings && <tr>
-                <td className="w-128">Microwakings</td>
-                <td>
-                    <MicrowakingsTimeline
-                        allData={allData}
-                        scrollPosition={scrollPosition}
-                        totalSamples={totalSamples}
-                        width={TIMELINE_WIDTH}
-                        onTimelineClick={handleTimelineClick}
-                    />
-                </td>
-            </tr>}
-            <tr>
-                <td className="w-128">Videos</td>
-                <td>
-                    <VideoTimeline
-                        allData={allData}
-                        videoFiles={allData.videos}
-                        startTime={allData.processedEDF.startDate}
-                        duration={allData.processedEDF.duration}
-                        width={TIMELINE_WIDTH}
-                        onTimelineClick={handleTimelineClick}
-                    />
-                </td>
-            </tr>
+                    
+                    <div className="flex items-center gap-1">
+                        <button onClick={handlePrevEpoch} className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-l transition-colors">
+                            ← Prev (q)
+                        </button>
+                        <button onClick={handleNextEpoch} className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-r transition-colors">
+                            Next (e) →
+                        </button>
+                    </div>
+                    
+                    {/* <button 
+                        onClick={handleRandomEpoch} 
+                        className="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded transition-colors"
+                    >
+                        Random (r)
+                    </button> */}
+                    
+                    <button
+                        onClick={() => setIsAutoScrolling(prev => !prev)}
+                        className={`${isAutoScrolling ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'} text-white px-3 py-2 rounded transition-colors`}
+                    >
+                        {isAutoScrolling ? 'Stop Auto (a)' : 'Auto (a)'}
+                    </button>
+                </div>
+                
+                {/* <div className="flex flex-wrap items-center gap-2">
+                    <div className="flex items-center gap-1">
+                        <button onClick={handleFirstUnscoredEpoch} className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded-l transition-colors">
+                            First Unscored
+                        </button>
+                        <button onClick={handlePrevUnscoredEpoch} className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 transition-colors">
+                            ← Prev
+                        </button>
+                        <button onClick={handleNextUnscoredEpoch} className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded-r transition-colors">
+                            Next →
+                        </button>
+                    </div>
+                    
+                    <div className="flex items-center gap-1">
+                        <button onClick={handlePrevScoredMicrowake} className="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-l transition-colors">
+                            ← Prev Microwake
+                        </button>
+                        <button onClick={handleNextScoredMicrowake} className="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-r transition-colors">
+                            Next Microwake →
+                        </button>
+                    </div>
+                </div> */}
+            </div>
+            
+            <div className="timeline-container">
+                <table className="w-full">
+                    <tbody>
+                        {allData.slowWaveEvents && allData.spindleEvents && Object.keys(allData.slowWaveEvents).map(channel => (
+                            <tr key={`combined-${channel}`} className="timeline-row">
+                                <td className="timeline-label w-40 font-medium text-gray-700 pr-4 py-2">Slow Waves & Spindles {channel}</td>
+                                <td className="timeline-data bg-white rounded-md shadow p-1">
+                                    <CombinedSlowWaveSpindleTimeline
+                                        key={channel}
+                                        allData={allData}
+                                        channel={channel}
+                                        scrollPosition={scrollPosition}
+                                        totalSamples={totalSamples}
+                                        width={TIMELINE_WIDTH}
+                                        onTimelineClick={handleTimelineClick}
+                                    />
+                                </td>
+                            </tr>
+                        ))}
+                        
+                        {allData.nightEvents && (
+                            <tr className="timeline-row">
+                                <td className="timeline-label w-40 font-medium text-gray-700 pr-4 py-2">Night Events</td>
+                                <td className="timeline-data bg-white rounded-md shadow p-1">
+                                    <NightEventsTimeline
+                                        allData={allData}
+                                        scrollPosition={scrollPosition}
+                                        totalSamples={totalSamples}
+                                        width={TIMELINE_WIDTH}
+                                        onTimelineClick={handleTimelineClick}
+                                    /> 
+                                </td>
+                            </tr>
+                        )}
+                        
+                        {Object.keys(allData.sleepStages?.[0]?.Channels || {}).filter(channel => channel !== 'Aggregated').map((channel, index) => (
+                            <tr key={`feature-${channel}`} className="timeline-row">
+                                <td className="timeline-label w-40 pr-4 py-2">
+                                    <div className="flex flex-col">
+                                        <span className="font-medium text-gray-700">Feature {channel}</span>
+                                        {index == 0 && (
+                                            <select
+                                                value={selectedFeature}
+                                                onChange={(e) => setSelectedFeature(e.target.value)}
+                                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                                            >
+                                                <option value="">Select Feature</option>
+                                                {getOrderedKeys(getFirstNonAggregatedChannel(allData)).map((feature) => (
+                                                    <option key={feature} value={feature}>
+                                                        {feature}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        )}
+                                    </div>
+                                </td>
+                                <td className="timeline-data bg-white rounded-md shadow p-1">
+                                    {selectedFeature && (
+                                        <FeatureTimeline
+                                            allData={allData}
+                                            scrollPosition={scrollPosition}
+                                            totalSamples={totalSamples}
+                                            width={TIMELINE_WIDTH}
+                                            onTimelineClick={handleTimelineClick}
+                                            selectedFeature={selectedFeature}
+                                            channel={channel}
+                                        />
+                                    )}
+                                </td>
+                            </tr>
+                        ))}
+                        
+                        {allData.sleepStages && (
+                            <tr className="timeline-row">
+                                <td className="timeline-label w-40 font-medium text-gray-700 pr-4 py-2">YASA Hypnogram</td>
+                                <td className="timeline-data bg-white rounded-md shadow p-1">
+                                    <SleepStageTimeline
+                                        sleepStages={allData.sleepStages}
+                                        scrollPosition={scrollPosition}
+                                        totalSamples={totalSamples}
+                                        samplesPerSecond={samplesPerSecond}
+                                        samplesPerEpoch={samplesPerEpoch}
+                                        width={TIMELINE_WIDTH}
+                                        onTimelineClick={handleTimelineClick}
+                                    />
+                                </td>
+                            </tr>
+                        )}
+                        
+                        {allData.fitbitHypnogram && (
+                            <tr className="timeline-row">
+                                <td className="timeline-label w-40 font-medium text-gray-700 pr-4 py-2">Fitbit Hypnogram</td>
+                                <td className="timeline-data bg-white rounded-md shadow p-1">
+                                    <FitbitHypnogramTimeline
+                                        fitbitHypnogram={allData.fitbitHypnogram}
+                                        scrollPosition={scrollPosition}
+                                        totalSamples={totalSamples}
+                                        width={TIMELINE_WIDTH}
+                                        onTimelineClick={handleTimelineClick}
+                                        allData={allData}
+                                    />
+                                </td>
+                            </tr>
+                        )}
+                        
+                        {allData.artifacts && (
+                            <tr className="timeline-row">
+                                <td className="timeline-label w-40 font-medium text-gray-700 pr-4 py-2">Artifacts</td>
+                                <td className="timeline-data bg-white rounded-md shadow p-1">
+                                    <ArtifactsTimeline
+                                        allData={allData}
+                                        scrollPosition={scrollPosition}
+                                        totalSamples={totalSamples}
+                                        width={TIMELINE_WIDTH}
+                                        onTimelineClick={handleTimelineClick}
+                                    />
+                                </td>
+                            </tr>
+                        )}
+                        
+                        {allData.rawPhysicalFeatures && (
+                            <tr className="timeline-row">
+                                <td className="timeline-label w-40 font-medium text-gray-700 pr-4 py-2">Movement</td>
+                                <td className="timeline-data bg-white rounded-md shadow p-1">
+                                    <RawPhysicalFeaturesTimeline
+                                        allData={allData}
+                                        scrollPosition={scrollPosition}
+                                        totalSamples={totalSamples}
+                                        width={TIMELINE_WIDTH}
+                                        onTimelineClick={handleTimelineClick}
+                                    />
+                                </td>
+                            </tr>
+                        )}
+                        
+                        <tr className="timeline-row">
+                            <td className="timeline-label w-40 font-medium text-gray-700 pr-4 py-2">SettlingManualScore</td>
+                            <td className="timeline-data bg-white rounded-md shadow p-1">
+                                <StageTimeline
+                                    sleepStages={allData.sleepStages}
+                                    scrollPosition={scrollPosition}
+                                    totalSamples={totalSamples}
+                                    width={TIMELINE_WIDTH}
+                                    onTimelineClick={handleTimelineClick}
+                                    field="SettlingManualScore"
+                                    color="red"
+                                />
+                            </td>
+                        </tr>
+                        
+                        {allData.microwakings && (
+                            <tr className="timeline-row">
+                                <td className="timeline-label w-40 font-medium text-gray-700 pr-4 py-2">Microwakings</td>
+                                <td className="timeline-data bg-white rounded-md shadow p-1">
+                                    <MicrowakingsTimeline
+                                        allData={allData}
+                                        scrollPosition={scrollPosition}
+                                        totalSamples={totalSamples}
+                                        width={TIMELINE_WIDTH}
+                                        onTimelineClick={handleTimelineClick}
+                                    />
+                                </td>
+                            </tr>
+                        )}
+                        
+                        <tr className="timeline-row">
+                            <td className="timeline-label w-40 font-medium text-gray-700 pr-4 py-2">Videos</td>
+                            <td className="timeline-data bg-white rounded-md shadow p-1">
+                                <VideoTimeline
+                                    allData={allData}
+                                    videoFiles={allData.videos}
+                                    startTime={allData.processedEDF.startDate}
+                                    duration={allData.processedEDF.duration}
+                                    width={TIMELINE_WIDTH}
+                                    onTimelineClick={handleTimelineClick}
+                                />
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
     );
 });
