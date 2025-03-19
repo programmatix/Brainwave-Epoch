@@ -49,8 +49,8 @@ export const VideoFilmstrip: React.FC<VideoFilmstripChartProps> = ({
         visibleVideos.forEach((video, index) => {
             annotations[`video-${index}`] = {
                 type: 'box',
-                xMin: video.timestamp.epochSeconds,
-                xMax: video.timestamp.epochSeconds + 1,
+                xMin: video.timestamp.epochSeconds * 1000,
+                xMax: video.timestamp.epochSeconds * 1000 + 1000,
                 yMin: 0,
                 yMax: 1,
                 backgroundColor: 'rgba(255, 99, 132, 0.3)',
@@ -70,7 +70,7 @@ export const VideoFilmstrip: React.FC<VideoFilmstripChartProps> = ({
         });
         
         if (currentVideoTime !== undefined && currentVideo) {
-            const playbackPosition = currentVideo.timestamp.epochSeconds + currentVideoTime;
+            const playbackPosition = currentVideo.timestamp.epochSeconds * 1000 + (currentVideoTime * 1000);
             annotations['playback-position'] = {
                 type: 'line',
                 xMin: playbackPosition,
@@ -96,11 +96,12 @@ export const VideoFilmstrip: React.FC<VideoFilmstripChartProps> = ({
                 scales: {
                     x: {
                         type: 'linear',
-                        min: visibleStartTime,
-                        max: visibleEndTime,
+                        min: visibleStartTime * 1000,
+                        max: visibleEndTime * 1000,
                         ticks: {
-                            callback: (value: number) => {
-                                const date = new Date(value * 1000);
+                            maxTicksLimit: 10,
+                            callback: (value) => {
+                                const date = new Date(value);
                                 return date.toLocaleTimeString();
                             }
                         }

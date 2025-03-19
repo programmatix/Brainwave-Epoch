@@ -106,7 +106,7 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition })
 
             const data = artifactMode === 'remove' ? signal.samples.slice(scrollPosition, scrollPosition + samplesToShow).map((value, index) => {
                 const sampleIndex = scrollPosition + index;
-                const isInArtifact = allData.artifacts?.some(artifact => 
+                const isInArtifact = allData.artifacts?.some(artifact =>
                     sampleIndex >= artifact.start && sampleIndex <= artifact.end
                 ) || false;
                 return isInArtifact ? NaN : value;
@@ -123,16 +123,16 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition })
 
             if (compareEpoch !== null) {
                 const compareStartSample = compareEpoch * SECONDS_PER_EPOCH * samplesPerSecond;
-                const compareData = artifactMode === 'remove' ? 
+                const compareData = artifactMode === 'remove' ?
                     signal.samples.slice(compareStartSample, compareStartSample + samplesToShow).map((value, index) => {
                         const sampleIndex = compareStartSample + index;
-                        const isInArtifact = allData.artifacts?.some(artifact => 
+                        const isInArtifact = allData.artifacts?.some(artifact =>
                             sampleIndex >= artifact.start && sampleIndex <= artifact.end
                         ) || false;
                         return isInArtifact ? NaN : value;
-                    }) : 
+                    }) :
                     signal.samples.slice(compareStartSample, compareStartSample + samplesToShow);
-                
+
                 datasets.push({
                     label: `${signal.label} (Compare)`,
                     data: compareData,
@@ -241,16 +241,16 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition })
             const artifactAnnotations = artifactMode === 'annotate' ? allData.artifacts?.map((artifact: Artifact, artifactIndex: number) => {
                 const artifactStartSample = artifact.start - scrollPosition;
                 const artifactEndSample = artifact.end - scrollPosition;
-                
+
                 // Only show artifacts that are visible in the current view
                 if (artifactEndSample < 0 || artifactStartSample > samplesToShow) {
                     return null;
                 }
-                
+
                 // Adjust to ensure we only show the visible portion of the artifact
                 const visibleStartSample = Math.max(0, artifactStartSample);
                 const visibleEndSample = Math.min(samplesToShow, artifactEndSample);
-                
+
                 return [`artifact${artifactIndex}`, {
                     type: 'box',
                     xMin: visibleStartSample,
@@ -509,7 +509,7 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition })
                 </label>
                 <label className="flex items-center space-x-2">
                     <span>Artifacts:</span>
-                    <select 
+                    <select
                         className="select select-bordered select-sm"
                         value={artifactMode}
                         onChange={(e) => setArtifactMode(e.target.value)}
@@ -563,23 +563,17 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition })
                     })}
 
                     {/* Raw Physical Features */}
-                    <div className="border border-base-300 bg-base-100 rounded-box mb-2">
-                        <div className="text-xl font-medium flex items-center gap-2">
-                            Raw Physical Features
-                        </div>
-                        
-                        <div className="p-4">
-                            {allData.rawPhysicalFeatures ? (
-                                <RawPhysicalFeaturesChart
-                                    allData={allData}
-                                    scrollPosition={scrollPosition}
-                                    samplesPerSecond={samplesPerSecond}
-                                    secondsToShow={SECONDS_TO_SHOW}
-                                />
-                            ) : (
-                                <div className="text-center p-4">No raw physical features data available</div>
-                            )}
-                        </div>
+                    <div className="p-4">
+                        {allData.rawPhysicalFeatures ? (
+                            <RawPhysicalFeaturesChart
+                                allData={allData}
+                                scrollPosition={scrollPosition}
+                                samplesPerSecond={samplesPerSecond}
+                                secondsToShow={SECONDS_TO_SHOW}
+                            />
+                        ) : (
+                            <div className="text-center p-4">No raw physical features data available</div>
+                        )}
                     </div>
 
                     <div className="collapse-content">

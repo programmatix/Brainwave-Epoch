@@ -58,16 +58,32 @@ export const RawPhysicalFeaturesChart: React.FC<RawPhysicalFeaturesChartProps> =
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                },
                 interaction: {
                     mode: 'index',
                     intersect: false,
                 },
+                layout: {
+                    padding: {
+                        left: 37,
+                        right: 10,
+                    }
+                },
                 scales: {
                     x: {
-                        display: true,
-                        title: {
-                            display: true,
-                            text: 'Time'
+                        type: 'linear',
+                        min: startTime + (scrollPosition / samplesPerSecond) * 1000,
+                        max: startTime + ((scrollPosition + samplesToShow) / samplesPerSecond) * 1000,
+                        ticks: {
+                            maxTicksLimit: 10,
+                            callback: (value) => {
+                                const date = new Date(value);
+                                return date.toLocaleTimeString();
+                            }
                         }
                     },
                     y1: {
@@ -75,7 +91,7 @@ export const RawPhysicalFeaturesChart: React.FC<RawPhysicalFeaturesChartProps> =
                         display: true,
                         position: 'left',
                         title: {
-                            display: true,
+                            display: false,
                             text: 'Movement'
                         }
                     }
