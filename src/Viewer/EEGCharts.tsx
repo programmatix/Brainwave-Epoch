@@ -562,16 +562,6 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition })
                         );
                     })}
 
-                    <div className="collapse-content">
-                        <VideoViewer
-                            videoFiles={allData.videos}
-                            startTime={allData.processedEDF.startDate}
-                            duration={allData.processedEDF.duration}
-                            currentTime={currentTime}
-                            secondsToShow={SECONDS_PER_EPOCH}
-                        />
-                    </div>
-
                     {/* Raw Physical Features */}
                     <div className="border border-base-300 bg-base-100 rounded-box mb-2">
                         <div className="text-xl font-medium flex items-center gap-2">
@@ -591,6 +581,17 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition })
                             )}
                         </div>
                     </div>
+
+                    <div className="collapse-content">
+                        <VideoViewer
+                            videoFiles={allData.videos}
+                            startTime={allData.processedEDF.startDate}
+                            duration={allData.processedEDF.duration}
+                            currentTime={currentTime}
+                            secondsToShow={SECONDS_PER_EPOCH}
+                        />
+                    </div>
+
                 </div>
             </div>
         </div>
