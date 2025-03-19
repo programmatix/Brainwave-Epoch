@@ -14,6 +14,8 @@ import { Slider } from './Slider';
 import { MetricsTable } from './MetricsTable';
 import { detectBlinks } from '../BlinkDetection/BlinkDetector';
 import { VideoViewer } from '../Videos/VideoViewer';
+import MovementTimeline from '../Movement/MovementTimeline';
+import { RawPhysicalFeaturesChart } from './RawPhysicalFeaturesChart';
 
 Chart.register(...registerables, annotationPlugin);
 
@@ -560,23 +562,35 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition })
                         );
                     })}
 
-                    {/* <button
-                        className="collapse-title text-xl font-medium flex items-center gap-2 w-full"
-                        onClick={() => setShowVideo(!showVideo)}
-                    >
-                        <span className="text-2xl">{showVideo ? '▼' : '▶'}</span>
-                        Video
-                    </button> */}
-                    
-                        <div className="collapse-content">
-                            <VideoViewer
-                                videoFiles={allData.videos}
-                                startTime={allData.processedEDF.startDate}
-                                duration={allData.processedEDF.duration}
-                                currentTime={currentTime}
-                                secondsToShow={SECONDS_PER_EPOCH}
-                            />
+                    <div className="collapse-content">
+                        <VideoViewer
+                            videoFiles={allData.videos}
+                            startTime={allData.processedEDF.startDate}
+                            duration={allData.processedEDF.duration}
+                            currentTime={currentTime}
+                            secondsToShow={SECONDS_PER_EPOCH}
+                        />
+                    </div>
+
+                    {/* Raw Physical Features */}
+                    <div className="border border-base-300 bg-base-100 rounded-box mb-2">
+                        <div className="text-xl font-medium flex items-center gap-2">
+                            Raw Physical Features
                         </div>
+                        
+                        <div className="p-4">
+                            {allData.rawPhysicalFeatures ? (
+                                <RawPhysicalFeaturesChart
+                                    allData={allData}
+                                    scrollPosition={scrollPosition}
+                                    samplesPerSecond={samplesPerSecond}
+                                    secondsToShow={SECONDS_TO_SHOW}
+                                />
+                            ) : (
+                                <div className="text-center p-4">No raw physical features data available</div>
+                            )}
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

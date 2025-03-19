@@ -21,6 +21,8 @@ import { StageTimeline } from './StageTimeline';
 import { PhysicalFeatureTimeline } from './PhysicalFeatureTimeline';
 import { FinalWakeModelFeatureTimeline } from './FinalWakeModelFeatureTimeline';
 import { ArtifactsTimeline } from './ArtifactsTimeline';
+import { RawPhysicalFeaturesTimeline } from './RawPhysicalFeaturesTimeline';
+
 interface TimelineNavigationProps {
     allData: AllData;
     scrollPosition: number;
@@ -199,7 +201,7 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = ({
             </div>
             {allData.slowWaveEvents && allData.spindleEvents && Object.keys(allData.slowWaveEvents).map(channel => (
                 <tr key={`combined-${channel}`}>
-                    <td>Slow Waves & Spindles {channel}</td>
+                    <td className="w-128">Slow Waves & Spindles {channel}</td>
                     <td>
                         <CombinedSlowWaveSpindleTimeline
                             key={channel}
@@ -214,7 +216,7 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = ({
                 </tr>
             ))}
             {allData.nightEvents && <tr>
-                <td>Night Events</td>
+                <td className="w-128">Night Events</td>
                 <td>
                     <NightEventsTimeline
                         allData={allData}
@@ -227,7 +229,9 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = ({
             </tr>}
             {Object.keys(allData.sleepStages?.[0]?.Channels || {}).filter(channel => channel !== 'Aggregated').map((channel, index) => (
                 <tr key={`feature-${channel}`}>
-                    <td>Feature Timeline {channel}
+                    <td className="w-128">
+                        <div className="flex items-center space-x-2 mb-2">
+                            Feature Timeline {channel}
 
                         {index == 0 && <div className="flex items-center space-x-2 mb-2">
                             <select
@@ -242,6 +246,7 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = ({
                                 ))}
                             </select>
                         </div>}
+                    </div>
 
                     </td>
                     <td>
@@ -259,8 +264,8 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = ({
                 </tr>
             ))}
             {/* {Object.keys(allData.sleepStages?.[0]?.finalWakeModel || {}).map((feature, index) => ( */}
-                <tr>
-                    <td>Final Wake Model
+                {/* <tr>
+                    <td className="w-128">Final Wake Model */}
 
                         {/* {index == 0 && <div className="flex items-center space-x-2 mb-2">
                             <select
@@ -276,7 +281,7 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = ({
                             </select>
                         </div>} */}
 
-                    </td>
+                    {/* </td>
                     <td>
                         <FinalWakeModelFeatureTimeline
                             allData={allData}
@@ -286,7 +291,7 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = ({
                             onTimelineClick={handleTimelineClick}
                         />
                     </td>
-                </tr>
+                </tr> */}
             {/* ))} */}
             {/* {Object.keys(allData.sleepStages?.[0]?.physicalFeatures || {}).map((feature, index) => (
                 <tr key={`feature-${feature}`}>
@@ -321,7 +326,7 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = ({
                 </tr>
             ))} */}
             {allData.sleepStages && <tr>
-                <td>Aggregated YASA Hypnogram</td>
+                <td className="w-128">Aggregated YASA Hypnogram</td>
                 <td>
                     <SleepStageTimeline
                         sleepStages={allData.sleepStages}
@@ -334,8 +339,8 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = ({
                     />
                 </td>
             </tr>}
-            {allData.sleepStages && <tr>
-                <td>Predicted Sleep Stages</td>
+            {/* {allData.sleepStages && <tr>
+                <td className="w-128">Predicted Sleep Stages</td>
                 <td>
                     <PredictedSleepStageTimeline
                         sleepStages={allData.sleepStages}
@@ -345,9 +350,9 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = ({
                         onTimelineClick={handleTimelineClick}
                     />
                 </td>
-            </tr>}
-            {scorings && <tr>
-                <td>Scored Epochs</td>
+            </tr>} */}
+            {/* {scorings && <tr>
+                <td className="w-128">Scored Epochs</td>
                 <td>
                     <ScoredEpochsTimeline
                         scorings={scorings}
@@ -360,7 +365,7 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = ({
                 </td>
             </tr>}
             {marks && <tr>
-                <td>Marked Epochs</td>
+                <td className="w-128">Marked Epochs</td>
                 <td>
                     <MarksTimeline
                         scrollPosition={scrollPosition}
@@ -370,9 +375,9 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = ({
                         onTimelineClick={handleTimelineClick}
                     />
                 </td>
-            </tr>}
+            </tr>} */}
             {allData.fitbitHypnogram && <tr>
-                <td>Fitbit Hypnogram</td>
+                <td className="w-128">Fitbit Hypnogram</td>
                 <td>
                     <FitbitHypnogramTimeline
                         fitbitHypnogram={allData.fitbitHypnogram}
@@ -385,9 +390,21 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = ({
                 </td>
             </tr>}
             {allData.artifacts && <tr>
-                <td>Artifacts</td>
+                <td className="w-128">Artifacts</td>
                 <td>
                     <ArtifactsTimeline
+                        allData={allData}
+                        scrollPosition={scrollPosition}
+                        totalSamples={totalSamples}
+                        width={TIMELINE_WIDTH}
+                        onTimelineClick={handleTimelineClick}
+                    />
+                </td>
+            </tr>}
+            {allData.rawPhysicalFeatures && <tr>
+                <td className="w-128">Movement</td>
+                <td>
+                    <RawPhysicalFeaturesTimeline
                         allData={allData}
                         scrollPosition={scrollPosition}
                         totalSamples={totalSamples}
@@ -420,8 +437,8 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = ({
                     />
                 </td>
             </tr>} */}
-            <tr>
-                <td>SettlingScorePrediction</td>
+            {/* <tr> */}
+                {/* <td className="w-128">SettlingScorePrediction</td>
                 <td>
                     <StageTimeline
                         sleepStages={allData.sleepStages}
@@ -435,7 +452,7 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = ({
                 </td>
             </tr>
             <tr>
-                <td>SettlingV4ScorePrediction</td>
+                <td className="w-128">SettlingV4ScorePrediction</td>
                 <td>
                     <StageTimeline
                         sleepStages={allData.sleepStages}
@@ -449,7 +466,7 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = ({
                 </td>
             </tr>
             <tr>
-                <td>SettlingTiredVsWiredPrediction</td>
+                <td className="w-128">SettlingTiredVsWiredPrediction</td>
                 <td>
                     <StageTimeline
                         sleepStages={allData.sleepStages}
@@ -461,9 +478,9 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = ({
                         color="red"
                     />
                 </td>
-            </tr>
+            </tr> */}
             <tr>
-                <td>SettlingManualScore</td>
+                <td className="w-128">SettlingManualScore</td>
                 <td>
                     <StageTimeline
                         sleepStages={allData.sleepStages}
@@ -477,7 +494,7 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = ({
                 </td>
             </tr>
             {allData.microwakings && <tr>
-                <td>Microwakings</td>
+                <td className="w-128">Microwakings</td>
                 <td>
                     <MicrowakingsTimeline
                         allData={allData}
@@ -489,13 +506,14 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = ({
                 </td>
             </tr>}
             <tr>
-                <td>Videos</td>
+                <td className="w-128">Videos</td>
                 <td>
                     <VideoTimeline
+                        allData={allData}
                         videoFiles={allData.videos}
                         startTime={allData.processedEDF.startDate}
                         duration={allData.processedEDF.duration}
-                        width={1000}
+                        width={TIMELINE_WIDTH}
                         onTimelineClick={handleTimelineClick}
                     />
                 </td>

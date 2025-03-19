@@ -2,8 +2,9 @@ import React from 'react';
 import { VideoFile } from './Videos';
 import { Temporal } from '@js-temporal/polyfill';
 import { SECONDS_PER_EPOCH } from '../Viewer/EEGCharts';
-
+import { AllData } from '../Loader/LoaderTypes';
 interface VideoTimelineProps {
+  allData: AllData;
   videoFiles: VideoFile[];
   startTime: Temporal.ZonedDateTime;
   duration: number;
@@ -12,6 +13,7 @@ interface VideoTimelineProps {
 }
 
 export const VideoTimeline: React.FC<VideoTimelineProps> = ({
+  allData,
   videoFiles,
   startTime,
   duration,
@@ -29,10 +31,10 @@ export const VideoTimeline: React.FC<VideoTimelineProps> = ({
               x={startX}
               y="0"
               width="1"
-              height="30"
+              height="20"
               fill="blue"
               onClick={() => {
-                const epoch = Math.floor(video.timestamp.epochSeconds / SECONDS_PER_EPOCH);
+                const epoch = Math.floor((video.timestamp.epochSeconds - allData.processedEDF.startDate.epochSeconds) / SECONDS_PER_EPOCH);
                 onTimelineClick(epoch);
               }}
             />

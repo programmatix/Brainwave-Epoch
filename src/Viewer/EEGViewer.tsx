@@ -3,6 +3,7 @@ import { AllData } from '../Loader/LoaderTypes';
 import { EEGCharts, SECONDS_PER_EPOCH } from './EEGCharts';
 import { TimelineNavigation } from './Navigation';
 import { ScoringComponent } from './ScoringComponent';
+import { DisturbancesComponent } from '../Disturbances/Disturbances';
 
 interface EEGViewerProps {
   allData: AllData;
@@ -10,7 +11,8 @@ interface EEGViewerProps {
 
 const EEGViewer: React.FC<EEGViewerProps> = ({ allData }) => {
   const [scrollPosition, setScrollPosition] = useState(0);
-  const [showScoring, setShowScoring] = useState(true);
+  const [showScoring, setShowScoring] = useState(false);
+  const [showDisturbances, setShowDisturbances] = useState(false);
   const [showVideo, setShowVideo] = useState(true);
 
   const samplesPerSecond = allData.processedEDF.signals[0]?.samplingRate || 1;
@@ -36,9 +38,9 @@ const EEGViewer: React.FC<EEGViewerProps> = ({ allData }) => {
           onClick={() => setShowScoring(!showScoring)}
         >
           <span className="text-2xl">{showScoring ? '▼' : '▶'}</span>
-          Scoring
+          Scoring, Marking & Tagging
         </button>
-        {/* {showScoring && ( */}
+        {showScoring && (
         <div className="collapse-content">
           <ScoringComponent
             scrollPosition={scrollPosition}
@@ -50,7 +52,30 @@ const EEGViewer: React.FC<EEGViewerProps> = ({ allData }) => {
             }}
           />
         </div>
-        {/* )} */}
+        )}
+      </div>
+
+      <div className="bg-base-200 mb-2">
+        <button
+          className="text-xl font-medium flex items-center gap-2 w-full"
+          onClick={() => setShowDisturbances(!showDisturbances)}
+        >
+          <span className="text-2xl">{showDisturbances ? '▼' : '▶'}</span>
+          Disturbances
+        </button>
+        {showDisturbances && (
+        <div className="collapse-content">
+          <DisturbancesComponent
+            scrollPosition={scrollPosition}
+            samplesPerEpoch={samplesPerEpoch}
+            allData={allData}
+            handleNextEpoch={() => {
+              const currentEpoch = Math.floor(scrollPosition / samplesPerEpoch);
+              setScrollPosition(Math.min(totalSamples - 1, (currentEpoch + 1) * samplesPerEpoch));
+            }}
+          />
+        </div>
+        )}
       </div>
 
       <EEGCharts

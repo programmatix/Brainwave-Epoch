@@ -78,8 +78,10 @@
     ]
   },
   "dependencies": {
+    "@influxdata/influxdb-client": "^1.35.0",
     "@js-temporal/polyfill": "^0.4.4",
     "@tippyjs/react": "^4.2.6",
+    "@types/d3": "^7.4.3",
     "assert": "^2.1.0",
     "buffer": "^6.0.3",
     "chartjs-plugin-annotation": "^3.0.1",
@@ -88,6 +90,8 @@
     "chartjs-plugin-style": "^0.5.0",
     "chartjs-plugin-zoom": "^2.0.1",
     "csv-parse": "^5.5.6",
+    "d3": "^7.9.0",
+    "dotenv": "^16.4.7",
     "file-saver": "^2.0.5",
     "plotly": "^1.0.6",
     "plotly.js": "^2.35.0",

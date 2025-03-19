@@ -1,11 +1,12 @@
 import { Temporal } from '@js-temporal/polyfill';
 import { parse } from 'csv-parse/sync';
 import { promises as fs } from 'fs';
-import { AllData, EDFData, EDFHeader, EDFSignal, FitbitHypnogram, GroupedSlowWaveEvents, GroupedSpindleEvents, NightEvents, ProcessedEDFData, ProcessedSleepStageEntry, ProcessedSleepStages, SignalData, SlowWaveEvents, SpindleEvents, TimeLabel, SleepStageFeatureMinMax, ProcessedSleepStageEntryFeatures, ChannelData, Scorings, ScoringEntry, ScoringTag, Mark, Microwaking, Microwakings, StageFeatureMinMax, StatsCSVRow, FeatureMinMax, Artifacts } from './LoaderTypes';
+import { AllData, EDFData, EDFHeader, EDFSignal, FitbitHypnogram, GroupedSlowWaveEvents, GroupedSpindleEvents, NightEvents, ProcessedEDFData, ProcessedSleepStageEntry, ProcessedSleepStages, SignalData, SlowWaveEvents, SpindleEvents, TimeLabel, SleepStageFeatureMinMax, ProcessedSleepStageEntryFeatures, ChannelData, Scorings, ScoringEntry, ScoringTag, Mark, Microwaking, Microwakings, StageFeatureMinMax, StatsCSVRow, FeatureMinMax, Artifacts, RawPhysicalFeatures } from './LoaderTypes';
 
 
 import { EventEmitter } from 'events';
 import { loadVideos } from '../Videos/Videos';
+import { queryMovementData, processMovementData } from '../Movement/Movement';
 
 export const loaderEvents = new EventEmitter();
 
@@ -332,6 +333,30 @@ export async function readScorings(filePath: string): Promise<{ scorings: Scorin
     }
 }
 
+export async function readRawPhysicalFeatures(filePath: string): Promise<RawPhysicalFeatures | undefined> {
+    try {
+        console.time('readRawPhysicalFeatures');
+        const data = await fs.readFile(filePath, 'utf8');
+        const parsedData = parse(data, {
+            columns: true,
+            skip_empty_lines: true
+        });
+
+        const rawPhysicalFeatures: RawPhysicalFeatures = parsedData.map((entry: any) => ({
+            timestamp: parseDateString(entry.DatabaseTimestamp),
+            hr: entry.HR ? parseFloat(entry.HR) : null,
+            temp: entry.Temp ? parseFloat(entry.Temp) : null,
+            o2: entry.O2 ? parseFloat(entry.O2) : null,
+            movement: entry.Movement ? parseFloat(entry.Movement) : null
+        }));
+        console.timeEnd('readRawPhysicalFeatures');
+        return rawPhysicalFeatures;
+    } catch (error) {
+        console.error(`Error reading RawPhysicalFeatures file: ${error.message}`);
+        return undefined;
+    }
+}
+
 export async function loadFiles(edfPath: string): Promise<AllData> {
     const start = performance.now();
     loaderEvents.emit('log', `${new Date().toISOString()}: Starting to load files`);
@@ -347,35 +372,56 @@ export async function loadFiles(edfPath: string): Promise<AllData> {
     const scoringsPath = edfPath.replace('.edf', '.scorings.json');
     const microwakingsPath = edfPath.replace('.edf', '.microwakings.csv');
     const artifactsPath = edfPath.replace('.edf', '.artifacts.csv');
-    // Completely deviating from original goal of making this a general purpose utility..
     const sleepStatsPath = "C:\\dev\\play\\brainwave-data\\stats.csv";
     const finalWakeModelPath = edfPath.replace('.edf', '.final_wake_model.csv');
+    const rawPhysicalFeaturesPath = edfPath.replace('.edf', '.physical_features.1s.csv');
 
-    const [stats, processedStages, raw, slowWaveEvents, nightEvents, fitbitHypnogram, spindleEvents, scorings, microwakings, artifacts] = await Promise.all([
+    // First, read and process the EDF file to get the date range for other data
+    loaderEvents.emit('log', `${new Date().toISOString()}: Reading EDF file...`);
+    const raw = await readEDFPlus(edfPath);
+    const processedEDF = await processEDFData(raw);
+    
+    // Now get date range for InfluxDB query
+    const startDate = processedEDF.startDate;
+    const endDate = processedEDF.startDate.add({ seconds: processedEDF.duration });
+    
+    // Load all other data in parallel
+    loaderEvents.emit('log', `${new Date().toISOString()}: Loading all data files in parallel...`);
+    const [
+        stats, 
+        processedStages, 
+        slowWaveEvents, 
+        nightEvents, 
+        fitbitHypnogram, 
+        spindleEvents, 
+        scorings, 
+        microwakings, 
+        artifacts,
+        // movementRawData,
+        videos,
+        rawPhysicalFeatures
+    ] = await Promise.all([
         readStats(sleepStatsPath),
         readSleepStages(sleepStagesPath, postHumansStagesPath, physicalFeaturesPath, finalWakeModelPath),
-        readEDFPlus(edfPath),
         readSlowWaveEvents(slowWaveEventsPath),
         readNightEvents(nightEventsPath),
         readFitbitHypnogram(fitbitHypnogramPath),
         readSpindleEvents(spindleEventsPath),
         readScorings(scoringsPath),
         readMicrowakings(microwakingsPath),
-        readArtifacts(artifactsPath)
+        readArtifacts(artifactsPath),
+        //queryMovementData(startDate, endDate),
+        loadVideos(processedEDF.startDate, processedEDF.duration),
+        readRawPhysicalFeatures(rawPhysicalFeaturesPath)
     ]);
 
-    loaderEvents.emit('log', `${new Date().toISOString()}: Processing EDF data...`);
-    const processStart = performance.now();
-    const processedEDF = await processEDFData(raw);
-    const processEnd = performance.now();
-    loaderEvents.emit('log', `${new Date().toISOString()}: EDF data processed in ${(processEnd - processStart).toFixed(2)}ms`);
-
+    // Process the movement data
+    // const movementData = processMovementData(movementRawData, startDate);
+    
     const end = performance.now();
     loaderEvents.emit('log', `${new Date().toISOString()}: All files loaded and processed in ${(end - start).toFixed(2)}ms`);
 
     const sleepStageFeatureMinMax = await calculateSleepStageFeatureMinMax(stats, processedStages);
-
-    const videos = await loadVideos(processedEDF.startDate, processedEDF.duration);
 
     const allData: AllData = {
         processedEDF,
@@ -387,11 +433,14 @@ export async function loadFiles(edfPath: string): Promise<AllData> {
         predictedAwakeTimeline: processedStages,
         definiteAwakeSleepTimeline: processedStages,
         sleepStageFeatureMinMax,
+        rawPhysicalFeatures,
         scorings: scorings.scorings,
         marks: scorings.marks,
         microwakings,
         videos,
-        artifacts
+        artifacts,
+        // movementData,
+        
     };
 
     return allData;

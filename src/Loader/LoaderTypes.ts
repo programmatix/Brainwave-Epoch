@@ -1,5 +1,6 @@
 import { Temporal } from "@js-temporal/polyfill";
 import { VideoFile } from "../Videos/Videos";
+import { ProcessedMovementData } from "../Movement/Movement";
 
 export type EDFHeader = {
     version: string;
@@ -274,6 +275,32 @@ export type ScoringTag = {
   export type Scorings = ScoringEntry[];
   
 
+export type DisturbanceValue = 'Unset' | 'No' | 'Yes' | 'Unclear';
+
+export type DisturbanceEntry = {
+  epochIndex: number;
+  scoredAt: string;
+  noseMotion: DisturbanceValue;
+  mouthFlapping: DisturbanceValue;
+  eegWires: DisturbanceValue;
+  charlieMoving: DisturbanceValue;
+  dog: DisturbanceValue;
+  cat: DisturbanceValue;
+  noteworthy: boolean;
+  note: string;
+  duration: 'brief' | 'partOfLonger' | null;
+};
+
+export type Disturbances = DisturbanceEntry[];
+
+export type RawPhysicalFeatures = {
+    timestamp: Temporal.ZonedDateTime;
+    hr: number | null;
+    temp: number | null;
+    o2: number | null;
+    movement: number | null;
+}[];
+
 export type AllData = {
     processedEDF: ProcessedEDFData;
     sleepStages?: ProcessedSleepStages;
@@ -284,12 +311,15 @@ export type AllData = {
     predictedAwakeTimeline?: ProcessedSleepStages;
     definiteAwakeSleepTimeline?: ProcessedSleepStages;
     sleepStageFeatureMinMax?: SleepStageFeatureMinMax;
+    //movementData?: ProcessedMovementData;
+    rawPhysicalFeatures?: RawPhysicalFeatures;
     // These are the originally loaded values - they are not modified
     scorings?: Scorings;
     marks?: Mark[];
     microwakings?: Microwakings;
     videos?: VideoFile[];
     artifacts?: Artifacts;
+    disturbances?: Disturbances;
 };
 
 // Add this new type
