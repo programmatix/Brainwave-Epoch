@@ -103,8 +103,8 @@ export const FitbitHypnogramChart: React.FC<FitbitHypnogramChartProps> = ({
                 },
                 layout: {
                     padding: {
-                        left: 50,
-                        right: 20,
+                        left: 37,
+                        right: 10,
                     }
                 },
             plugins: {

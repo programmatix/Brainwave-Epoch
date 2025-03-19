@@ -3,8 +3,10 @@ import { Temporal } from '@js-temporal/polyfill';
 import { VideoTimeline } from './VideoTimeline';
 import { VideoFilmstrip } from './VideoFilmstrip';
 import { VideoFile } from './Videos';
-
+import { AllData } from '../Loader/LoaderTypes';
 interface VideoViewerProps {
+  allData: AllData;
+  scrollPosition: number;
   videoFiles: VideoFile[];
   startTime: Temporal.ZonedDateTime;
   duration: number;
@@ -13,6 +15,8 @@ interface VideoViewerProps {
 }
 
 export const VideoViewer: React.FC<VideoViewerProps> = ({
+  allData,
+  scrollPosition,
   videoFiles,
   startTime,
   duration,
@@ -37,6 +41,8 @@ export const VideoViewer: React.FC<VideoViewerProps> = ({
   return (
     <div className="video-viewer">
       <VideoFilmstrip
+        allData={allData}
+        scrollPosition={scrollPosition}
         videoFiles={videoFiles}
         currentTime={currentTime}
         secondsToShow={secondsToShow}

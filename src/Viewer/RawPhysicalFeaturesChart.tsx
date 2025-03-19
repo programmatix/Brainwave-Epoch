@@ -2,6 +2,8 @@ import React from 'react';
 import { AllData } from '../Loader/LoaderTypes';
 import { Chart, ChartConfiguration, registerables } from 'chart.js';
 import annotationPlugin from 'chartjs-plugin-annotation';
+import { merge } from 'lodash';
+import { eegChartOptions } from './ChartUtils';
 
 Chart.register(...registerables, annotationPlugin);
 
@@ -50,29 +52,15 @@ export const RawPhysicalFeaturesChart: React.FC<RawPhysicalFeaturesChartProps> =
                         data: visibleFeatures.map(f => f.movement),
                         borderColor: '#8b5cf6',
                         backgroundColor: '#8b5cf6',
-                        yAxisID: 'y1',
-                        spanGaps: true
                     }
                 ]
             },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        display: false
-                    },
-                },
-                interaction: {
-                    mode: 'index',
-                    intersect: false,
-                },
-                layout: {
-                    padding: {
-                        left: 37,
-                        right: 10,
-                    }
-                },
+            options: merge(
+                eegChartOptions(`Movement`, allData, scrollPosition), {
+                // interaction: {
+                //     mode: 'index',
+                //     intersect: false,
+                // },
                 scales: {
                     x: {
                         type: 'linear',
@@ -85,18 +73,9 @@ export const RawPhysicalFeaturesChart: React.FC<RawPhysicalFeaturesChartProps> =
                                 return date.toLocaleTimeString();
                             }
                         }
-                    },
-                    y1: {
-                        type: 'linear',
-                        display: true,
-                        position: 'left',
-                        title: {
-                            display: false,
-                            text: 'Movement'
-                        }
                     }
                 }
-            }
+            }) as any
         };
 
         const newChart = new Chart(ctx, config);
@@ -110,7 +89,7 @@ export const RawPhysicalFeaturesChart: React.FC<RawPhysicalFeaturesChartProps> =
     if (!allData.rawPhysicalFeatures) return null;
 
     return (
-        <div className="w-full" style={{ height: '200px' }}>
+        <div className="w-full" style={{ height: '100px' }}>
             <canvas ref={chartRef} style={{ width: '100%', height: '100%' }} />
         </div>
     );

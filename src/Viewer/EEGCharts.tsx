@@ -6,7 +6,7 @@ import { FitbitHypnogramChart } from './FitbitHypnogramChart';
 import { NightEventsChart } from './NightEventsChart';
 import { ComparisonControls } from './ComparisonControls';
 import { generateAnnotations, generateAnnotationsForLeft } from './EEGChartAnnotations';
-import { LabelContent, millisecondsToSamples, sampleIndexToTime } from './ChartUtils';
+import { eegChartOptions, LabelContent, millisecondsToSamples, sampleIndexToTime } from './ChartUtils';
 import { useStore, StoreState } from '../Store/Store';
 import { Temporal } from '@js-temporal/polyfill';
 import { parseDateString } from '../Loader/Loader';
@@ -16,6 +16,7 @@ import { detectBlinks } from '../BlinkDetection/BlinkDetector';
 import { VideoViewer } from '../Videos/VideoViewer';
 import MovementTimeline from '../Movement/MovementTimeline';
 import { RawPhysicalFeaturesChart } from './RawPhysicalFeaturesChart';
+import { merge } from 'lodash';
 
 Chart.register(...registerables, annotationPlugin);
 
@@ -283,121 +284,104 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition })
                     labels: Array(samplesToShow).fill(''),
                     datasets: datasets
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        x: {
-                            display: index === 0 || index === signalsToShow.length - 1,
-                            position: index === 0 ? 'top' : 'bottom',
-                            title: { display: true, text: 'Time' },
-                            ticks: {
-                                maxTicksLimit: 10,
-                                callback: (value, index, ticks) => {
-                                    return allData.processedEDF.signals[0].timeLabels[scrollPosition + index]?.formatted
-                                }
+                options: merge(
+                    eegChartOptions(`${signal.label} (${signal.physicalDimension})`, allData, scrollPosition),
+                    {
+                        scales: {
+                            x: {
+                                display: index === 0 || index === signalsToShow.length - 1,
+                                position: index === 0 ? 'top' : 'bottom',
                             },
-                            grid: {
-                                display: true
+                            y: {
+                                min: signal.label == 'Artifacts' ? 0 : yMin,
+                                max: signal.label == 'Artifacts' ? 1 : yMax,
+                            },
+                        },
+                        // layout: {
+                        //     padding: {
+                        //         left: 37,
+                        //         right: 10,
+                        //     }
+                        // },
+                        plugins: {
+                            annotation: {
+                                annotations: {
+                                    ...markAnnotations,
+                                    ...microwakingAnnotations,
+                                    ...blinkAnnotations,
+                                    ...Object.fromEntries(artifactAnnotations),
+
+                                    ...(showEpochInfo ? generateAnnotations(
+                                        allData,
+                                        startEpochIndex,
+                                        endEpochIndex,
+                                        scrollPosition,
+                                        samplesPerSecond,
+                                        compareEpoch,
+                                        signal
+                                    ) : []),
+                                    ...(showSlowWaveEvents ? Object.fromEntries(
+                                        visibleSlowWaveEvents.map((event, eventIndex) => {
+                                            const eventStartSample = secondsToSamples(event.Start) - scrollPosition;
+                                            const eventEndSample = secondsToSamples(event.End) - scrollPosition;
+                                            return [`slowWave${eventIndex}`, {
+                                                type: 'box',
+                                                xMin: eventStartSample,
+                                                xMax: eventEndSample,
+                                                yMin: yMin,
+                                                yMax: yMax,
+                                                backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                                                borderColor: 'rgba(54, 162, 235, 1)',
+                                                borderWidth: 1,
+                                            }];
+                                        })
+                                    ) : []),
+                                    ...(showSpindleEvents ? Object.fromEntries(
+                                        visibleSpindleEvents.map((event, eventIndex) => {
+                                            const eventStartSample = secondsToSamples(event.Start) - scrollPosition;
+                                            const eventEndSample = secondsToSamples(event.End) - scrollPosition;
+                                            return [`spindle${eventIndex}`, {
+                                                type: 'box',
+                                                xMin: eventStartSample,
+                                                xMax: eventEndSample,
+                                                yMin: yMin,
+                                                yMax: yMax,
+                                                backgroundColor: 'rgba(147, 51, 234, 0.2)',
+                                                borderColor: 'rgba(147, 51, 234, 1)',
+                                                borderWidth: 1,
+                                            }];
+                                        })
+                                    ) : []),
+                                },
+                                // click: (context: any, event: any) => {
+                                //     console.log(`context`, context, `event`, event)
+                                //     if (context.element) {
+                                //         const clickedAnnotation = context.element;
+                                //         if (clickedAnnotation.options.click) {
+                                //             clickedAnnotation.options.click();
+                                //             event.preventDefault();
+                                //             event.native.stopPropagation();
+                                //         }
+                                //     }
+                                // }
                             }
                         },
-                        y: {
-                            title: { display: true, text: `${signal.label} (${signal.physicalDimension})` },
-                            min: signal.label == 'Artifacts' ? 0 : yMin,
-                            max: signal.label == 'Artifacts' ? 1 : yMax,
-                            position: 'left',
-                            grid: {
-                                color: 'rgba(0, 0, 0, 0.1)'
-                            }
+                        onClick: (event: any, elements: any[], chart: Chart) => {
+                            const left = event.chart.chartArea.left
+                            const right = event.chart.chartArea.right
+                            const xAsPctOfChartWidth = (event.x - left) / (right - left);
+                            const sampleIndexRaw = Math.floor(xAsPctOfChartWidth * samplesToShow);
+                            const sampleIndex = sampleIndexRaw + scrollPosition;
+
+                            console.info(`event`, event, `left`, left, `xAsPctOfChartWidth`, xAsPctOfChartWidth, `sampleIndexRaw`, sampleIndexRaw, `sampleIndex`, sampleIndex, `scrollPosition`, scrollPosition, `samplesToShow`, samplesToShow, `samplesPerSecond`, samplesPerSecond, `SECONDS_PER_EPOCH`, SECONDS_PER_EPOCH, `SECONDS_TO_SHOW`, SECONDS_TO_SHOW)
+
+                            const time = sampleIndexToTime(allData, sampleIndex);
+                            const channel = signal.label;
+
+                            console.log('Chart click', time.toInstant().epochSeconds, time.toInstant().toString());
+                            handleChartClick(time, channel);
                         },
-                    },
-                    layout: {
-                        padding: {
-                            left: 50,
-                            right: 20,
-                        }
-                    },
-                    animation: false,
-                    plugins: {
-                        legend: { display: false },
-                        annotation: {
-                            annotations: {
-                                ...markAnnotations,
-                                ...microwakingAnnotations,
-                                ...blinkAnnotations,
-                                ...Object.fromEntries(artifactAnnotations),
-
-                                ...(showEpochInfo ? generateAnnotations(
-                                    allData,
-                                    startEpochIndex,
-                                    endEpochIndex,
-                                    scrollPosition,
-                                    samplesPerSecond,
-                                    compareEpoch,
-                                    signal
-                                ) : []),
-                                ...(showSlowWaveEvents ? Object.fromEntries(
-                                    visibleSlowWaveEvents.map((event, eventIndex) => {
-                                        const eventStartSample = secondsToSamples(event.Start) - scrollPosition;
-                                        const eventEndSample = secondsToSamples(event.End) - scrollPosition;
-                                        return [`slowWave${eventIndex}`, {
-                                            type: 'box',
-                                            xMin: eventStartSample,
-                                            xMax: eventEndSample,
-                                            yMin: yMin,
-                                            yMax: yMax,
-                                            backgroundColor: 'rgba(54, 162, 235, 0.2)',
-                                            borderColor: 'rgba(54, 162, 235, 1)',
-                                            borderWidth: 1,
-                                        }];
-                                    })
-                                ) : []),
-                                ...(showSpindleEvents ? Object.fromEntries(
-                                    visibleSpindleEvents.map((event, eventIndex) => {
-                                        const eventStartSample = secondsToSamples(event.Start) - scrollPosition;
-                                        const eventEndSample = secondsToSamples(event.End) - scrollPosition;
-                                        return [`spindle${eventIndex}`, {
-                                            type: 'box',
-                                            xMin: eventStartSample,
-                                            xMax: eventEndSample,
-                                            yMin: yMin,
-                                            yMax: yMax,
-                                            backgroundColor: 'rgba(147, 51, 234, 0.2)',
-                                            borderColor: 'rgba(147, 51, 234, 1)',
-                                            borderWidth: 1,
-                                        }];
-                                    })
-                                ) : []),
-                            },
-                            // click: (context: any, event: any) => {
-                            //     console.log(`context`, context, `event`, event)
-                            //     if (context.element) {
-                            //         const clickedAnnotation = context.element;
-                            //         if (clickedAnnotation.options.click) {
-                            //             clickedAnnotation.options.click();
-                            //             event.preventDefault();
-                            //             event.native.stopPropagation();
-                            //         }
-                            //     }
-                            // }
-                        }
-                    },
-                    onClick: (event: any, elements: any[], chart: Chart) => {
-                        const left = event.chart.chartArea.left
-                        const right = event.chart.chartArea.right
-                        const xAsPctOfChartWidth = (event.x - left) / (right - left);
-                        const sampleIndexRaw = Math.floor(xAsPctOfChartWidth * samplesToShow);
-                        const sampleIndex = sampleIndexRaw + scrollPosition;
-
-                        console.info(`event`, event, `left`, left, `xAsPctOfChartWidth`, xAsPctOfChartWidth, `sampleIndexRaw`, sampleIndexRaw, `sampleIndex`, sampleIndex, `scrollPosition`, scrollPosition, `samplesToShow`, samplesToShow, `samplesPerSecond`, samplesPerSecond, `SECONDS_PER_EPOCH`, SECONDS_PER_EPOCH, `SECONDS_TO_SHOW`, SECONDS_TO_SHOW)
-
-                        const time = sampleIndexToTime(allData, sampleIndex);
-                        const channel = signal.label;
-
-                        console.log('Chart click', time.toInstant().epochSeconds, time.toInstant().toString());
-                        handleChartClick(time, channel);
-                    },
-                }
+                    }) as any
             };
 
             return new Chart(ctx, config);
@@ -563,28 +547,26 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition })
                     })}
 
                     {/* Raw Physical Features */}
-                    <div className="p-4">
-                        {allData.rawPhysicalFeatures ? (
-                            <RawPhysicalFeaturesChart
-                                allData={allData}
-                                scrollPosition={scrollPosition}
-                                samplesPerSecond={samplesPerSecond}
-                                secondsToShow={SECONDS_TO_SHOW}
-                            />
-                        ) : (
-                            <div className="text-center p-4">No raw physical features data available</div>
-                        )}
-                    </div>
-
-                    <div className="collapse-content">
-                        <VideoViewer
-                            videoFiles={allData.videos}
-                            startTime={allData.processedEDF.startDate}
-                            duration={allData.processedEDF.duration}
-                            currentTime={currentTime}
-                            secondsToShow={SECONDS_PER_EPOCH}
+                    {allData.rawPhysicalFeatures ? (
+                        <RawPhysicalFeaturesChart
+                            allData={allData}
+                            scrollPosition={scrollPosition}
+                            samplesPerSecond={samplesPerSecond}
+                            secondsToShow={SECONDS_TO_SHOW}
                         />
-                    </div>
+                    ) : (
+                        <div className="text-center p-4">No raw physical features data available</div>
+                    )}
+
+                    <VideoViewer
+                        allData={allData}
+                        scrollPosition={scrollPosition}
+                        videoFiles={allData.videos}
+                        startTime={allData.processedEDF.startDate}
+                        duration={allData.processedEDF.duration}
+                        currentTime={currentTime}
+                        secondsToShow={SECONDS_PER_EPOCH}
+                    />
 
                 </div>
             </div>

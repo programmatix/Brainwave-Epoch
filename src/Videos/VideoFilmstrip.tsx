@@ -3,10 +3,15 @@ import annotationPlugin from 'chartjs-plugin-annotation';
 import React, { useEffect, useRef, useState } from 'react';
 import { Temporal } from '@js-temporal/polyfill';
 import { VideoFile } from './Videos';
+import { eegChartOptions } from '../Viewer/ChartUtils';
+import { merge } from 'lodash';
+import { AllData } from '../Loader/LoaderTypes';
 
 Chart.register(...registerables, annotationPlugin);
 
 interface VideoFilmstripChartProps {
+    allData: AllData;
+    scrollPosition: number;
     videoFiles: VideoFile[];
     currentTime: Temporal.ZonedDateTime;
     secondsToShow: number;
@@ -16,6 +21,8 @@ interface VideoFilmstripChartProps {
 }
 
 export const VideoFilmstrip: React.FC<VideoFilmstripChartProps> = ({
+    allData,
+    scrollPosition,
     videoFiles,
     currentTime,
     secondsToShow,
@@ -90,43 +97,39 @@ export const VideoFilmstrip: React.FC<VideoFilmstripChartProps> = ({
                     data: [],
                 }]
             },
-            options: {
+            options: merge(
+                eegChartOptions(`Videos`, allData, scrollPosition), {
                 responsive: true,
                 maintainAspectRatio: false,
                 scales: {
                     x: {
-                        type: 'linear',
-                        min: visibleStartTime * 1000,
-                        max: visibleEndTime * 1000,
-                        ticks: {
-                            maxTicksLimit: 10,
-                            callback: (value) => {
-                                const date = new Date(value);
-                                return date.toLocaleTimeString();
-                            }
-                        }
+                        // type: 'linear',
+                        // min: visibleStartTime * 1000,
+                        // max: visibleEndTime * 1000,
+                        // ticks: {
+                        //     maxTicksLimit: 10,
+                        //     callback: (value) => {
+                        //         const date = new Date(value);
+                        //         return date.toLocaleTimeString();
+                        //     }
+                        // }
                     },
                     y: {
-                        title: { display: true, text: 'Videos' },
                         min: 0,
                         max: 1,
-                        position: 'left',
-                        grid: {
-                            color: 'rgba(0, 0, 0, 0.1)'
-                        }
                     }
                 },
-                layout: {
-                    padding: {
-                        left: 57,
-                        right: 20,
-                    }
-                },
-                animation: false,
+                // layout: {
+                //     padding: {
+                //         left: 57,
+                //         right: 20,
+                //     }
+                // },
+                // animation: false,
                 plugins: {
-                    legend: {
-                        display: false
-                    },
+                    // legend: {
+                    //     display: false
+                    // },
                     annotation: {
                         annotations: annotations
                     },
@@ -144,7 +147,7 @@ export const VideoFilmstrip: React.FC<VideoFilmstripChartProps> = ({
                         }
                     }
                 }
-            }
+            }) as any
         };
 
         chartInstance.current = new Chart(ctx, config);

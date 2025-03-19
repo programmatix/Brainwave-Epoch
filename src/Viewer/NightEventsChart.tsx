@@ -71,8 +71,8 @@ export const NightEventsChart: React.FC<NightEventsChartProps> = ({
                 },
                 layout: {
                     padding: {
-                        left: 50,
-                        right: 20,
+                        left: 37,
+                        right: 10,
                     }
                 },
                 plugins: {

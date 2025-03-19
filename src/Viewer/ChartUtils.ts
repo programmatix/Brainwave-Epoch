@@ -126,3 +126,42 @@ export const millisecondsToSamples = (milliseconds: number, samplesPerSecond: nu
     //console.log(`milliseconds`, milliseconds, `samplesPerSecond`, samplesPerSecond, `samples`, Math.floor(milliseconds * samplesPerSecond / 1000))
     return Math.floor(milliseconds * samplesPerSecond / 1000);
 };
+
+export function eegChartOptions(title: string, allData: AllData, scrollPosition: number) {
+    return {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            x: {
+                title: { display: false },
+                ticks: {
+                    maxTicksLimit: 10,
+                    callback: (value, index, ticks) => {
+                        return allData.processedEDF.signals[0].timeLabels[scrollPosition + index]?.formatted
+                    }
+                },
+                grid: {
+                    display: true
+                }
+            },
+            y: {
+                title: { display: true, text: title },
+                position: 'left',
+                // grid: {
+                //     color: 'rgba(0, 0, 0, 0.1)'
+                // }
+            }
+        },
+        layout: {
+            padding: {
+                left: 37,
+                right: 10
+            }
+        },
+        animation: false,
+        plugins: {
+            legend: { display: false },
+        }
+    }
+}
+
