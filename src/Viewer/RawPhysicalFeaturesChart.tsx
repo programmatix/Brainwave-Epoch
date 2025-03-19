@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { AllData } from '../Loader/LoaderTypes';
 import { Chart, ChartConfiguration, registerables } from 'chart.js';
 import annotationPlugin from 'chartjs-plugin-annotation';
@@ -23,6 +23,52 @@ export const RawPhysicalFeaturesChart: React.FC<RawPhysicalFeaturesChartProps> =
     const chartRef = React.useRef<HTMLCanvasElement | null>(null);
     const [chart, setChart] = React.useState<Chart | null>(null);
 
+    const startTime = allData.processedEDF.startDate.epochMilliseconds;
+    const samplesToShow = secondsToShow * samplesPerSecond;
+
+    const visibleFeatures = useMemo(() => {
+        if (!allData.rawPhysicalFeatures || !allData.rawPhysicalFeatures.length) return [];
+        
+        const startTimeVisible = startTime + (scrollPosition / samplesPerSecond) * 1000;
+        const endTimeVisible = startTimeVisible + (samplesToShow / samplesPerSecond) * 1000;
+        
+        // Binary search to find the starting index
+        let startIdx = 0;
+        let endIdx = allData.rawPhysicalFeatures.length - 1;
+        let firstVisibleIdx = 0;
+        
+        while (startIdx <= endIdx) {
+            const midIdx = Math.floor((startIdx + endIdx) / 2);
+            const midTime = allData.rawPhysicalFeatures[midIdx].timestamp;
+            
+            if (midTime < startTimeVisible) {
+                startIdx = midIdx + 1;
+            } else {
+                endIdx = midIdx - 1;
+                firstVisibleIdx = midIdx;
+            }
+        }
+        
+        // Find the end index - start from where we found the first visible item
+        startIdx = firstVisibleIdx;
+        endIdx = allData.rawPhysicalFeatures.length - 1;
+        let lastVisibleIdx = firstVisibleIdx;
+        
+        while (startIdx <= endIdx) {
+            const midIdx = Math.floor((startIdx + endIdx) / 2);
+            const midTime = allData.rawPhysicalFeatures[midIdx].timestamp;
+            
+            if (midTime > endTimeVisible) {
+                endIdx = midIdx - 1;
+            } else {
+                startIdx = midIdx + 1;
+                lastVisibleIdx = midIdx;
+            }
+        }
+        
+        return allData.rawPhysicalFeatures.slice(firstVisibleIdx, lastVisibleIdx + 1);
+    }, [allData.rawPhysicalFeatures, startTime, scrollPosition, samplesPerSecond, samplesToShow]);
+
     React.useEffect(() => {
         if (!allData.rawPhysicalFeatures) return;
 
@@ -32,15 +78,6 @@ export const RawPhysicalFeaturesChart: React.FC<RawPhysicalFeaturesChartProps> =
         if (chart) {
             chart.destroy();
         }
-
-        const startTime = allData.processedEDF.startDate.epochMilliseconds;
-        const samplesToShow = secondsToShow * samplesPerSecond;
-        const visibleFeatures = allData.rawPhysicalFeatures.filter(f => {
-            const time = f.timestamp;
-            const startTimeVisible = startTime + (scrollPosition / samplesPerSecond) * 1000;
-            const endTimeVisible = startTimeVisible + (samplesToShow / samplesPerSecond) * 1000;
-            return time >= startTimeVisible && time <= endTimeVisible;
-        });
 
         const config: ChartConfiguration = {
             type: 'line',
@@ -84,7 +121,7 @@ export const RawPhysicalFeaturesChart: React.FC<RawPhysicalFeaturesChartProps> =
         return () => {
             newChart.destroy();
         };
-    }, [allData, scrollPosition, samplesPerSecond, secondsToShow]);
+    }, [allData, scrollPosition, samplesPerSecond, secondsToShow, visibleFeatures]);
 
     if (!allData.rawPhysicalFeatures) return null;
 

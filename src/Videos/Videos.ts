@@ -2,7 +2,8 @@ import { Temporal } from '@js-temporal/polyfill';
 
 export type VideoFile = {
     name: string;
-    timestamp: Temporal.ZonedDateTime;
+    // Epoch milliseconds
+    timestamp: number;
 };
 
 export type VideoFiles = VideoFile[];
@@ -29,14 +30,14 @@ export function filterOverlappingVideoFiles(
                         second: parseInt(second),
                         timeZone: 'Europe/London'
                     });
-                    return { name: filename, timestamp };
+                    return { name: filename, timestamp: timestamp.toInstant().epochMilliseconds };
                 }
             } catch (e) {
                 console.log("Error parsing video file timestamp: ", filename, e);
                 return null;
             }
         })
-        .filter(video => video && video.timestamp && video.timestamp.epochSeconds >= eegStartTime.epochSeconds && video.timestamp.epochSeconds <= eegEndTime.epochSeconds);
+        .filter(video => video && video.timestamp && video.timestamp >= eegStartTime.epochMilliseconds && video.timestamp <= eegEndTime.epochMilliseconds);
 
     console.log("Videos filtered: ", out);
     return out;

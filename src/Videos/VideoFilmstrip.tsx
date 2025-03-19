@@ -43,11 +43,11 @@ export const VideoFilmstrip: React.FC<VideoFilmstripChartProps> = ({
             chartInstance.current.destroy();
         }
 
-        const visibleStartTime = currentTime.epochSeconds;
+        const visibleStartTime = currentTime.epochMilliseconds;
         const visibleEndTime = visibleStartTime + secondsToShow;
 
         const visibleVideos = videoFiles.filter(video => {
-            const videoTime = video.timestamp.epochSeconds;
+            const videoTime = video.timestamp;
             return videoTime >= visibleStartTime && videoTime <= visibleEndTime;
         });
 
@@ -56,8 +56,8 @@ export const VideoFilmstrip: React.FC<VideoFilmstripChartProps> = ({
         visibleVideos.forEach((video, index) => {
             annotations[`video-${index}`] = {
                 type: 'box',
-                xMin: video.timestamp.epochSeconds * 1000,
-                xMax: video.timestamp.epochSeconds * 1000 + 1000,
+                xMin: video.timestamp,
+                xMax: video.timestamp + 1000,
                 yMin: 0,
                 yMax: 1,
                 backgroundColor: 'rgba(255, 99, 132, 0.3)',
@@ -77,7 +77,7 @@ export const VideoFilmstrip: React.FC<VideoFilmstripChartProps> = ({
         });
         
         if (currentVideoTime !== undefined && currentVideo) {
-            const playbackPosition = currentVideo.timestamp.epochSeconds * 1000 + (currentVideoTime * 1000);
+            const playbackPosition = currentVideo.timestamp + (currentVideoTime * 1000);
             annotations['playback-position'] = {
                 type: 'line',
                 xMin: playbackPosition,
