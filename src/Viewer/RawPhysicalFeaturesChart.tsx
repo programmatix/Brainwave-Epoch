@@ -36,7 +36,7 @@ export const RawPhysicalFeaturesChart: React.FC<RawPhysicalFeaturesChartProps> =
         const startTime = allData.processedEDF.startDate.epochMilliseconds;
         const samplesToShow = secondsToShow * samplesPerSecond;
         const visibleFeatures = allData.rawPhysicalFeatures.filter(f => {
-            const time = f.timestamp.epochMilliseconds;
+            const time = f.timestamp;
             const startTimeVisible = startTime + (scrollPosition / samplesPerSecond) * 1000;
             const endTimeVisible = startTimeVisible + (samplesToShow / samplesPerSecond) * 1000;
             return time >= startTimeVisible && time <= endTimeVisible;
@@ -45,7 +45,7 @@ export const RawPhysicalFeaturesChart: React.FC<RawPhysicalFeaturesChartProps> =
         const config: ChartConfiguration = {
             type: 'line',
             data: {
-                labels: visibleFeatures.map(f => f.timestamp.toInstant().toString()),
+                // labels: visibleFeatures.map(f => f.timestamp.toString()),
                 datasets: [
                     {
                         label: 'Movement',

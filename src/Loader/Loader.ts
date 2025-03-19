@@ -343,7 +343,7 @@ export async function readRawPhysicalFeatures(filePath: string): Promise<RawPhys
         });
 
         const rawPhysicalFeatures: RawPhysicalFeatures = parsedData.map((entry: any) => ({
-            timestamp: parseDateString(entry.DatabaseTimestamp),
+            timestamp: parseDateString(entry.DatabaseTimestamp).toInstant().epochMilliseconds,
             hr: entry.HR ? parseFloat(entry.HR) : null,
             temp: entry.Temp ? parseFloat(entry.Temp) : null,
             o2: entry.O2 ? parseFloat(entry.O2) : null,

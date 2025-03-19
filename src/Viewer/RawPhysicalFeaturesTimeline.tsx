@@ -9,13 +9,14 @@ interface RawPhysicalFeaturesTimelineProps {
     onTimelineClick: (position: number) => void;
 }
 
-export const RawPhysicalFeaturesTimeline: React.FC<RawPhysicalFeaturesTimelineProps> = ({
+export const RawPhysicalFeaturesTimeline: React.FC<RawPhysicalFeaturesTimelineProps> = React.memo(({
     allData,
     scrollPosition,
     totalSamples,
     width,
     onTimelineClick
 }) => {
+
     const samplesPerSecond = allData.processedEDF.signals[0].samplingRate;
     const startTime = allData.processedEDF.startDate.epochMilliseconds;
     const duration = allData.processedEDF.duration * 1000;
@@ -52,7 +53,7 @@ export const RawPhysicalFeaturesTimeline: React.FC<RawPhysicalFeaturesTimelinePr
 
         const features = allData.rawPhysicalFeatures;
         const visibleFeatures = features.filter(f => {
-            const time = f.timestamp.epochMilliseconds;
+            const time = f.timestamp;
             return time >= startTime && time <= endTime;
         });
 
@@ -61,7 +62,7 @@ export const RawPhysicalFeaturesTimeline: React.FC<RawPhysicalFeaturesTimelinePr
         ctx.fillStyle = '#8b5cf6';
         visibleFeatures.forEach(f => {
             if (f.movement === 1) {
-                const x = ((f.timestamp.epochMilliseconds - startTime) / duration) * width;
+                const x = ((f.timestamp - startTime) / duration) * width;
                 ctx.fillRect(x, 0, 2, 100);
             }
         });
@@ -94,4 +95,4 @@ export const RawPhysicalFeaturesTimeline: React.FC<RawPhysicalFeaturesTimelinePr
             />
         </div>
     );
-}; 
+});

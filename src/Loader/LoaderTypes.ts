@@ -294,7 +294,8 @@ export type DisturbanceEntry = {
 export type Disturbances = DisturbanceEntry[];
 
 export type RawPhysicalFeatures = {
-    timestamp: Temporal.ZonedDateTime;
+    // Epoch milliseconds
+    timestamp: number;
     hr: number | null;
     temp: number | null;
     o2: number | null;

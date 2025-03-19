@@ -34,7 +34,7 @@ interface TimelineNavigationProps {
 
 const TIMELINE_WIDTH = 1000;
 
-export const TimelineNavigation: React.FC<TimelineNavigationProps> = ({
+export const TimelineNavigation: React.FC<TimelineNavigationProps> = React.memo(({
     allData,
     scrollPosition,
     setScrollPosition,
@@ -42,6 +42,8 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = ({
     samplesPerSecond,
     samplesPerEpoch,
 }) => {
+    console.info("TimelineNavigation", allData, scrollPosition, setScrollPosition, totalSamples, samplesPerSecond, samplesPerEpoch)
+
     const [epochInput, setEpochInput] = useState('');
     const [selectedFeature, setSelectedFeature] = useState<string>('');
     const [selectedPhysicalFeature, setSelectedPhysicalFeature] = useState<string>('');
@@ -93,9 +95,9 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = ({
         };
     }, [isAutoScrolling, setScrollPosition, samplesPerEpoch, totalSamples]);
 
-    const handleTimelineClick = (newPosition: number) => {
+    const handleTimelineClick = useCallback((newPosition: number) => {
         setScrollPosition(Math.min(totalSamples - 1, Math.max(0, newPosition)));
-    };
+    }, []);
 
     const handlePrevEpoch = () => {
         const currentEpoch = Math.floor(scrollPosition / samplesPerEpoch);
@@ -520,4 +522,4 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = ({
             </tr>
         </div>
     );
-};
+});
