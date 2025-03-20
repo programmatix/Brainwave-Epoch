@@ -96,7 +96,9 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = React.memo(
     }, [isAutoScrolling, setScrollPosition, samplesPerEpoch, totalSamples]);
 
     const handleTimelineClick = useCallback((newPosition: number) => {
-        setScrollPosition(Math.min(totalSamples - 1, Math.max(0, newPosition)));
+        const newScrollPosition = Math.min(totalSamples - 1, Math.max(0, newPosition))
+        console.info("handleTimelineClick", newPosition, newScrollPosition)
+        setScrollPosition(newScrollPosition);
     }, []);
 
     const handlePrevEpoch = () => {

@@ -83,7 +83,7 @@ export const RawPhysicalFeaturesTimeline: React.FC<RawPhysicalFeaturesTimelinePr
     return (
         <div className="relative" >
             <canvas
-            style={{ width: width, height: 20 }}
+                style={{ width: width, height: 20 }}
                 ref={canvasRef}
                 className="cursor-pointer"
                 onClick={(e) => {
