@@ -185,8 +185,8 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = React.memo(
     // Function to find next artifact, video, or movement
     const handleNextArtifactVideoMovement = useCallback(() => {
         const currentSample = scrollPosition;
-        let candidates: Array<{position: number, type: string, name?: string}> = [];
-        
+        let candidates: Array<{ position: number, type: string, name?: string }> = [];
+
         // Collect all candidates from artifacts
         if (allData.artifacts) {
             for (const artifact of allData.artifacts) {
@@ -199,7 +199,7 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = React.memo(
                 }
             }
         }
-        
+
         // Collect all candidates from videos
         if (allData.videos) {
             for (const video of allData.videos) {
@@ -215,7 +215,7 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = React.memo(
                 }
             }
         }
-        
+
         // Collect all candidates from movements
         if (allData.rawPhysicalFeatures) {
             const movements = allData.rawPhysicalFeatures.filter(m => m.movement > 0);
@@ -230,13 +230,13 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = React.memo(
                 }
             }
         }
-        
+
         // Find the closest candidate (smallest value > currentSample)
         if (candidates.length > 0) {
             candidates.sort((a, b) => a.position - b.position);
             const nextCandidate = candidates[0];
             setScrollPosition(nextCandidate.position);
-            
+
             // Show toast notification
             toast.info(`Next ${nextCandidate.type}: ${nextCandidate.name || ''}`, {
                 position: "top-right",
@@ -253,12 +253,12 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = React.memo(
             });
         }
     }, [allData, scrollPosition, samplesPerSecond, setScrollPosition]);
-    
+
     // Function to find previous artifact, video, or movement
     const handlePrevArtifactVideoMovement = useCallback(() => {
         const currentSample = scrollPosition;
-        let candidates: Array<{position: number, type: string, name?: string}> = [];
-        
+        let candidates: Array<{ position: number, type: string, name?: string }> = [];
+
         // Collect all candidates from artifacts
         if (allData.artifacts) {
             for (const artifact of allData.artifacts) {
@@ -271,7 +271,7 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = React.memo(
                 }
             }
         }
-        
+
         // Collect all candidates from videos
         if (allData.videos) {
             for (const video of allData.videos) {
@@ -285,7 +285,7 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = React.memo(
                 }
             }
         }
-        
+
         // Collect all candidates from movements
         if (allData.rawPhysicalFeatures) {
             const movements = allData.rawPhysicalFeatures.filter(m => m.movement > 0);
@@ -300,13 +300,13 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = React.memo(
                 }
             }
         }
-        
+
         // Find the closest candidate (largest value < currentSample)
         if (candidates.length > 0) {
             candidates.sort((a, b) => b.position - a.position);
             const prevCandidate = candidates[0];
             setScrollPosition(prevCandidate.position);
-            
+
             // Show toast notification
             toast.info(`Previous ${prevCandidate.type}: ${prevCandidate.name || ''}`, {
                 position: "top-right",
@@ -340,14 +340,14 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = React.memo(
                             placeholder="Epoch #"
                             className="border border-gray-300 rounded-l px-3 py-2 w-20 focus:outline-none focus:ring-2 focus:ring-blue-400"
                         />
-                        <button 
-                            onClick={handleSetEpoch} 
+                        <button
+                            onClick={handleSetEpoch}
                             className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-r transition-colors"
                         >
                             Go
                         </button>
                     </div>
-                    
+
                     <div className="flex items-center gap-1">
                         <button onClick={handlePrevEpoch} className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-l transition-colors">
                             ← Prev (q)
@@ -356,7 +356,7 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = React.memo(
                             Next (e) →
                         </button>
                     </div>
-                    
+
                     <div className="flex items-center gap-1">
                         <button onClick={handlePrevArtifactVideoMovement} className="bg-orange-600 hover:bg-orange-700 text-white px-3 py-2 rounded-l transition-colors">
                             ← Prev Event (w)
@@ -365,7 +365,7 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = React.memo(
                             Next Event (d) →
                         </button>
                     </div>
-                    
+
                     <button
                         onClick={() => setIsAutoScrolling(prev => !prev)}
                         className={`${isAutoScrolling ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'} text-white px-3 py-2 rounded transition-colors`}
@@ -373,7 +373,7 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = React.memo(
                         {isAutoScrolling ? 'Stop Auto (a)' : 'Auto (a)'}
                     </button>
                 </div>
-                
+
                 {/* <div className="flex flex-wrap items-center gap-2">
                     <div className="flex items-center gap-1">
                         <button onClick={handleFirstUnscoredEpoch} className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded-l transition-colors">
@@ -397,7 +397,7 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = React.memo(
                     </div>
                 </div> */}
             </div>
-            
+
             <div className="timeline-container">
                 <table className="w-full">
                     <tbody>
@@ -417,7 +417,7 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = React.memo(
                                 </td>
                             </tr>
                         ))}
-                        
+
                         {allData.nightEvents && (
                             <tr className="timeline-row">
                                 <td className="timeline-label w-40 font-medium text-gray-700 pr-4 py-2">Night Events</td>
@@ -428,11 +428,11 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = React.memo(
                                         totalSamples={totalSamples}
                                         width={TIMELINE_WIDTH}
                                         onTimelineClick={handleTimelineClick}
-                                    /> 
+                                    />
                                 </td>
                             </tr>
                         )}
-                        
+
                         {Object.keys(allData.sleepStages?.[0]?.Channels || {}).filter(channel => channel !== 'Aggregated').map((channel, index) => (
                             <tr key={`feature-${channel}`} className="timeline-row">
                                 <td className="timeline-label w-40 pr-4 py-2">
@@ -469,7 +469,7 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = React.memo(
                                 </td>
                             </tr>
                         ))}
-                        
+
                         {allData.sleepStages && (
                             <tr className="timeline-row">
                                 <td className="timeline-label w-40 font-medium text-gray-700 pr-4 py-2">YASA Hypnogram</td>
@@ -486,7 +486,7 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = React.memo(
                                 </td>
                             </tr>
                         )}
-                        
+
                         {allData.fitbitHypnogram && (
                             <tr className="timeline-row">
                                 <td className="timeline-label w-40 font-medium text-gray-700 pr-4 py-2">Fitbit Hypnogram</td>
@@ -502,7 +502,7 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = React.memo(
                                 </td>
                             </tr>
                         )}
-                        
+
                         {allData.artifacts && (
                             <tr className="timeline-row">
                                 <td className="timeline-label w-40 font-medium text-gray-700 pr-4 py-2">Artifacts</td>
@@ -517,7 +517,7 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = React.memo(
                                 </td>
                             </tr>
                         )}
-                        
+
                         {allData.rawPhysicalFeatures && (
                             <tr className="timeline-row">
                                 <td className="timeline-label w-40 font-medium text-gray-700 pr-4 py-2">Movement</td>
@@ -532,22 +532,24 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = React.memo(
                                 </td>
                             </tr>
                         )}
-                        
-                        <tr className="timeline-row">
-                            <td className="timeline-label w-40 font-medium text-gray-700 pr-4 py-2">SettlingManualScore</td>
-                            <td className="timeline-data bg-white rounded-md shadow p-1">
-                                <StageTimeline
-                                    sleepStages={allData.sleepStages}
-                                    scrollPosition={scrollPosition}
-                                    totalSamples={totalSamples}
-                                    width={TIMELINE_WIDTH}
-                                    onTimelineClick={handleTimelineClick}
-                                    field="SettlingManualScore"
-                                    color="red"
-                                />
-                            </td>
-                        </tr>
-                        
+
+                        {/* {allData.sleepStages?.find(s => s.SettlingManualScore !== null) && (
+                            <tr className="timeline-row">
+                                <td className="timeline-label w-40 font-medium text-gray-700 pr-4 py-2">SettlingManualScore</td>
+                                <td className="timeline-data bg-white rounded-md shadow p-1">
+                                    <StageTimeline
+                                        sleepStages={allData.sleepStages}
+                                        scrollPosition={scrollPosition}
+                                        totalSamples={totalSamples}
+                                        width={TIMELINE_WIDTH}
+                                        onTimelineClick={handleTimelineClick}
+                                        field="SettlingManualScore"
+                                        color="red"
+                                    />
+                                </td>
+                            </tr>
+                        )} */}
+
                         {allData.microwakings && (
                             <tr className="timeline-row">
                                 <td className="timeline-label w-40 font-medium text-gray-700 pr-4 py-2">Microwakings</td>
@@ -562,7 +564,7 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = React.memo(
                                 </td>
                             </tr>
                         )}
-                        
+
                         <tr className="timeline-row">
                             <td className="timeline-label w-40 font-medium text-gray-700 pr-4 py-2">Videos</td>
                             <td className="timeline-data bg-white rounded-md shadow p-1">

@@ -4,6 +4,21 @@ export type VideoFile = {
     name: string;
     // Epoch milliseconds
     timestamp: number;
+    // New fields from API
+    file_size_in_bytes: number;
+    filename: string;
+    filename_as_epoch_millis: number;
+    // Optional fields that might be present
+    event_id?: string;
+    durations?: {
+        post_motion_seconds: number;
+        pre_motion_seconds: number;
+        total_seconds: number;
+    };
+    first_frame_time?: string;
+    last_frame_time?: string;
+    motion_start_time?: string;
+    frame_count?: number;
 };
 
 export type VideoFiles = VideoFile[];
@@ -30,7 +45,13 @@ export function filterOverlappingVideoFiles(
                         second: parseInt(second),
                         timeZone: 'Europe/London'
                     });
-                    return { name: filename, timestamp: timestamp.toInstant().epochMilliseconds };
+                    return { 
+                        name: filename, 
+                        timestamp: timestamp.toInstant().epochMilliseconds,
+                        file_size_in_bytes: 0,
+                        filename: filename,
+                        filename_as_epoch_millis: timestamp.toInstant().epochMilliseconds
+                    };
                 }
             } catch (e) {
                 console.log("Error parsing video file timestamp: ", filename, e);
@@ -54,7 +75,7 @@ export async function loadVideos(startDate: Temporal.ZonedDateTime, duration: nu
         const videoFiles = files.map((file: any) => ({
             name: file.filename,
             timestamp: file.filename_as_epoch_millis,
-            ... file
+            ...file
         }));
         
         // Filter videos that overlap with the EEG time range

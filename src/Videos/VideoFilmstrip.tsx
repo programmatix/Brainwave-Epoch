@@ -83,6 +83,39 @@ export const VideoFilmstrip: React.FC<VideoFilmstripChartProps> = ({
                 },
                 click: () => onVideoClick(video),
             };
+            
+            // Add motion indicators if durations data is available
+            if (video.durations) {
+                // Pre-motion (red) section
+                if (video.durations.pre_motion_seconds > 0) {
+                    annotations[`pre-motion-${index}`] = {
+                        type: 'box',
+                        xMin: video.timestamp - (video.durations.pre_motion_seconds * 1000),
+                        xMax: video.timestamp,
+                        yMin: 0,
+                        yMax: 1,
+                        backgroundColor: 'rgba(255, 0, 0, 0.2)',
+                        borderColor: 'rgba(255, 0, 0, 0.5)',
+                        borderWidth: 1,
+                        click: () => onVideoClick(video),
+                    };
+                }
+                
+                // Post-motion (green) section
+                if (video.durations.post_motion_seconds > 0) {
+                    annotations[`post-motion-${index}`] = {
+                        type: 'box',
+                        xMin: video.timestamp,
+                        xMax: video.timestamp + (video.durations.post_motion_seconds * 1000),
+                        yMin: 0,
+                        yMax: 1,
+                        backgroundColor: 'rgba(0, 255, 0, 0.2)',
+                        borderColor: 'rgba(0, 255, 0, 0.5)',
+                        borderWidth: 1,
+                        click: () => onVideoClick(video),
+                    };
+                }
+            }
         });
 
         console.info(`VideoFilmstrip visibleVideos=${visibleVideos.length} currentTime=${currentTime} secondsToShow=${secondsToShow} currentVideoTime=${currentVideoTime} currentVideo=${currentVideo} visibleStartTime=${visibleStartTime} visibleEndTime=${visibleEndTime}`, annotations)
@@ -143,7 +176,27 @@ export const VideoFilmstrip: React.FC<VideoFilmstripChartProps> = ({
                             },
                             label: (tooltipItem) => {
                                 const video = visibleVideos[tooltipItem.dataIndex];
-                                return video ? `Time: ${video.timestamp.toLocaleString()}` : '';
+                                if (!video) return '';
+                                
+                                const labels = [
+                                    `Time: ${new Date(video.timestamp).toLocaleString()}`
+                                ];
+                                
+                                if (video.event_id) {
+                                    labels.push(`Event: ${video.event_id}`);
+                                }
+                                
+                                if (video.durations) {
+                                    labels.push(`Duration: ${video.durations.total_seconds.toFixed(2)}s`);
+                                    labels.push(`Pre-motion: ${video.durations.pre_motion_seconds.toFixed(2)}s`);
+                                    labels.push(`Post-motion: ${video.durations.post_motion_seconds.toFixed(2)}s`);
+                                }
+                                
+                                if (video.frame_count) {
+                                    labels.push(`Frames: ${video.frame_count}`);
+                                }
+                                
+                                return labels;
                             }
                         }
                     }
