@@ -22,6 +22,9 @@ import { PhysicalFeatureTimeline } from './PhysicalFeatureTimeline';
 import { FinalWakeModelFeatureTimeline } from './FinalWakeModelFeatureTimeline';
 import { ArtifactsTimeline } from './ArtifactsTimeline';
 import { RawPhysicalFeaturesTimeline } from './RawPhysicalFeaturesTimeline';
+import { millisecondsToSamples, sampleIndexToTime } from './ChartUtils';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 interface TimelineNavigationProps {
     allData: AllData;
@@ -68,6 +71,10 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = React.memo(
             handleRandomEpoch()
         } else if (e.key === 'a') {
             setIsAutoScrolling(prev => !prev);
+        } else if (e.key === 'w') {
+            handlePrevArtifactVideoMovement();
+        } else if (e.key === 'd') {
+            handleNextArtifactVideoMovement();
         }
     }, [setScrollPosition, totalSamples, scrollPosition, samplesPerEpoch]);
 
@@ -175,10 +182,155 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = React.memo(
         }
     };
 
+    // Function to find next artifact, video, or movement
+    const handleNextArtifactVideoMovement = useCallback(() => {
+        const currentSample = scrollPosition;
+        let candidates: Array<{position: number, type: string, name?: string}> = [];
+        
+        // Collect all candidates from artifacts
+        if (allData.artifacts) {
+            for (const artifact of allData.artifacts) {
+                if (artifact.start > currentSample) {
+                    candidates.push({
+                        position: artifact.start,
+                        type: 'Artifact',
+                        name: sampleIndexToTime(allData, artifact.start).toLocaleString()
+                    });
+                }
+            }
+        }
+        
+        // Collect all candidates from videos
+        if (allData.videos) {
+            for (const video of allData.videos) {
+                const videoStartSample = millisecondsToSamples(video.timestamp - allData.processedEDF.startDate.epochMilliseconds, samplesPerSecond);
+                const candidate = videoStartSample > currentSample
+                console.log("handleNextArtifactVideoMovement", video.name, videoStartSample, currentSample, candidate)
+                if (candidate) {
+                    candidates.push({
+                        position: videoStartSample,
+                        type: 'Video',
+                        name: video.name
+                    });
+                }
+            }
+        }
+        
+        // Collect all candidates from movements
+        if (allData.rawPhysicalFeatures) {
+            const movements = allData.rawPhysicalFeatures.filter(m => m.movement > 0);
+            for (const movement of movements) {
+                const movementPosition = millisecondsToSamples(movement.timestamp - allData.processedEDF.startDate.epochMilliseconds, samplesPerSecond);
+                if (movementPosition > currentSample) {
+                    candidates.push({
+                        position: movementPosition,
+                        type: 'Movement',
+                        name: sampleIndexToTime(allData, movementPosition).toLocaleString()
+                    });
+                }
+            }
+        }
+        
+        // Find the closest candidate (smallest value > currentSample)
+        if (candidates.length > 0) {
+            candidates.sort((a, b) => a.position - b.position);
+            const nextCandidate = candidates[0];
+            setScrollPosition(nextCandidate.position);
+            
+            // Show toast notification
+            toast.info(`Next ${nextCandidate.type}: ${nextCandidate.name || ''}`, {
+                position: "top-right",
+                autoClose: 3000,
+                hideProgressBar: false,
+                closeOnClick: true,
+                pauseOnHover: true,
+                draggable: true,
+            });
+        } else {
+            toast.warn("No more events found", {
+                position: "top-right",
+                autoClose: 3000,
+            });
+        }
+    }, [allData, scrollPosition, samplesPerSecond, setScrollPosition]);
+    
+    // Function to find previous artifact, video, or movement
+    const handlePrevArtifactVideoMovement = useCallback(() => {
+        const currentSample = scrollPosition;
+        let candidates: Array<{position: number, type: string, name?: string}> = [];
+        
+        // Collect all candidates from artifacts
+        if (allData.artifacts) {
+            for (const artifact of allData.artifacts) {
+                if (artifact.start < currentSample) {
+                    candidates.push({
+                        position: artifact.start,
+                        type: 'Artifact',
+                        name: sampleIndexToTime(allData, artifact.start).toLocaleString()
+                    });
+                }
+            }
+        }
+        
+        // Collect all candidates from videos
+        if (allData.videos) {
+            for (const video of allData.videos) {
+                const videoStartSample = millisecondsToSamples(video.timestamp - allData.processedEDF.startDate.epochMilliseconds, samplesPerSecond);
+                if (videoStartSample < currentSample) {
+                    candidates.push({
+                        position: videoStartSample,
+                        type: 'Video',
+                        name: video.name
+                    });
+                }
+            }
+        }
+        
+        // Collect all candidates from movements
+        if (allData.rawPhysicalFeatures) {
+            const movements = allData.rawPhysicalFeatures.filter(m => m.movement > 0);
+            for (const movement of movements) {
+                const movementPosition = millisecondsToSamples(movement.timestamp - allData.processedEDF.startDate.epochMilliseconds, samplesPerSecond);
+                if (movementPosition < currentSample) {
+                    candidates.push({
+                        position: movementPosition,
+                        type: 'Movement',
+                        name: sampleIndexToTime(allData, movementPosition).toLocaleString()
+                    });
+                }
+            }
+        }
+        
+        // Find the closest candidate (largest value < currentSample)
+        if (candidates.length > 0) {
+            candidates.sort((a, b) => b.position - a.position);
+            const prevCandidate = candidates[0];
+            setScrollPosition(prevCandidate.position);
+            
+            // Show toast notification
+            toast.info(`Previous ${prevCandidate.type}: ${prevCandidate.name || ''}`, {
+                position: "top-right",
+                autoClose: 3000,
+                hideProgressBar: false,
+                closeOnClick: true,
+                pauseOnHover: true,
+                draggable: true,
+            });
+        } else {
+            toast.warn("No previous events found", {
+                position: "top-right",
+                autoClose: 3000,
+            });
+        }
+    }, [allData, scrollPosition, samplesPerSecond, setScrollPosition]);
+
     const startDate = allData.processedEDF.startDate.epochSeconds;
 
     return (
         <div className="timeline-navigation bg-gray-100 p-4 rounded-lg shadow-md">
+            {/* ToastContainer for react-toastify */}
+            <ToastContainer position="top-right" />
+            
             <div className="navigation-controls bg-white p-3 rounded-md shadow mb-4">
                 <div className="flex flex-wrap items-center gap-2 mb-2">
                     <div className="flex items-center">
@@ -206,12 +358,14 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = React.memo(
                         </button>
                     </div>
                     
-                    {/* <button 
-                        onClick={handleRandomEpoch} 
-                        className="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded transition-colors"
-                    >
-                        Random (r)
-                    </button> */}
+                    <div className="flex items-center gap-1">
+                        <button onClick={handlePrevArtifactVideoMovement} className="bg-orange-600 hover:bg-orange-700 text-white px-3 py-2 rounded-l transition-colors">
+                            ← Prev Event (w)
+                        </button>
+                        <button onClick={handleNextArtifactVideoMovement} className="bg-orange-600 hover:bg-orange-700 text-white px-3 py-2 rounded-r transition-colors">
+                            Next Event (d) →
+                        </button>
+                    </div>
                     
                     <button
                         onClick={() => setIsAutoScrolling(prev => !prev)}

@@ -98,6 +98,7 @@
     "plotly.js": "^2.35.0",
     "react-chartjs-2": "^5.2.0",
     "react-plotly.js": "^2.6.0",
+    "react-toastify": "^11.0.5",
     "stream-browserify": "^3.0.0",
     "tippy.js": "^6.3.7",
     "zustand": "^4.5.5"

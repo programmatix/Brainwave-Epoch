@@ -6,6 +6,8 @@ import LogContainer from './Logs/LogContainer';
 import EEGViewer from './Viewer/EEGViewer';
 import { StoreState, useStore } from './Store/Store';
 import { create, createStore } from 'zustand';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 declare global {
     interface Window {
@@ -64,6 +66,19 @@ export const AppEEG: React.FC = () => {
 
     return (
         <div className="h-full">
+            {/* Toast Container */}
+            <ToastContainer
+                position="top-right"
+                autoClose={3000}
+                hideProgressBar={false}
+                newestOnTop
+                closeOnClick
+                rtl={false}
+                pauseOnFocusLoss
+                draggable
+                pauseOnHover
+            />
+            
             <div className="flex flex-col h-full">
                 {/* {scorings == undefined && <div>No scorings</div>}
                 {scorings != undefined && <div>Has scorings</div>} */}

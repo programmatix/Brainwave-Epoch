@@ -103,6 +103,8 @@ export const RawPhysicalFeaturesChart: React.FC<RawPhysicalFeaturesChartProps> =
                         data: visibleFeatures.map(f => f.movement),
                         borderColor: '#8b5cf6',
                         backgroundColor: '#8b5cf6',
+                        borderWidth: 2,
+                        pointRadius: 4,
                     }
                 ]
             },
@@ -128,10 +130,10 @@ export const RawPhysicalFeaturesChart: React.FC<RawPhysicalFeaturesChartProps> =
                             // }
                         }
                     },
-                    // y: {
-                    //     min: 0,
-                    //     max: 1,
-                    // }
+                    y: {
+                        min: -0.2,
+                        max: 1,
+                    }
                 },
                 plugins: {
                     tooltip: {
@@ -182,6 +184,7 @@ export const RawPhysicalFeaturesChart: React.FC<RawPhysicalFeaturesChartProps> =
 
     return (
         <div className="w-full" style={{ height: '100px' }}>
+            <p className="text-sm text-gray-500 text-center">O2Ring only provides values every 4s (so a 1 just means that some movement was seen in the 4s since last), and some raw values that look flaky are skipped</p>
             <canvas ref={chartRef} style={{ width: '100%', height: '100%' }} />
         </div>
     );

@@ -59,7 +59,7 @@ export const VideoViewer: React.FC<VideoViewerProps> = ({
             src={`http://192.168.1.180:5000/media/${currentVideo.name}`}
             controls
             autoPlay
-            width="1280"
+            width="800"
             onTimeUpdate={handleTimeUpdate}
           />
         </div>
