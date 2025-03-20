@@ -6,6 +6,7 @@ import { AllData, EDFData, EDFHeader, EDFSignal, FitbitHypnogram, GroupedSlowWav
 
 import { EventEmitter } from 'events';
 import { loadVideos } from '../Videos/Videos';
+import { loadAudio } from '../Audio/Audio';
 import { queryMovementData, processMovementData } from '../Movement/Movement';
 
 export const loaderEvents = new EventEmitter();
@@ -399,6 +400,7 @@ export async function loadFiles(edfPath: string): Promise<AllData> {
         artifacts,
         // movementRawData,
         videos,
+        audio,
         rawPhysicalFeatures
     ] = await Promise.all([
         readStats(sleepStatsPath),
@@ -412,6 +414,7 @@ export async function loadFiles(edfPath: string): Promise<AllData> {
         readArtifacts(artifactsPath),
         //queryMovementData(startDate, endDate),
         loadVideos(processedEDF.startDate, processedEDF.duration),
+        loadAudio(processedEDF.startDate, processedEDF.duration),
         readRawPhysicalFeatures(rawPhysicalFeaturesPath)
     ]);
 
@@ -438,6 +441,7 @@ export async function loadFiles(edfPath: string): Promise<AllData> {
         marks: scorings.marks,
         microwakings,
         videos,
+        audio,
         artifacts,
         // movementData,
         

@@ -68,7 +68,9 @@ export async function loadVideos(startDate: Temporal.ZonedDateTime, duration: nu
     try {
         // Format the date as YYYY-MM-DD for the API parameter
         const dayParam = `${startDate.year}-${String(startDate.month).padStart(2, '0')}-${String(startDate.day).padStart(2, '0')}`;
-        const response = await fetch(`http://192.168.1.180:5000/api/videos?day=${dayParam}`);
+        const url = `http://192.168.1.180:5000/api/videos?day=${dayParam}`;
+        console.log("Loading videos from: ", url);
+        const response = await fetch(url);
         const files = await response.json();
         
         // Map the new format to our VideoFile type

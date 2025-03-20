@@ -1,6 +1,7 @@
 import { Temporal } from "@js-temporal/polyfill";
-import { VideoFile } from "../Videos/Videos";
+import { VideoFiles } from "../Videos/Videos";
 import { ProcessedMovementData } from "../Movement/Movement";
+import { AudioFiles } from '../Audio/Audio';
 
 export type EDFHeader = {
     version: string;
@@ -313,14 +314,14 @@ export type AllData = {
     predictedAwakeTimeline?: ProcessedSleepStages;
     definiteAwakeSleepTimeline?: ProcessedSleepStages;
     sleepStageFeatureMinMax?: SleepStageFeatureMinMax;
-    //movementData?: ProcessedMovementData;
     rawPhysicalFeatures?: RawPhysicalFeatures;
-    // These are the originally loaded values - they are not modified
     scorings?: Scorings;
     marks?: Mark[];
     microwakings?: Microwakings;
-    videos?: VideoFile[];
+    videos?: VideoFiles;
+    audio?: AudioFiles;
     artifacts?: Artifacts;
+    movementData?: ProcessedMovementData;
     disturbances?: Disturbances;
 };
 

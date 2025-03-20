@@ -16,7 +16,9 @@ import { detectBlinks } from '../BlinkDetection/BlinkDetector';
 import { VideoViewer } from '../Videos/VideoViewer';
 import MovementTimeline from '../Movement/MovementTimeline';
 import { RawPhysicalFeaturesChart } from './RawPhysicalFeaturesChart';
+import { AudioFilmstrip } from '../Audio/AudioFilmstrip';
 import { merge } from 'lodash';
+import { AudioViewer } from '../Audio/AudioViewer';
 
 Chart.register(...registerables, annotationPlugin);
 
@@ -579,6 +581,15 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition })
                         secondsToShow={SECONDS_PER_EPOCH}
                     />
 
+                    <AudioViewer
+                        allData={allData}
+                        scrollPosition={scrollPosition}
+                        audioFiles={allData.audio}
+                        startTime={allData.processedEDF.startDate}
+                        duration={allData.processedEDF.duration}
+                        currentTime={currentTime}   
+                        secondsToShow={SECONDS_PER_EPOCH}
+                    />
                 </div>
             </div>
         </div>
