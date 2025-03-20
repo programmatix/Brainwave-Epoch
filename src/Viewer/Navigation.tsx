@@ -328,6 +328,8 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = React.memo(
 
     return (
         <div className="timeline-navigation bg-gray-100 p-4 rounded-lg shadow-md">
+            <ToastContainer position="top-right" />
+
             <div className="navigation-controls bg-white p-3 rounded-md shadow mb-4">
                 <div className="flex flex-wrap items-center gap-2 mb-2">
                     <div className="flex items-center">

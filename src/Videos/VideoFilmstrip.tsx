@@ -60,23 +60,26 @@ export const VideoFilmstrip: React.FC<VideoFilmstripChartProps> = ({
         const annotations: any = {};
 
         visibleVideos.forEach((video, index) => {
+            const isCurrentVideo = currentVideo && video.name === currentVideo.name;
+            
             annotations[`video-${index}`] = {
                 type: 'box',
                 xMin: video.timestamp,
                 xMax: video.timestamp + 1000,
                 yMin: 0,
                 yMax: 1,
-                backgroundColor: 'rgba(255, 99, 132, 0.3)',
-                borderColor: 'rgba(255, 99, 132, 0.8)',
-                borderWidth: 2,
+                backgroundColor: isCurrentVideo ? 'rgba(46, 204, 113, 0.4)' : 'rgba(255, 99, 132, 0.3)',
+                borderColor: isCurrentVideo ? 'rgba(46, 204, 113, 0.9)' : 'rgba(255, 99, 132, 0.8)',
+                borderWidth: isCurrentVideo ? 3 : 2,
                 label: {
-                    content: video.name,
+                    content: isCurrentVideo ? `▶ ${video.name}` : video.name,
                     enabled: true,
                     position: 'start',
                     font: {
-                        size: 12
+                        size: 12,
+                        weight: isCurrentVideo ? 'bold' : 'normal'
                     },
-                    color: 'black'
+                    color: isCurrentVideo ? 'rgb(0, 100, 0)' : 'black'
                 },
                 click: () => onVideoClick(video),
             };
@@ -116,41 +119,18 @@ export const VideoFilmstrip: React.FC<VideoFilmstripChartProps> = ({
                         max: visibleEndTime,
                         ticks: {
                             count: 10,
-                            // autoSkip: false,
                             callback: (value) => {
                                 const date = new Date(value);
                                 return formatDate(date);
                             }
                         }
-                        // ticks: {
-                        //     callback: (value, index) => {
-                        //         const video = visibleVideos[index];
-                        //         if (!video) {
-                        //             console.error(`VideoFilmstrip ticks callback video not found for index=${index} value=${value}`)
-                        //             return '';
-                        //         }
-                        //         const date = new Date(video.timestamp);
-                        //         const formattedTime = formatDate(date);
-                        //         return formattedTime;
-                        //     }
-                        // }
                     },
                     y: {
                         min: 0,
                         max: 1,
                     }
                 },
-                // layout: {
-                //     padding: {
-                //         left: 57,
-                //         right: 20,
-                //     }
-                // },
-                // animation: false,
                 plugins: {
-                    // legend: {
-                    //     display: false
-                    // },
                     annotation: {
                         annotations: annotations
                     },
