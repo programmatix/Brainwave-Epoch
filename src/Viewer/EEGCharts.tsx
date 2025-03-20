@@ -36,7 +36,7 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition })
     const [showSlowWaveEvents, setShowSlowWaveEvents] = useState(false);
     const [showSpindleEvents, setShowSpindleEvents] = useState(false);
     const [showEpochInfo, setShowEpochInfo] = useState(true);
-    const [showTable, setShowTable] = useState(true);
+    const [showTable, setShowTable] = useState(false); // disabled by default as slow
     const [yAxisRange, setYAxisRange] = useState(100);
     const [showBlinks, setShowBlinks] = useState(false);
     const [showArtifacts, setShowArtifacts] = useState(true);
@@ -291,6 +291,12 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition })
                             x: {
                                 display: index === 0 || index === signalsToShow.length - 1,
                                 position: index === 0 ? 'top' : 'bottom',
+                                ticks: {
+                                    callback: (value, index, ticks) => {
+                                        return allData.processedEDF.signals[0].timeLabels[scrollPosition + index]?.formatted
+                                    }
+                                },
+                
                             },
                             y: {
                                 min: signal.label == 'Artifacts' ? 0 : yMin,

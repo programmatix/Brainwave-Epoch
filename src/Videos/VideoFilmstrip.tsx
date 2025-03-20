@@ -6,6 +6,7 @@ import { VideoFile } from './Videos';
 import { eegChartOptions } from '../Viewer/ChartUtils';
 import { merge } from 'lodash';
 import { AllData } from '../Loader/LoaderTypes';
+import { formatDate } from '../Loader/Loader';
 
 Chart.register(...registerables, annotationPlugin);
 
@@ -48,12 +49,15 @@ export const VideoFilmstrip: React.FC<VideoFilmstripChartProps> = ({
 
         const visibleVideos = videoFiles.filter(video => {
             const videoTime = video.timestamp;
-            console.info(`VideoFilmstrip visibleVideos`, video.name, videoTime, visibleStartTime, visibleEndTime)
-            return videoTime >= visibleStartTime && videoTime <= visibleEndTime;
+            const visible = videoTime >= visibleStartTime && videoTime <= visibleEndTime;
+            if (visible) {
+                console.info(`VideoFilmstrip visibleVideos`, video.name, videoTime, visibleStartTime, visibleEndTime, visible)
+            }
+            return visible;
         });
 
         const annotations: any = {};
-        
+
         visibleVideos.forEach((video, index) => {
             annotations[`video-${index}`] = {
                 type: 'box',
@@ -76,7 +80,7 @@ export const VideoFilmstrip: React.FC<VideoFilmstripChartProps> = ({
                 click: () => onVideoClick(video),
             };
         });
-        
+
         if (currentVideoTime !== undefined && currentVideo) {
             const playbackPosition = currentVideo.timestamp + (currentVideoTime * 1000);
             annotations['playback-position'] = {
@@ -107,13 +111,14 @@ export const VideoFilmstrip: React.FC<VideoFilmstripChartProps> = ({
                         // type: 'linear',
                         // min: visibleStartTime * 1000,
                         // max: visibleEndTime * 1000,
-                        // ticks: {
-                        //     maxTicksLimit: 10,
-                        //     callback: (value) => {
-                        //         const date = new Date(value);
-                        //         return date.toLocaleTimeString();
-                        //     }
-                        // }
+                        ticks: {
+                            callback: (value, index) => {
+                                const video = visibleVideos[index];
+                                const date = new Date(video.timestamp);
+                                const formattedTime = formatDate(date);
+                                return formattedTime;
+                            }
+                        }
                     },
                     y: {
                         min: 0,

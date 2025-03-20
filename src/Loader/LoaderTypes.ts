@@ -101,6 +101,7 @@ export type SpindleEvents = SpindleEvent[];
 
 
 export type TimeLabel = {
+    // Epoch milliseconds
     timestamp: number;
     formatted: string;
   };

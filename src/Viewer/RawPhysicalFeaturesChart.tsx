@@ -4,6 +4,7 @@ import { Chart, ChartConfiguration, registerables } from 'chart.js';
 import annotationPlugin from 'chartjs-plugin-annotation';
 import { merge } from 'lodash';
 import { eegChartOptions } from './ChartUtils';
+import { formatDate } from '../Loader/Loader';
 
 Chart.register(...registerables, annotationPlugin);
 
@@ -28,47 +29,52 @@ export const RawPhysicalFeaturesChart: React.FC<RawPhysicalFeaturesChartProps> =
 
     const visibleFeatures = useMemo(() => {
         if (!allData.rawPhysicalFeatures || !allData.rawPhysicalFeatures.length) return [];
-        
+
         const startTimeVisible = startTime + (scrollPosition / samplesPerSecond) * 1000;
         const endTimeVisible = startTimeVisible + (samplesToShow / samplesPerSecond) * 1000;
-        
-        // Binary search to find the starting index
-        let startIdx = 0;
-        let endIdx = allData.rawPhysicalFeatures.length - 1;
-        let firstVisibleIdx = 0;
-        
-        while (startIdx <= endIdx) {
-            const midIdx = Math.floor((startIdx + endIdx) / 2);
-            const midTime = allData.rawPhysicalFeatures[midIdx].timestamp;
-            
-            if (midTime < startTimeVisible) {
-                startIdx = midIdx + 1;
-            } else {
-                endIdx = midIdx - 1;
-                firstVisibleIdx = midIdx;
-            }
-        }
-        
-        // Find the end index - start from where we found the first visible item
-        startIdx = firstVisibleIdx;
-        endIdx = allData.rawPhysicalFeatures.length - 1;
-        let lastVisibleIdx = firstVisibleIdx;
-        
-        while (startIdx <= endIdx) {
-            const midIdx = Math.floor((startIdx + endIdx) / 2);
-            const midTime = allData.rawPhysicalFeatures[midIdx].timestamp;
-            
-            if (midTime > endTimeVisible) {
-                endIdx = midIdx - 1;
-            } else {
-                startIdx = midIdx + 1;
-                lastVisibleIdx = midIdx;
-            }
-        }
 
-        console.info(`RawPhysicalFeaturesChart firstVisibleIdx=${firstVisibleIdx} lastVisibleIdx=${lastVisibleIdx} startTime=${startTime} endTimeVisible=${endTimeVisible} samplesToShow=${samplesToShow} samplesPerSecond=${samplesPerSecond} scrollPosition=${scrollPosition}`)
-        
-        return allData.rawPhysicalFeatures.slice(firstVisibleIdx, lastVisibleIdx + 1);
+        const visibleFeatures = allData.rawPhysicalFeatures.filter(f => f.timestamp >= startTimeVisible && f.timestamp <= endTimeVisible);
+
+        console.info(`RawPhysicalFeaturesChart visibleFeatures=${visibleFeatures.length} startTimeVisible=${startTimeVisible} endTimeVisible=${endTimeVisible} samplesToShow=${samplesToShow} samplesPerSecond=${samplesPerSecond} scrollPosition=${scrollPosition}`, visibleFeatures)
+        return visibleFeatures;
+        // Binary search to find the starting index
+        // let startIdx = 0;
+        // let endIdx = allData.rawPhysicalFeatures.length - 1;
+        // let firstVisibleIdx = 0;
+
+        // while (startIdx <= endIdx) {
+        //     const midIdx = Math.floor((startIdx + endIdx) / 2);
+        //     const midTime = allData.rawPhysicalFeatures[midIdx].timestamp;
+
+        //     if (midTime < startTimeVisible) {
+        //         startIdx = midIdx + 1;
+        //     } else {
+        //         endIdx = midIdx - 1;
+        //         firstVisibleIdx = midIdx;
+        //     }
+        // }
+
+        // // Find the end index - start from where we found the first visible item
+        // startIdx = firstVisibleIdx;
+        // endIdx = allData.rawPhysicalFeatures.length - 1;
+        // let lastVisibleIdx = firstVisibleIdx;
+
+        // while (startIdx <= endIdx) {
+        //     const midIdx = Math.floor((startIdx + endIdx) / 2);
+        //     const midTime = allData.rawPhysicalFeatures[midIdx].timestamp;
+
+        //     if (midTime > endTimeVisible) {
+        //         endIdx = midIdx - 1;
+        //     } else {
+        //         startIdx = midIdx + 1;
+        //         lastVisibleIdx = midIdx;
+        //     }
+        // }
+
+        //console.info(`RawPhysicalFeaturesChart firstVisibleIdx=${firstVisibleIdx} lastVisibleIdx=${lastVisibleIdx} startTime=${startTime} startTimeVisible=${startTimeVisible} endTimeVisible=${endTimeVisible} samplesToShow=${samplesToShow} samplesPerSecond=${samplesPerSecond} scrollPosition=${scrollPosition}`)
+
+        //return allData.rawPhysicalFeatures.slice(firstVisibleIdx, lastVisibleIdx + 1);
+
     }, [allData.rawPhysicalFeatures, startTime, scrollPosition, samplesPerSecond, samplesToShow]);
 
     React.useEffect(() => {
@@ -84,7 +90,7 @@ export const RawPhysicalFeaturesChart: React.FC<RawPhysicalFeaturesChartProps> =
         const config: ChartConfiguration = {
             type: 'line',
             data: {
-                // labels: visibleFeatures.map(f => f.timestamp.toString()),
+                labels: visibleFeatures.map(f => f.timestamp),
                 datasets: [
                     {
                         label: 'Movement',
@@ -96,24 +102,56 @@ export const RawPhysicalFeaturesChart: React.FC<RawPhysicalFeaturesChartProps> =
             },
             options: merge(
                 eegChartOptions(`Movement`, allData, scrollPosition), {
+                scales: {
+                    x: {
+                        ticks: {
+                            callback: (value, index, ticks) => {
+                                const v = visibleFeatures[index]
+                                //console.info(`RawPhysicalFeaturesChart x ticks callback v=${v.timestamp} value=${value} index=${index} scrollPosition=${scrollPosition} samplesPerSecond=${samplesPerSecond} secondsToShow=${secondsToShow} samplesToShow=${samplesToShow} startTime=${startTime} v=${v}`)
+                                const formattedTime = formatDate(new Date(v.timestamp));
+                                return formattedTime;
+                            }
+                        }
+                    },
+                    // y: {
+                    //     min: 0,
+                    //     max: 1,
+                    // }
+                },
+                plugins: {
+                    tooltip: {
+                        enabled: true,
+                        callbacks: {
+                            title: (tooltipItems) => {
+                                const feature = visibleFeatures[tooltipItems[0].dataIndex];
+                                return new Date(feature.timestamp).toLocaleString();
+                            },
+                            label: (tooltipItem) => {
+                                const feature = visibleFeatures[tooltipItem.dataIndex];
+                                return feature ? `Movement: ${feature.movement}` : '';
+                            }
+                        }
+                    }
+
+                }
                 // interaction: {
                 //     mode: 'index',
                 //     intersect: false,
                 // },
-                scales: {
-                    x: {
-                        type: 'linear',
-                        min: startTime + (scrollPosition / samplesPerSecond) * 1000,
-                        max: startTime + ((scrollPosition + samplesToShow) / samplesPerSecond) * 1000,
-                        ticks: {
-                            maxTicksLimit: 10,
-                            callback: (value) => {
-                                const date = new Date(value);
-                                return date.toLocaleTimeString();
-                            }
-                        }
-                    }
-                }
+                // scales: {
+                //     x: {
+                //         // type: 'linear',
+                //         // min: startTime + (scrollPosition / samplesPerSecond) * 1000,
+                //         // max: startTime + ((scrollPosition + samplesToShow) / samplesPerSecond) * 1000,
+                //         // ticks: {
+                //         //     maxTicksLimit: 10,
+                //         //     callback: (value) => {
+                //         //         const date = new Date(value);
+                //         //         return date.toLocaleTimeString();
+                //         //     }
+                //         // }
+                //     }
+                // }
             }) as any
         };
 

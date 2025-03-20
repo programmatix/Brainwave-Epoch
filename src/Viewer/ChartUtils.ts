@@ -136,9 +136,6 @@ export function eegChartOptions(title: string, allData: AllData, scrollPosition:
                 title: { display: false },
                 ticks: {
                     maxTicksLimit: 10,
-                    callback: (value, index, ticks) => {
-                        return allData.processedEDF.signals[0].timeLabels[scrollPosition + index]?.formatted
-                    }
                 },
                 grid: {
                     display: true

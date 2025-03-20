@@ -580,6 +580,11 @@ export async function readArtifacts(filePath: string): Promise<Artifacts | undef
     }
 }
 
+export function formatDate(date: Date): string {
+    const padZero = (num: number) => num.toString().padStart(2, '0');
+    return `${padZero(date.getUTCHours())}:${padZero(date.getUTCMinutes())}:${padZero(date.getUTCSeconds())}`;
+}
+
 export function processEDFData(edfData: EDFData): ProcessedEDFData {
     const { header, signals, records } = edfData;
 
@@ -591,7 +596,6 @@ export function processEDFData(edfData: EDFData): ProcessedEDFData {
 
         const timeLabels: TimeLabel[] = [];
 
-        const padZero = (num: number) => num.toString().padStart(2, '0');
         const startTime = new Date(Date.UTC(header.startDate.year, header.startDate.month - 1, header.startDate.day,
             header.startDate.hour, header.startDate.minute, header.startDate.second,
             header.startDate.millisecond)).getTime();
@@ -603,7 +607,7 @@ export function processEDFData(edfData: EDFData): ProcessedEDFData {
             const milliseconds = Math.round(i / samplingRate * 1000);
             const currentTime = new Date(startTime + milliseconds - offsetMilliseconds);
 
-            const formattedTime = `${padZero(currentTime.getUTCHours())}:${padZero(currentTime.getUTCMinutes())}:${padZero(currentTime.getUTCSeconds())}`;
+            const formattedTime = formatDate(currentTime);
 
             timeLabels.push({
                 timestamp: startTime + milliseconds,
