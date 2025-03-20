@@ -135,6 +135,7 @@ export function eegChartOptions(title: string, allData: AllData, scrollPosition:
             x: {
                 title: { display: false },
                 ticks: {
+                    count: 10,
                     maxTicksLimit: 10,
                 },
                 grid: {

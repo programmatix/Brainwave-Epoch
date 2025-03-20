@@ -292,11 +292,15 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition })
                                 display: index === 0 || index === signalsToShow.length - 1,
                                 position: index === 0 ? 'top' : 'bottom',
                                 ticks: {
+                                    count: 10,
+                                    // autoSkip: false,
+                                    maxTicksLimit: 10,
                                     callback: (value, index, ticks) => {
+                                        //console.info(`x ticks callback value=${value} index=${index} ticks=${ticks}`)
                                         return allData.processedEDF.signals[0].timeLabels[scrollPosition + index]?.formatted
                                     }
                                 },
-                
+
                             },
                             y: {
                                 min: signal.label == 'Artifacts' ? 0 : yMin,
@@ -559,6 +563,7 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition })
                             scrollPosition={scrollPosition}
                             samplesPerSecond={samplesPerSecond}
                             secondsToShow={SECONDS_TO_SHOW}
+                            currentTime={currentTime}
                         />
                     ) : (
                         <div className="text-center p-4">No raw physical features data available</div>

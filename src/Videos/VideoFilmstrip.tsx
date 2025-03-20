@@ -7,6 +7,7 @@ import { eegChartOptions } from '../Viewer/ChartUtils';
 import { merge } from 'lodash';
 import { AllData } from '../Loader/LoaderTypes';
 import { formatDate } from '../Loader/Loader';
+import 'chartjs-adapter-date-fns';
 
 Chart.register(...registerables, annotationPlugin);
 
@@ -81,6 +82,8 @@ export const VideoFilmstrip: React.FC<VideoFilmstripChartProps> = ({
             };
         });
 
+        console.info(`VideoFilmstrip visibleVideos=${visibleVideos.length} currentTime=${currentTime} secondsToShow=${secondsToShow} currentVideoTime=${currentVideoTime} currentVideo=${currentVideo} visibleStartTime=${visibleStartTime} visibleEndTime=${visibleEndTime}`, annotations)
+
         if (currentVideoTime !== undefined && currentVideo) {
             const playbackPosition = currentVideo.timestamp + (currentVideoTime * 1000);
             annotations['playback-position'] = {
@@ -108,17 +111,29 @@ export const VideoFilmstrip: React.FC<VideoFilmstripChartProps> = ({
                 maintainAspectRatio: false,
                 scales: {
                     x: {
-                        // type: 'linear',
-                        // min: visibleStartTime * 1000,
-                        // max: visibleEndTime * 1000,
+                        type: 'time',
+                        min: visibleStartTime,
+                        max: visibleEndTime,
                         ticks: {
-                            callback: (value, index) => {
-                                const video = visibleVideos[index];
-                                const date = new Date(video.timestamp);
-                                const formattedTime = formatDate(date);
-                                return formattedTime;
+                            count: 10,
+                            // autoSkip: false,
+                            callback: (value) => {
+                                const date = new Date(value);
+                                return formatDate(date);
                             }
                         }
+                        // ticks: {
+                        //     callback: (value, index) => {
+                        //         const video = visibleVideos[index];
+                        //         if (!video) {
+                        //             console.error(`VideoFilmstrip ticks callback video not found for index=${index} value=${value}`)
+                        //             return '';
+                        //         }
+                        //         const date = new Date(video.timestamp);
+                        //         const formattedTime = formatDate(date);
+                        //         return formattedTime;
+                        //     }
+                        // }
                     },
                     y: {
                         min: 0,

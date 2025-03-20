@@ -84,6 +84,7 @@
     "@types/d3": "^7.4.3",
     "assert": "^2.1.0",
     "buffer": "^6.0.3",
+    "chartjs-adapter-date-fns": "^3.0.0",
     "chartjs-plugin-annotation": "^3.0.1",
     "chartjs-plugin-crosshair": "^2.0.0",
     "chartjs-plugin-datalabels": "^2.2.0",

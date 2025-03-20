@@ -5,6 +5,7 @@ import annotationPlugin from 'chartjs-plugin-annotation';
 import { merge } from 'lodash';
 import { eegChartOptions } from './ChartUtils';
 import { formatDate } from '../Loader/Loader';
+import { Temporal } from '@js-temporal/polyfill';
 
 Chart.register(...registerables, annotationPlugin);
 
@@ -13,19 +14,24 @@ interface RawPhysicalFeaturesChartProps {
     scrollPosition: number;
     samplesPerSecond: number;
     secondsToShow: number;
+    currentTime: Temporal.ZonedDateTime;
 }
 
 export const RawPhysicalFeaturesChart: React.FC<RawPhysicalFeaturesChartProps> = ({
     allData,
     scrollPosition,
     samplesPerSecond,
-    secondsToShow
+    secondsToShow,
+    currentTime
 }) => {
     const chartRef = React.useRef<HTMLCanvasElement | null>(null);
     const [chart, setChart] = React.useState<Chart | null>(null);
 
     const startTime = allData.processedEDF.startDate.epochMilliseconds;
     const samplesToShow = secondsToShow * samplesPerSecond;
+
+    const visibleStartTime = currentTime.epochMilliseconds;
+    const visibleEndTime = visibleStartTime + secondsToShow * 1000;
 
     const visibleFeatures = useMemo(() => {
         if (!allData.rawPhysicalFeatures || !allData.rawPhysicalFeatures.length) return [];
@@ -104,13 +110,22 @@ export const RawPhysicalFeaturesChart: React.FC<RawPhysicalFeaturesChartProps> =
                 eegChartOptions(`Movement`, allData, scrollPosition), {
                 scales: {
                     x: {
+                        type: 'time',
+                        min: visibleStartTime,
+                        max: visibleEndTime,
                         ticks: {
-                            callback: (value, index, ticks) => {
-                                const v = visibleFeatures[index]
-                                //console.info(`RawPhysicalFeaturesChart x ticks callback v=${v.timestamp} value=${value} index=${index} scrollPosition=${scrollPosition} samplesPerSecond=${samplesPerSecond} secondsToShow=${secondsToShow} samplesToShow=${samplesToShow} startTime=${startTime} v=${v}`)
-                                const formattedTime = formatDate(new Date(v.timestamp));
-                                return formattedTime;
+                            count: 10,
+                            callback: (value) => {
+                                const date = new Date(value);
+                                return formatDate(date);
                             }
+
+                            // callback: (value, index, ticks) => {
+                            //     const v = visibleFeatures[index]
+                            //     //console.info(`RawPhysicalFeaturesChart x ticks callback v=${v.timestamp} value=${value} index=${index} scrollPosition=${scrollPosition} samplesPerSecond=${samplesPerSecond} secondsToShow=${secondsToShow} samplesToShow=${samplesToShow} startTime=${startTime} v=${v}`)
+                            //     const formattedTime = formatDate(new Date(v.timestamp));
+                            //     return formattedTime;
+                            // }
                         }
                     },
                     // y: {
