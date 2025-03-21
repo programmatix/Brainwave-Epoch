@@ -122,10 +122,19 @@ export const VideoFilmstrip: React.FC<VideoFilmstripChartProps> = ({
 
         if (currentVideoTime !== undefined && currentVideo) {
             const playbackPosition = currentVideo.timestamp + (currentVideoTime * 1000);
+            
+            // Calculate the actual starting time, accounting for pre-motion if available
+            const videoStartTime = currentVideo.durations?.pre_motion_seconds 
+                ? currentVideo.timestamp - (currentVideo.durations.pre_motion_seconds * 1000)
+                : currentVideo.timestamp;
+                
+            // Calculate the adjusted playback position based on the actual starting time
+            const adjustedPlaybackPosition = videoStartTime + (currentVideoTime * 1000);
+            
             annotations['playback-position'] = {
                 type: 'line',
-                xMin: playbackPosition,
-                xMax: playbackPosition,
+                xMin: adjustedPlaybackPosition,
+                xMax: adjustedPlaybackPosition,
                 yMin: 0,
                 yMax: 1,
                 borderColor: 'rgba(0, 0, 255, 0.8)',
