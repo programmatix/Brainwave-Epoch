@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Temporal } from '@js-temporal/polyfill';
 import { AudioFilmstrip } from './AudioFilmstrip';
 import { AudioFile } from './Audio';
@@ -37,6 +37,12 @@ export const AudioViewer: React.FC<AudioViewerProps> = ({
       setPlaybackTime(audioRef.current.currentTime);
     }
   };
+
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.playbackRate = 3;
+    }
+  }, [currentAudio]);
 
   return (
     <div className="audio-viewer">
