@@ -1,7 +1,7 @@
 import { Temporal } from '@js-temporal/polyfill';
 import { parse } from 'csv-parse/sync';
 import { promises as fs } from 'fs';
-import { AllData, EDFData, EDFHeader, EDFSignal, FitbitHypnogram, GroupedSlowWaveEvents, GroupedSpindleEvents, NightEvents, ProcessedEDFData, ProcessedSleepStageEntry, ProcessedSleepStages, SignalData, SlowWaveEvents, SpindleEvents, TimeLabel, SleepStageFeatureMinMax, ProcessedSleepStageEntryFeatures, ChannelData, Scorings, ScoringEntry, ScoringTag, Mark, Microwaking, Microwakings, StageFeatureMinMax, StatsCSVRow, FeatureMinMax, Artifacts, RawPhysicalFeatures } from './LoaderTypes';
+import { AllData, EDFData, EDFHeader, EDFSignal, FitbitHypnogram, GroupedSlowWaveEvents, GroupedSpindleEvents, NightEvents, ProcessedEDFData, ProcessedSleepStageEntry, ProcessedSleepStages, SignalData, SlowWaveEvents, SpindleEvents, TimeLabel, SleepStageFeatureMinMax, ProcessedSleepStageEntryFeatures, ChannelData, Scorings, ScoringEntry, ScoringTag, Mark, Microwaking, Microwakings, StageFeatureMinMax, StatsCSVRow, FeatureMinMax, Artifacts, RawPhysicalFeatures, BinaryEEGMetadata, BinaryEEGData } from './LoaderTypes';
 
 
 import { EventEmitter } from 'events';
@@ -311,6 +311,23 @@ export function setupFileMenu(onFileLoad: (filePath: string) => Promise<void>) {
             fileInput.click();
         }
     }));
+    
+    fileMenu.append(new window.nw.MenuItem({
+        label: 'Open Binary EEG File',
+        click: () => {
+            const fileInput = document.createElement('input');
+            fileInput.type = 'file';
+            fileInput.accept = '.bin';
+            fileInput.onchange = async (e) => {
+                const file = (e.target as HTMLInputElement).files?.[0];
+                console.log('File:', file);
+                if (file) {
+                    await onFileLoad((file as any).path);
+                }
+            };
+            fileInput.click();
+        }
+    }));
 
     menu.append(new window.nw.MenuItem({
         label: 'File',
@@ -358,29 +375,200 @@ export async function readRawPhysicalFeatures(filePath: string): Promise<RawPhys
     }
 }
 
+export async function readBinaryEEG(filePath: string): Promise<ProcessedEDFData> {
+    console.time('readBinaryEEG');
+    
+    // Read the JSON metadata file
+    const metadataPath = filePath.replace('.bin', '.json');
+    const metadataContent = await fs.readFile(metadataPath, 'utf8');
+    const metadata: BinaryEEGMetadata = JSON.parse(metadataContent);
+    
+    loaderEvents.emit('log', `${new Date().toISOString()}: Reading binary EEG file with ${metadata.n_samples} samples and ${metadata.n_channels} channels`);
+    
+    // For extremely large files, use file streaming with a smaller buffer
+    // Calculate file stats to determine if we need chunked processing
+    const stats = await fs.stat(filePath);
+    const fileSizeInMB = stats.size / (1024 * 1024);
+    loaderEvents.emit('log', `${new Date().toISOString()}: File size is ${fileSizeInMB.toFixed(2)} MB`);
+    
+    // Parse the start time
+    const startTime = parseDateString(metadata.start_time);
+    
+    // Calculate duration in seconds
+    const endTime = parseDateString(metadata.end_time);
+    const durationInSeconds = Temporal.Duration.from(
+        startTime.until(endTime)
+    ).total('second');
+    
+    // Create TimeLabels (optimization: create fewer timestamps for large files)
+    const timeLabels: TimeLabel[] = [];
+    const samplingRate = metadata.sampling_frequency;
+    
+    const startTimeMs = startTime.toInstant().epochMilliseconds;
+    const offsetMilliseconds = new Date().getTimezoneOffset() * 60000;
+    
+    // For very large files, generate a reduced set of timestamps
+    const timeLabelStepSize = Math.max(1, Math.floor(metadata.n_samples / 1000000));
+    for (let i = 0; i < metadata.n_samples; i += timeLabelStepSize) {
+        const milliseconds = Math.round(i / samplingRate * 1000);
+        const currentTime = new Date(startTimeMs + milliseconds - offsetMilliseconds);
+        timeLabels.push({
+            timestamp: startTimeMs + milliseconds,
+            formatted: formatDate(currentTime)
+        });
+    }
+    
+    loaderEvents.emit('log', `${new Date().toISOString()}: Generated ${timeLabels.length} time labels`);
+    
+    // Prepare channel data structures
+    const channelMinValues = new Array(metadata.n_channels).fill(Infinity);
+    const channelMaxValues = new Array(metadata.n_channels).fill(-Infinity);
+    
+    // For large files, we'll use a chunked approach
+    const isLargeFile = fileSizeInMB > 500; // Over 500MB is considered large
+    const channelSamplesArrays = new Array(metadata.n_channels).fill(null).map(() => []);
+    
+    // For very large files, we'll use downsampling
+    const downsampleFactor = isLargeFile ? Math.max(1, Math.floor(metadata.n_samples / 5000000)) : 1;
+    
+    if (isLargeFile) {
+        loaderEvents.emit('log', `${new Date().toISOString()}: Large file detected, using chunked processing with downsample factor ${downsampleFactor}`);
+    }
+    
+    // Read the entire file at once for smaller files, or in chunks for larger files
+    if (!isLargeFile) {
+        const buffer = await fs.readFile(filePath);
+        const dataView = new DataView(buffer.buffer);
+        
+        // Process all samples in one pass
+        for (let i = 0; i < metadata.n_samples; i++) {
+            // Apply downsampling if needed
+            if (i % downsampleFactor !== 0) continue;
+            
+            const channelIdx = i % metadata.n_channels;
+            const sampleValue = dataView.getInt16(i * 2, metadata.byte_order === 'little-endian');
+            
+            // Update min/max
+            if (sampleValue < channelMinValues[channelIdx]) channelMinValues[channelIdx] = sampleValue;
+            if (sampleValue > channelMaxValues[channelIdx]) channelMaxValues[channelIdx] = sampleValue;
+            
+            // Store the sample
+            channelSamplesArrays[channelIdx].push(sampleValue);
+        }
+    } else {
+        // For large files, process in chunks
+        const fd = await fs.open(filePath, 'r');
+        try {
+            const chunkSize = 10 * 1024 * 1024; // 10MB chunks
+            const buffer = Buffer.alloc(chunkSize);
+            
+            let bytesRead = 0;
+            let position = 0;
+            let samplesProcessed = 0;
+            
+            while (position < stats.size) {
+                const readResult = await fd.read(buffer, 0, Math.min(chunkSize, stats.size - position), position);
+                bytesRead = readResult.bytesRead;
+                if (bytesRead === 0) break;
+                
+                const dataView = new DataView(buffer.buffer, 0, bytesRead);
+                const samplesInChunk = Math.floor(bytesRead / 2); // 2 bytes per sample
+                
+                for (let i = 0; i < samplesInChunk; i++) {
+                    const globalSampleIndex = (position / 2) + i;
+                    if (globalSampleIndex >= metadata.n_samples) break;
+                    
+                    // Apply downsampling if needed
+                    if (globalSampleIndex % downsampleFactor !== 0) continue;
+                    
+                    const channelIdx = globalSampleIndex % metadata.n_channels;
+                    const sampleValue = dataView.getInt16(i * 2, metadata.byte_order === 'little-endian');
+                    
+                    // Update min/max
+                    if (sampleValue < channelMinValues[channelIdx]) channelMinValues[channelIdx] = sampleValue;
+                    if (sampleValue > channelMaxValues[channelIdx]) channelMaxValues[channelIdx] = sampleValue;
+                    
+                    // Store the sample
+                    channelSamplesArrays[channelIdx].push(sampleValue);
+                }
+                
+                position += bytesRead;
+                samplesProcessed += samplesInChunk;
+                
+                if (samplesProcessed % 1000000 === 0) {
+                    loaderEvents.emit('log', `${new Date().toISOString()}: Processed ${samplesProcessed} samples (${(position / stats.size * 100).toFixed(1)}%)`);
+                }
+            }
+        } finally {
+            await fd.close();
+        }
+    }
+    
+    // Create SignalData objects for each channel
+    const signals: SignalData[] = metadata.channels.map((channelName, idx) => {
+        loaderEvents.emit('log', `${new Date().toISOString()}: Finalizing channel ${channelName} with ${channelSamplesArrays[idx].length} samples`);
+        
+        return {
+            label: channelName,
+            transducerType: 'EEG',
+            physicalDimension: 'uV',
+            physicalMin: channelMinValues[idx],
+            physicalMax: channelMaxValues[idx],
+            digitalMin: -32768, // For int16
+            digitalMax: 32767,  // For int16
+            prefiltering: '',
+            samplingRate: samplingRate / downsampleFactor, // Adjust sampling rate if downsampled
+            samples: channelSamplesArrays[idx],
+            timeLabels
+        };
+    });
+    
+    const processedData: ProcessedEDFData = {
+        filePath,
+        filePathWithoutExtension: filePath.replace(/\.bin$/, ''),
+        startDate: startTime,
+        duration: durationInSeconds,
+        signals
+    };
+    
+    console.timeEnd('readBinaryEEG');
+    return processedData;
+}
+
 export async function loadFiles(edfPath: string): Promise<AllData> {
     const start = performance.now();
     loaderEvents.emit('log', `${new Date().toISOString()}: Starting to load files`);
     window.nw.Window.get().title = edfPath;
 
-    const sleepStagesPath = edfPath.replace('.edf', '.with_features.csv');
-    const postHumansStagesPath = edfPath.replace('.edf', '.post_human.csv');
-    const physicalFeaturesPath = edfPath.replace('.edf', '.physical_features.csv');
-    const slowWaveEventsPath = edfPath.replace('.edf', '.sw_summary.csv');
-    const nightEventsPath = edfPath.replace('.edf', '.night_events.csv');
-    const fitbitHypnogramPath = edfPath.replace('.edf', '.fitbit_hypnogram.csv');
-    const spindleEventsPath = edfPath.replace('.edf', '.spindle_summary.csv');
-    const scoringsPath = edfPath.replace('.edf', '.scorings.json');
-    const microwakingsPath = edfPath.replace('.edf', '.microwakings.csv');
-    const artifactsPath = edfPath.replace('.edf', '.artifacts.csv');
-    const sleepStatsPath = "C:\\dev\\play\\brainwave-data\\stats.csv";
-    const finalWakeModelPath = edfPath.replace('.edf', '.final_wake_model.csv');
-    const rawPhysicalFeaturesPath = edfPath.replace('.edf', '.physical_features.1s.csv');
+    let processedEDF: ProcessedEDFData;
+    
+    // Determine file type and load accordingly
+    if (edfPath.endsWith('.edf')) {
+        // Handle EDF file
+        const raw = await readEDFPlus(edfPath);
+        processedEDF = await processEDFData(raw);
+    } else if (edfPath.endsWith('.bin')) {
+        // Handle binary file
+        processedEDF = await readBinaryEEG(edfPath);
+    } else {
+        throw new Error(`Unsupported file type: ${edfPath}`);
+    }
 
-    // First, read and process the EDF file to get the date range for other data
-    loaderEvents.emit('log', `${new Date().toISOString()}: Reading EDF file...`);
-    const raw = await readEDFPlus(edfPath);
-    const processedEDF = await processEDFData(raw);
+    // Generate paths for associated files based on the base filename (without extension)
+    const basePath = processedEDF.filePathWithoutExtension;
+    const sleepStagesPath = `${basePath}.with_features.csv`;
+    const postHumansStagesPath = `${basePath}.post_human.csv`;
+    const physicalFeaturesPath = `${basePath}.physical_features.csv`;
+    const slowWaveEventsPath = `${basePath}.sw_summary.csv`;
+    const nightEventsPath = `${basePath}.night_events.csv`;
+    const fitbitHypnogramPath = `${basePath}.fitbit_hypnogram.csv`;
+    const spindleEventsPath = `${basePath}.spindle_summary.csv`;
+    const scoringsPath = `${basePath}.scorings.json`;
+    const microwakingsPath = `${basePath}.microwakings.csv`;
+    const artifactsPath = `${basePath}.artifacts.csv`;
+    const sleepStatsPath = "C:\\dev\\play\\brainwave-data\\stats.csv";
+    const finalWakeModelPath = `${basePath}.final_wake_model.csv`;
+    const rawPhysicalFeaturesPath = `${basePath}.physical_features.1s.csv`;
     
     // Now get date range for InfluxDB query
     const startDate = processedEDF.startDate;

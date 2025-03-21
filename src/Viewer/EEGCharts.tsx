@@ -79,7 +79,7 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition })
     }, [compareEpochInput]);
 
     useEffect(() => {
-        const samplesToShow = samplesPerSecond * SECONDS_TO_SHOW;
+        const samplesToShow = Math.floor(samplesPerSecond * SECONDS_TO_SHOW);
         const signalsToShow = allData.processedEDF.signals.filter(signal => signal.label !== 'EDF Annotations');
 
         charts.forEach(chart => chart?.destroy());
@@ -279,6 +279,8 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition })
                     }
                 }];
             }).filter(Boolean) || [] : [];
+
+            console.log(`samplesToShow`, samplesToShow)
 
             const config: ChartConfiguration = {
                 type: 'line',

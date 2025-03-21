@@ -341,3 +341,20 @@ export type Artifact = {
 
 export type Artifacts = Artifact[];
 
+export type BinaryEEGMetadata = {
+    sampling_frequency: number;
+    channels: string[];
+    n_channels: number;
+    n_samples: number;
+    data_format: string;
+    byte_order: string;
+    start_time: string;
+    end_time: string;
+};
+
+export type BinaryEEGData = {
+    filePath: string;
+    metadata: BinaryEEGMetadata;
+    records: number[][];
+};
+
