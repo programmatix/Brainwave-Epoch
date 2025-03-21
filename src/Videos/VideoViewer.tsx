@@ -33,8 +33,16 @@ export const VideoViewer: React.FC<VideoViewerProps> = ({
   const videoRef = useRef<HTMLVideoElement>(null);
 
   const handleVideoClick = (video: VideoFile) => {
-    setCurrentVideo(video);
-    setPlaybackTime(0);
+    if (currentVideo && video.name === currentVideo.name) {
+      if (videoRef.current) {
+        videoRef.current.currentTime = 0;
+        videoRef.current.play();
+      }
+      setPlaybackTime(0);
+    } else {
+      setCurrentVideo(video);
+      setPlaybackTime(0);
+    }
   };
 
   const handleTimeUpdate = () => {

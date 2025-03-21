@@ -40,7 +40,7 @@ export const AudioViewer: React.FC<AudioViewerProps> = ({
 
   useEffect(() => {
     if (audioRef.current) {
-      audioRef.current.playbackRate = 3;
+    //   audioRef.current.playbackRate = 3;
     }
   }, [currentAudio]);
 
