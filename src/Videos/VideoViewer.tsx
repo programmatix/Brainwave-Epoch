@@ -4,6 +4,8 @@ import { VideoTimeline } from './VideoTimeline';
 import { VideoFilmstrip } from './VideoFilmstrip';
 import { VideoFile } from './Videos';
 import { AllData } from '../Loader/LoaderTypes';
+import { useStore, StoreState } from '../Store/Store';
+
 interface VideoViewerProps {
   allData: AllData;
   scrollPosition: number;
@@ -23,7 +25,10 @@ export const VideoViewer: React.FC<VideoViewerProps> = ({
   currentTime,
   secondsToShow,
 }) => {
-  const [currentVideo, setCurrentVideo] = useState<VideoFile | null>(null);
+  const { currentVideo, setCurrentVideo } = useStore((state: StoreState) => ({
+    currentVideo: state.currentVideo,
+    setCurrentVideo: state.setCurrentVideo
+  }));
   const [playbackTime, setPlaybackTime] = useState<number>(0);
   const videoRef = useRef<HTMLVideoElement>(null);
 

@@ -17,6 +17,7 @@ import { StoreState, useStore } from '../Store/Store';
 import { MarksTimeline } from './MarksTimeline';
 import { MicrowakingsTimeline } from './MicrowakingsTimeline';
 import { VideoTimeline } from '../Videos/VideoTimeline';
+import { VideoFile } from '../Videos/Videos';
 import { StageTimeline } from './StageTimeline';
 import { PhysicalFeatureTimeline } from './PhysicalFeatureTimeline';
 import { FinalWakeModelFeatureTimeline } from './FinalWakeModelFeatureTimeline';
@@ -49,18 +50,19 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = React.memo(
 
     const [epochInput, setEpochInput] = useState('');
     const [selectedFeature, setSelectedFeature] = useState<string>('');
-    const { scorings, marks } = useStore((state: StoreState) => ({
+    const { scorings, marks, setCurrentVideo } = useStore((state: StoreState) => ({
         scorings: state.scorings,
         marks: state.marks,
+        setCurrentVideo: state.setCurrentVideo,
     }))
     console.info("scorings", scorings)
     const [isAutoScrolling, setIsAutoScrolling] = useState(false);
 
     const handleKeyDown = useCallback((e: KeyboardEvent) => {
         if (e.key === 'ArrowLeft') {
-            setScrollPosition((prev) => Math.max(0, prev - 200));
+            setScrollPosition((prev) => Math.max(0, prev - 2500));
         } else if (e.key === 'ArrowRight') {
-            setScrollPosition((prev) => Math.min(totalSamples - 1, prev + 200));
+            setScrollPosition((prev) => Math.min(totalSamples - 1, prev + 2500));
         } else if (e.key === 'q') {
             handlePrevEpoch()
         } else if (e.key === 'e') {
@@ -187,15 +189,15 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = React.memo(
         const isNext = direction === 'next';
         
         // Create a map of epochs that contain events
-        const epochsWithEvents = new Map<number, Array<{ type: string, name?: string }>>();
+        const epochsWithEvents = new Map<number, Array<{ type: string, name?: string, video?: VideoFile }>>();
         
         // Function to record an event in an epoch
-        const recordEventInEpoch = (position: number, type: string, name?: string) => {
+        const recordEventInEpoch = (position: number, type: string, name?: string, video?: VideoFile) => {
             const epoch = Math.floor(position / samplesPerEpoch);
             if (!epochsWithEvents.has(epoch)) {
                 epochsWithEvents.set(epoch, []);
             }
-            epochsWithEvents.get(epoch)?.push({ type, name });
+            epochsWithEvents.get(epoch)?.push({ type, name, video });
         };
 
         // Collect all candidates from artifacts
@@ -209,7 +211,7 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = React.memo(
         if (allData.videos) {
             for (const video of allData.videos) {
                 const videoStartSample = millisecondsToSamples(video.timestamp - allData.processedEDF.startDate.epochMilliseconds, samplesPerSecond);
-                recordEventInEpoch(videoStartSample, 'Video', video.name);
+                recordEventInEpoch(videoStartSample, 'Video', video.name, video);
             }
         }
 
@@ -245,6 +247,13 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = React.memo(
             const eventTypes = [...new Set(events.map(e => e.type))].join(', ');
             const eventCount = events.length;
             
+            // Auto-play video if one exists in this epoch
+            const videoEvent = events.find(e => e.type === 'Video' && e.video);
+            if (videoEvent && videoEvent.video) {
+                // Use the setCurrentVideo action from the store
+                setCurrentVideo(videoEvent.video);
+            }
+            
             // Show toast notification
             toast.info(`${isNext ? 'Next' : 'Previous'} epoch with ${eventTypes} (${eventCount} event${eventCount !== 1 ? 's' : ''})
 From epoch ${currentEpoch} to ${targetEpoch}`, {
@@ -261,7 +270,7 @@ From epoch ${currentEpoch} to ${targetEpoch}`, {
                 autoClose: 3000,
             });
         }
-    }, [allData, scrollPosition, samplesPerEpoch, samplesPerSecond, setScrollPosition]);
+    }, [allData, scrollPosition, samplesPerEpoch, samplesPerSecond, setScrollPosition, setCurrentVideo]);
 
     const handleNextArtifactVideoMovement = useCallback(() => {
         findArtifactVideoMovement('next');

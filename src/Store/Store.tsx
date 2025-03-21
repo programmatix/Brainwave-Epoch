@@ -4,6 +4,7 @@ import { Scorings, AllData, ScoringEntry, Mark } from '../Loader/LoaderTypes'
 import fs from 'fs'
 import path from 'path'
 import { Temporal } from '@js-temporal/polyfill'
+import { VideoFile } from '../Videos/Videos'
 
 type DisturbanceValue = 'Unset' | 'No' | 'Yes' | 'Unclear';
 
@@ -55,6 +56,7 @@ export interface StoreState {
     scorings: Scorings
     disturbances: DisturbanceEntry[]
     markingMode: string
+    currentVideo: VideoFile | null
     saveScoring: (newScoring: ScoringEntry) => void
     saveDisturbance: (newDisturbance: DisturbanceEntry) => void
     updateMarks: (newMarks: Mark[]) => void
@@ -64,6 +66,7 @@ export interface StoreState {
     handleChartClick: (timestamp: Temporal.ZonedDateTime, channel: string) => void
     deleteMark: (timestamp: string, channel: string) => void
     setMarkingMode: (mode: StoreState['markingMode']) => void
+    setCurrentVideo: (video: VideoFile | null) => void
 }
 
 export const useStore = create<StoreState>()(devtools((set) => ({
@@ -72,6 +75,7 @@ export const useStore = create<StoreState>()(devtools((set) => ({
     scorings: [],
     disturbances: [],
     markingMode: 'None',
+    currentVideo: null,
     handleChartClick: (timestamp: Temporal.ZonedDateTime, channel: string) => {
         console.log("handleChartClick", timestamp, channel)
         set((state) => {
@@ -160,5 +164,8 @@ export const useStore = create<StoreState>()(devtools((set) => ({
             saveToFile(state.scorings, updatedMarks, state.disturbances, state.allData);
             return { marks: updatedMarks, markingMode: foundMark.type };
         });
+    },
+    setCurrentVideo: (video) => {
+        set({ currentVideo: video })
     },
 })))
