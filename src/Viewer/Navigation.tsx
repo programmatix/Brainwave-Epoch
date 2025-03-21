@@ -26,6 +26,7 @@ import { RawPhysicalFeaturesTimeline } from './RawPhysicalFeaturesTimeline';
 import { millisecondsToSamples, sampleIndexToTime } from './ChartUtils';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { SECONDS_PER_EPOCH } from './EEGCharts';
 
 interface TimelineNavigationProps {
     allData: AllData;
@@ -50,10 +51,11 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = React.memo(
 
     const [epochInput, setEpochInput] = useState('');
     const [selectedFeature, setSelectedFeature] = useState<string>('');
-    const { scorings, marks, setCurrentVideo } = useStore((state: StoreState) => ({
+    const { scorings, marks, setCurrentVideo, currentVideo } = useStore((state: StoreState) => ({
         scorings: state.scorings,
         marks: state.marks,
         setCurrentVideo: state.setCurrentVideo,
+        currentVideo: state.currentVideo,
     }))
     console.info("scorings", scorings)
     const [isAutoScrolling, setIsAutoScrolling] = useState(false);
@@ -110,12 +112,50 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = React.memo(
 
     const handlePrevEpoch = () => {
         const currentEpoch = Math.floor(scrollPosition / samplesPerEpoch);
-        setScrollPosition(Math.max(0, (currentEpoch - 1) * samplesPerEpoch));
+        const newScrollPosition = Math.max(0, (currentEpoch - 1) * samplesPerEpoch);
+        setScrollPosition(newScrollPosition);
+        
+        // Find videos in the new epoch
+        const newEpochStartTime = allData.processedEDF.startDate.add({ 
+            seconds: Math.floor(newScrollPosition / samplesPerSecond) 
+        });
+        const newEpochEndTime = newEpochStartTime.add({ seconds: SECONDS_PER_EPOCH });
+        
+        // Find first video in the new epoch
+        const videosInNewEpoch = allData.videos.filter(video => {
+            const videoTime = video.timestamp;
+            return videoTime >= newEpochStartTime.epochMilliseconds && 
+                   videoTime <= newEpochEndTime.epochMilliseconds;
+        });
+        
+        // Play the first video if available
+        if (videosInNewEpoch.length > 0) {
+            setCurrentVideo(videosInNewEpoch[0]);
+        }
     };
 
     const handleNextEpoch = () => {
         const currentEpoch = Math.floor(scrollPosition / samplesPerEpoch);
-        setScrollPosition(Math.min(totalSamples - 1, (currentEpoch + 1) * samplesPerEpoch));
+        const newScrollPosition = Math.min(totalSamples - 1, (currentEpoch + 1) * samplesPerEpoch);
+        setScrollPosition(newScrollPosition);
+        
+        // Find videos in the new epoch
+        const newEpochStartTime = allData.processedEDF.startDate.add({ 
+            seconds: Math.floor(newScrollPosition / samplesPerSecond) 
+        });
+        const newEpochEndTime = newEpochStartTime.add({ seconds: SECONDS_PER_EPOCH });
+        
+        // Find first video in the new epoch
+        const videosInNewEpoch = allData.videos.filter(video => {
+            const videoTime = video.timestamp;
+            return videoTime >= newEpochStartTime.epochMilliseconds && 
+                   videoTime <= newEpochEndTime.epochMilliseconds;
+        });
+        
+        // Play the first video if available
+        if (videosInNewEpoch.length > 0) {
+            setCurrentVideo(videosInNewEpoch[0]);
+        }
     };
 
     const handleSetEpoch = () => {

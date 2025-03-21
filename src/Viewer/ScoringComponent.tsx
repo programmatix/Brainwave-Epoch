@@ -123,7 +123,7 @@ export const ScoringComponent: React.FC<ScoringComponentProps> = ({ scrollPositi
         
         <div className="flex items-center space-x-4 p-2 border rounded-md bg-gray-50">
           <div className="font-semibold">EEG Graph Marking Mode:</div>
-          <p className="mb-2">Handle graph clicks.  Also get saved to raw.scorings.json.  Artifacts are used for regression tests so set it safely after the real start.  Microwakings are also used for artifact regression so don't need to set both.</p>
+          <p className="mb-2">Handle graph clicks.  Also get saved to raw.scorings.json.  Artifacts are used for regression tests so set it safely after the real start.  Microwakings (which were for training a model) are deprecated (a microwaking is just an artifact during sleep).</p>
           <select
             value={markingMode}
             onChange={(e) => setMarkingMode(e.target.value as StoreState['markingMode'])}
@@ -132,8 +132,11 @@ export const ScoringComponent: React.FC<ScoringComponentProps> = ({ scrollPositi
             <option value="None">None</option>
             <option value="ArtifactStart">Artifact Start</option>
             <option value="ArtifactEnd">Artifact End</option>
-            <option value="MicrowakingStart">Microwaking Start</option>
-            <option value="MicrowakingEnd">Microwaking End</option>
+            <option value="NotArtifactStart">Not Artifact Start</option>
+            <option value="NotArtifactEnd">Not Artifact End</option>
+            {/* Removed as microwakings are deprecated */}
+            {/* <option value="MicrowakingStart">Microwaking Start</option>
+            <option value="MicrowakingEnd">Microwaking End</option> */}
             {/* Removing as I don't recall what these are used for  */}
             {/* <option value="StartExclusion">Start Exclusion</option>
             <option value="EndExclusion">End Exclusion</option> */}

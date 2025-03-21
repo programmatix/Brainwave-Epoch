@@ -28,13 +28,13 @@ export function generateAnnotations(
             const channelData = sleepStage?.Channels[signal.label];
 
             const content: EpochAnnotation[] = [
-                { key: 'Epoch', value: `${epochIndex} (${sleepStage?.Timestamp.toString()})` },
+                { key: 'Epoch', value: `${epochIndex} (${sleepStage?.Timestamp.toInstant().toString()})` },
                 { key: 'Stage', value: `${channelData?.Stage || 'N/A'} (${((channelData?.Confidence || 0) * 100).toFixed(0)}%)`, compValue: compareEpoch !== null ? `${allData.sleepStages[compareEpoch]?.Channels[signal.label]?.Stage || 'N/A'} (${((allData.sleepStages[compareEpoch]?.Channels[signal.label]?.Confidence || 0) * 100).toFixed(0)}%)` : undefined },
-                { key: 'SettlingScorePrediction', value: `${sleepStage?.SettlingScorePrediction?.toFixed(2) || 'N/A'}`, compValue: compareEpoch !== null ? `${allData.sleepStages[compareEpoch]?.SettlingScorePrediction || 'N/A'}` : undefined },
-                { key: 'SettlingV4ScorePrediction', value: `${sleepStage?.SettlingV4ScorePrediction?.toFixed(2) || 'N/A'}`, compValue: compareEpoch !== null ? `${allData.sleepStages[compareEpoch]?.SettlingV4ScorePrediction || 'N/A'}` : undefined },
-                { key: 'SettlingTiredVsWiredPrediction', value: `${sleepStage?.SettlingTiredVsWiredPrediction?.toFixed(2) || 'N/A'}`, compValue: compareEpoch !== null ? `${allData.sleepStages[compareEpoch]?.SettlingTiredVsWiredPrediction?.toFixed(2) || 'N/A'}` : undefined },
-                { key: 'SettlingManualScore', value: `${sleepStage?.SettlingManualScore?.toFixed(2) || 'N/A'}`, compValue: compareEpoch !== null ? `${allData.sleepStages[compareEpoch]?.SettlingManualScore?.toFixed(2) || 'N/A'}` : undefined },  
-                { key: 'SettlingEventVersion', value: `${sleepStage?.SettlingEventVersion || 'N/A'}`, compValue: compareEpoch !== null ? `${allData.sleepStages[compareEpoch]?.SettlingEventVersion || 'N/A'}` : undefined },  
+                // { key: 'SettlingScorePrediction', value: `${sleepStage?.SettlingScorePrediction?.toFixed(2) || 'N/A'}`, compValue: compareEpoch !== null ? `${allData.sleepStages[compareEpoch]?.SettlingScorePrediction || 'N/A'}` : undefined },
+                // { key: 'SettlingV4ScorePrediction', value: `${sleepStage?.SettlingV4ScorePrediction?.toFixed(2) || 'N/A'}`, compValue: compareEpoch !== null ? `${allData.sleepStages[compareEpoch]?.SettlingV4ScorePrediction || 'N/A'}` : undefined },
+                // { key: 'SettlingTiredVsWiredPrediction', value: `${sleepStage?.SettlingTiredVsWiredPrediction?.toFixed(2) || 'N/A'}`, compValue: compareEpoch !== null ? `${allData.sleepStages[compareEpoch]?.SettlingTiredVsWiredPrediction?.toFixed(2) || 'N/A'}` : undefined },
+                // { key: 'SettlingManualScore', value: `${sleepStage?.SettlingManualScore?.toFixed(2) || 'N/A'}`, compValue: compareEpoch !== null ? `${allData.sleepStages[compareEpoch]?.SettlingManualScore?.toFixed(2) || 'N/A'}` : undefined },  
+                // { key: 'SettlingEventVersion', value: `${sleepStage?.SettlingEventVersion || 'N/A'}`, compValue: compareEpoch !== null ? `${allData.sleepStages[compareEpoch]?.SettlingEventVersion || 'N/A'}` : undefined },  
             ];
 
             const labelCanvas = createLabelCanvas(content, 400, (content.length + 1) * 15);
