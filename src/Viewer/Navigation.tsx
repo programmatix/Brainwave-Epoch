@@ -27,9 +27,7 @@ import { millisecondsToSamples, sampleIndexToTime } from './ChartUtils';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { SECONDS_PER_EPOCH } from './EEGCharts';
-import Tippy from '@tippyjs/react';
-import 'tippy.js/dist/tippy.css';
-import 'tippy.js/themes/light.css';
+import { TimelineTooltip } from './TimelineTooltip';
 
 interface TimelineNavigationProps {
     allData: AllData;
@@ -63,6 +61,8 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = React.memo(
     console.info("scorings", scorings)
     const [isAutoScrolling, setIsAutoScrolling] = useState(false);
     const [mousePosition, setMousePosition] = useState<number>(0);
+    const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
+    const [activeTooltip, setActiveTooltip] = useState<{ type: string; channel?: string } | null>(null);
 
     const handleKeyDown = useCallback((e: KeyboardEvent) => {
         if (e.key === 'ArrowLeft') {
@@ -324,13 +324,24 @@ From epoch ${currentEpoch} to ${targetEpoch}`, {
         findArtifactVideoMovement('prev');
     }, [findArtifactVideoMovement]);
 
-    const handleMouseMove = useCallback((e: React.MouseEvent<SVGSVGElement>, width: number, duration: number) => {
+    const handleMouseMove = useCallback((e: React.MouseEvent<HTMLElement>, width: number, duration: number, type: string, channel?: string) => {
+        e.preventDefault(); // Prevent any default behavior
         const rect = e.currentTarget.getBoundingClientRect();
         const x = e.clientX - rect.left;
         const mouseTimeSeconds = (x / width) * duration;
         const mouseTimeSamples = mouseTimeSeconds * samplesPerSecond;
+        
+        // Immediately update tooltip position for responsive feel
+        setTooltipPosition({ x: e.clientX, y: e.clientY });
+        setActiveTooltip({ type, channel });
+        
+        // Batch these updates for performance
         setMousePosition(mouseTimeSamples);
     }, [samplesPerSecond]);
+
+    const handleMouseLeave = useCallback(() => {
+        setActiveTooltip(null);
+    }, []);
 
     const startDate = allData.processedEDF.startDate.epochSeconds;
 
@@ -413,20 +424,22 @@ From epoch ${currentEpoch} to ${targetEpoch}`, {
                             <tr key={`combined-${channel}`} className="timeline-row">
                                 <td className="timeline-label w-40 font-medium text-gray-700 pr-4 py-2">Slow Waves & Spindles {channel}</td>
                                 <td className="timeline-data bg-white rounded-md shadow p-1 flex-grow">
-                                    <Tippy content={<TimelineTooltip allData={allData} mousePosition={mousePosition} type="combined" channel={channel} />}>
-                                        <div className="w-full">
-                                            <CombinedSlowWaveSpindleTimeline
-                                                key={channel}
-                                                allData={allData}
-                                                channel={channel}
-                                                scrollPosition={scrollPosition}
-                                                totalSamples={totalSamples}
-                                                width={window.innerWidth - 200}
-                                                onTimelineClick={handleTimelineClick}
-                                                onMouseMove={(e) => handleMouseMove(e, window.innerWidth - 200, totalSamples / samplesPerSecond)}
-                                            />
-                                        </div>
-                                    </Tippy>
+                                    <div 
+                                        className="w-full cursor-pointer"
+                                        onMouseMove={(e) => handleMouseMove(e, window.innerWidth - 200, totalSamples / samplesPerSecond, 'combined', channel)}
+                                        onMouseLeave={handleMouseLeave}
+                                    >
+                                        <CombinedSlowWaveSpindleTimeline
+                                            key={channel}
+                                            allData={allData}
+                                            channel={channel}
+                                            scrollPosition={scrollPosition}
+                                            totalSamples={totalSamples}
+                                            width={window.innerWidth - 200}
+                                            onTimelineClick={handleTimelineClick}
+                                            onMouseMove={(e) => {}}
+                                        />
+                                    </div>
                                 </td>
                             </tr>
                         ))}
@@ -435,18 +448,20 @@ From epoch ${currentEpoch} to ${targetEpoch}`, {
                             <tr className="timeline-row">
                                 <td className="timeline-label w-40 font-medium text-gray-700 pr-4 py-2">Night Events</td>
                                 <td className="timeline-data bg-white rounded-md shadow p-1 flex-grow">
-                                    <Tippy content={<TimelineTooltip allData={allData} mousePosition={mousePosition} type="nightEvents" />}>
-                                        <div className="w-full">
-                                            <NightEventsTimeline
-                                                allData={allData}
-                                                scrollPosition={scrollPosition}
-                                                totalSamples={totalSamples}
-                                                width={window.innerWidth - 200}
-                                                onTimelineClick={handleTimelineClick}
-                                                onMouseMove={(e) => handleMouseMove(e, window.innerWidth - 200, totalSamples / samplesPerSecond)}
-                                            />
-                                        </div>
-                                    </Tippy>
+                                    <div 
+                                        className="w-full cursor-pointer"
+                                        onMouseMove={(e) => handleMouseMove(e, window.innerWidth - 200, totalSamples / samplesPerSecond, 'nightEvents')}
+                                        onMouseLeave={handleMouseLeave}
+                                    >
+                                        <NightEventsTimeline
+                                            allData={allData}
+                                            scrollPosition={scrollPosition}
+                                            totalSamples={totalSamples}
+                                            width={window.innerWidth - 200}
+                                            onTimelineClick={handleTimelineClick}
+                                            onMouseMove={(e) => {}}
+                                        />
+                                    </div>
                                 </td>
                             </tr>
                         )}
@@ -474,20 +489,22 @@ From epoch ${currentEpoch} to ${targetEpoch}`, {
                                 </td>
                                 <td className="timeline-data bg-white rounded-md shadow p-1 flex-grow">
                                     {selectedFeature && (
-                                        <Tippy content={<TimelineTooltip allData={allData} mousePosition={mousePosition} type="feature" channel={channel} />}>
-                                            <div className="w-full">
-                                                <FeatureTimeline
-                                                    allData={allData}
-                                                    scrollPosition={scrollPosition}
-                                                    totalSamples={totalSamples}
-                                                    width={window.innerWidth - 200}
-                                                    onTimelineClick={handleTimelineClick}
-                                                    selectedFeature={selectedFeature}
-                                                    channel={channel}
-                                                    onMouseMove={(e) => handleMouseMove(e, window.innerWidth - 200, totalSamples / samplesPerSecond)}
-                                                />
-                                            </div>
-                                        </Tippy>
+                                        <div 
+                                            className="w-full cursor-pointer"
+                                            onMouseMove={(e) => handleMouseMove(e, window.innerWidth - 200, totalSamples / samplesPerSecond, 'feature', channel)}
+                                            onMouseLeave={handleMouseLeave}
+                                        >
+                                            <FeatureTimeline
+                                                allData={allData}
+                                                scrollPosition={scrollPosition}
+                                                totalSamples={totalSamples}
+                                                width={window.innerWidth - 200}
+                                                onTimelineClick={handleTimelineClick}
+                                                selectedFeature={selectedFeature}
+                                                channel={channel}
+                                                onMouseMove={(e) => {}}
+                                            />
+                                        </div>
                                     )}
                                 </td>
                             </tr>
@@ -497,20 +514,22 @@ From epoch ${currentEpoch} to ${targetEpoch}`, {
                             <tr className="timeline-row">
                                 <td className="timeline-label w-40 font-medium text-gray-700 pr-4 py-2">YASA Hypnogram</td>
                                 <td className="timeline-data bg-white rounded-md shadow p-1 flex-grow">
-                                    <Tippy content={<TimelineTooltip allData={allData} mousePosition={mousePosition} type="sleepStage" />}>
-                                        <div className="w-full">
-                                            <SleepStageTimeline
-                                                sleepStages={allData.sleepStages}
-                                                scrollPosition={scrollPosition}
-                                                totalSamples={totalSamples}
-                                                samplesPerSecond={samplesPerSecond}
-                                                samplesPerEpoch={samplesPerEpoch}
-                                                width={window.innerWidth - 200}
-                                                onTimelineClick={handleTimelineClick}
-                                                onMouseMove={(e) => handleMouseMove(e, window.innerWidth - 200, totalSamples / samplesPerSecond)}
-                                            />
-                                        </div>
-                                    </Tippy>
+                                    <div 
+                                        className="w-full cursor-pointer"
+                                        onMouseMove={(e) => handleMouseMove(e, window.innerWidth - 200, totalSamples / samplesPerSecond, 'sleepStage')}
+                                        onMouseLeave={handleMouseLeave}
+                                    >
+                                        <SleepStageTimeline
+                                            sleepStages={allData.sleepStages}
+                                            scrollPosition={scrollPosition}
+                                            totalSamples={totalSamples}
+                                            samplesPerSecond={samplesPerSecond}
+                                            samplesPerEpoch={samplesPerEpoch}
+                                            width={window.innerWidth - 200}
+                                            onTimelineClick={handleTimelineClick}
+                                            onMouseMove={(e) => {}}
+                                        />
+                                    </div>
                                 </td>
                             </tr>
                         )}
@@ -519,19 +538,21 @@ From epoch ${currentEpoch} to ${targetEpoch}`, {
                             <tr className="timeline-row">
                                 <td className="timeline-label w-40 font-medium text-gray-700 pr-4 py-2">Fitbit Hypnogram</td>
                                 <td className="timeline-data bg-white rounded-md shadow p-1 flex-grow">
-                                    <Tippy content={<TimelineTooltip allData={allData} mousePosition={mousePosition} type="fitbit" />}>
-                                        <div className="w-full">
-                                            <FitbitHypnogramTimeline
-                                                fitbitHypnogram={allData.fitbitHypnogram}
-                                                scrollPosition={scrollPosition}
-                                                totalSamples={totalSamples}
-                                                width={window.innerWidth - 200}
-                                                onTimelineClick={handleTimelineClick}
-                                                allData={allData}
-                                                onMouseMove={(e) => handleMouseMove(e, window.innerWidth - 200, totalSamples / samplesPerSecond)}
-                                            />
-                                        </div>
-                                    </Tippy>
+                                    <div 
+                                        className="w-full cursor-pointer"
+                                        onMouseMove={(e) => handleMouseMove(e, window.innerWidth - 200, totalSamples / samplesPerSecond, 'fitbit')}
+                                        onMouseLeave={handleMouseLeave}
+                                    >
+                                        <FitbitHypnogramTimeline
+                                            fitbitHypnogram={allData.fitbitHypnogram}
+                                            scrollPosition={scrollPosition}
+                                            totalSamples={totalSamples}
+                                            width={window.innerWidth - 200}
+                                            onTimelineClick={handleTimelineClick}
+                                            allData={allData}
+                                            onMouseMove={(e) => {}}
+                                        />
+                                    </div>
                                 </td>
                             </tr>
                         )}
@@ -540,18 +561,20 @@ From epoch ${currentEpoch} to ${targetEpoch}`, {
                             <tr className="timeline-row">
                                 <td className="timeline-label w-40 font-medium text-gray-700 pr-4 py-2">Artifacts</td>
                                 <td className="timeline-data bg-white rounded-md shadow p-1 flex-grow">
-                                    <Tippy content={<TimelineTooltip allData={allData} mousePosition={mousePosition} type="artifact" />}>
-                                        <div className="w-full">
-                                            <ArtifactsTimeline
-                                                allData={allData}
-                                                scrollPosition={scrollPosition}
-                                                totalSamples={totalSamples}
-                                                width={window.innerWidth - 200}
-                                                onTimelineClick={handleTimelineClick}
-                                                onMouseMove={(e) => handleMouseMove(e, window.innerWidth - 200, totalSamples / samplesPerSecond)}
-                                            />
-                                        </div>
-                                    </Tippy>
+                                    <div 
+                                        className="w-full cursor-pointer"
+                                        onMouseMove={(e) => handleMouseMove(e, window.innerWidth - 200, totalSamples / samplesPerSecond, 'artifact')}
+                                        onMouseLeave={handleMouseLeave}
+                                    >
+                                        <ArtifactsTimeline
+                                            allData={allData}
+                                            scrollPosition={scrollPosition}
+                                            totalSamples={totalSamples}
+                                            width={window.innerWidth - 200}
+                                            onTimelineClick={handleTimelineClick}
+                                            onMouseMove={(e) => {}}
+                                        />
+                                    </div>
                                 </td>
                             </tr>
                         )}
@@ -560,18 +583,20 @@ From epoch ${currentEpoch} to ${targetEpoch}`, {
                             <tr className="timeline-row">
                                 <td className="timeline-label w-40 font-medium text-gray-700 pr-4 py-2">Marks</td>
                                 <td className="timeline-data bg-white rounded-md shadow p-1 flex-grow">
-                                    <Tippy content={<TimelineTooltip allData={allData} mousePosition={mousePosition} type="mark" />}>
-                                        <div className="w-full">
-                                            <MarksTimeline
-                                                scrollPosition={scrollPosition}
-                                                totalSamples={totalSamples}
-                                                samplesPerEpoch={samplesPerEpoch}
-                                                width={window.innerWidth - 200}
-                                                onTimelineClick={handleTimelineClick}
-                                                onMouseMove={(e) => handleMouseMove(e, window.innerWidth - 200, totalSamples / samplesPerSecond)}
-                                            />
-                                        </div>
-                                    </Tippy>
+                                    <div 
+                                        className="w-full cursor-pointer"
+                                        onMouseMove={(e) => handleMouseMove(e, window.innerWidth - 200, totalSamples / samplesPerSecond, 'mark')}
+                                        onMouseLeave={handleMouseLeave}
+                                    >
+                                        <MarksTimeline
+                                            scrollPosition={scrollPosition}
+                                            totalSamples={totalSamples}
+                                            samplesPerEpoch={samplesPerEpoch}
+                                            width={window.innerWidth - 200}
+                                            onTimelineClick={handleTimelineClick}
+                                            onMouseMove={(e) => {}}
+                                        />
+                                    </div>
                                 </td>
                             </tr>
                         )}
@@ -580,17 +605,19 @@ From epoch ${currentEpoch} to ${targetEpoch}`, {
                             <tr className="timeline-row">
                                 <td className="timeline-label w-40 font-medium text-gray-700 pr-4 py-2">Movement</td>
                                 <td className="timeline-data bg-white rounded-md shadow p-1 flex-grow">
-                                    <Tippy content={<TimelineTooltip allData={allData} mousePosition={mousePosition} type="movement" />}>
-                                        <div className="w-full">
-                                            <RawPhysicalFeaturesTimeline
-                                                allData={allData}
-                                                scrollPosition={scrollPosition}
-                                                totalSamples={totalSamples}
-                                                width={window.innerWidth - 200}
-                                                onTimelineClick={handleTimelineClick}
-                                            />
-                                        </div>
-                                    </Tippy>
+                                    <div 
+                                        className="w-full cursor-pointer"
+                                        onMouseMove={(e) => handleMouseMove(e, window.innerWidth - 200, totalSamples / samplesPerSecond, 'movement')}
+                                        onMouseLeave={handleMouseLeave}
+                                    >
+                                        <RawPhysicalFeaturesTimeline
+                                            allData={allData}
+                                            scrollPosition={scrollPosition}
+                                            totalSamples={totalSamples}
+                                            width={window.innerWidth - 200}
+                                            onTimelineClick={handleTimelineClick}
+                                        />
+                                    </div>
                                 </td>
                             </tr>
                         )}
@@ -616,18 +643,20 @@ From epoch ${currentEpoch} to ${targetEpoch}`, {
                             <tr className="timeline-row">
                                 <td className="timeline-label w-40 font-medium text-gray-700 pr-4 py-2">Microwakings</td>
                                 <td className="timeline-data bg-white rounded-md shadow p-1 flex-grow">
-                                    <Tippy content={<TimelineTooltip allData={allData} mousePosition={mousePosition} type="microwaking" />}>
-                                        <div className="w-full">
-                                            <MicrowakingsTimeline
-                                                allData={allData}
-                                                scrollPosition={scrollPosition}
-                                                totalSamples={totalSamples}
-                                                width={window.innerWidth - 200}
-                                                onTimelineClick={handleTimelineClick}
-                                                onMouseMove={(e) => handleMouseMove(e, window.innerWidth - 200, totalSamples / samplesPerSecond)}
-                                            />
-                                        </div>
-                                    </Tippy>
+                                    <div 
+                                        className="w-full cursor-pointer"
+                                        onMouseMove={(e) => handleMouseMove(e, window.innerWidth - 200, totalSamples / samplesPerSecond, 'microwaking')}
+                                        onMouseLeave={handleMouseLeave}
+                                    >
+                                        <MicrowakingsTimeline
+                                            allData={allData}
+                                            scrollPosition={scrollPosition}
+                                            totalSamples={totalSamples}
+                                            width={window.innerWidth - 200}
+                                            onTimelineClick={handleTimelineClick}
+                                            onMouseMove={(e) => {}}
+                                        />
+                                    </div>
                                 </td>
                             </tr>
                         )}
@@ -635,192 +664,36 @@ From epoch ${currentEpoch} to ${targetEpoch}`, {
                         <tr className="timeline-row">
                             <td className="timeline-label w-40 font-medium text-gray-700 pr-4 py-2">Videos</td>
                             <td className="timeline-data bg-white rounded-md shadow p-1 flex-grow">
-                                <Tippy content={<TimelineTooltip allData={allData} mousePosition={mousePosition} type="video" />}>
-                                    <div className="w-full">
-                                        <VideoTimeline
-                                            allData={allData}
-                                            videoFiles={allData.videos}
-                                            startTime={allData.processedEDF.startDate}
-                                            duration={allData.processedEDF.duration}
-                                            width={window.innerWidth - 200}
-                                            onTimelineClick={handleTimelineClick}
-                                            onMouseMove={(e) => handleMouseMove(e, window.innerWidth - 200, totalSamples / samplesPerSecond)}
-                                        />
-                                    </div>
-                                </Tippy>
+                                <div 
+                                    className="w-full cursor-pointer"
+                                    onMouseMove={(e) => handleMouseMove(e, window.innerWidth - 200, totalSamples / samplesPerSecond, 'video')}
+                                    onMouseLeave={handleMouseLeave}
+                                >
+                                    <VideoTimeline
+                                        allData={allData}
+                                        videoFiles={allData.videos}
+                                        startTime={allData.processedEDF.startDate}
+                                        duration={allData.processedEDF.duration}
+                                        width={window.innerWidth - 200}
+                                        onTimelineClick={handleTimelineClick}
+                                        onMouseMove={(e) => {}}
+                                    />
+                                </div>
                             </td>
                         </tr>
                     </tbody>
                 </table>
             </div>
+
+            {activeTooltip && (
+                <TimelineTooltip
+                    allData={allData}
+                    mousePosition={mousePosition}
+                    type={activeTooltip.type}
+                    channel={activeTooltip.channel}
+                    position={tooltipPosition}
+                />
+            )}
         </div>
     );
 });
-
-interface TimelineTooltipProps {
-    allData: AllData;
-    mousePosition: number;
-    type: string;
-    channel?: string;
-}
-
-const TimelineTooltip: React.FC<TimelineTooltipProps> = ({ allData, mousePosition, type, channel }) => {
-    const time = sampleIndexToTime(allData, mousePosition);
-    const epoch = Math.floor(mousePosition / SECONDS_PER_EPOCH);
-    const { marks } = useStore((state: StoreState) => ({
-        marks: state.marks,
-    }));
-
-    let content = (
-        <div className="p-2">
-            <div className="font-medium">Time: {time.toLocaleString()}</div>
-            <div>Epoch: {epoch}</div>
-        </div>
-    );
-
-    try {
-        switch (type) {
-            case 'video':
-                const video = allData.videos.find(v => {
-                    const videoStartSample = millisecondsToSamples(v.timestamp - allData.processedEDF.startDate.epochMilliseconds, allData.processedEDF.signals[0].samplingRate);
-                    return videoStartSample <= mousePosition && videoStartSample + SECONDS_PER_EPOCH >= mousePosition;
-                });
-
-                if (video) {
-                    content = (
-                        <div className="p-2">
-                            <div className="font-medium">Time: {time.toLocaleString()}</div>
-                            <div>Epoch: {epoch}</div>
-                            <div>Video: {video.name}</div>
-                        </div>
-                    );
-                }
-                break;
-
-            case 'sleepStage':
-                const sleepStage = allData.sleepStages?.[epoch];
-                if (sleepStage) {
-                    content = (
-                        <div className="p-2">
-                            <div className="font-medium">Time: {time.toLocaleString()}</div>
-                            <div>Epoch: {epoch}</div>
-                            <div>Stage: {sleepStage.Stage}</div>
-                        </div>
-                    );
-                }
-                break;
-
-            case 'fitbit':
-                const fitbitStage = allData.fitbitHypnogram?.[epoch];
-                if (fitbitStage) {
-                    content = (
-                        <div className="p-2">
-                            <div className="font-medium">Time: {time.toLocaleString()}</div>
-                            <div>Epoch: {epoch}</div>
-                            <div>Fitbit Stage: {fitbitStage.state}</div>
-                        </div>
-                    );
-                }
-                break;
-
-            case 'artifact':
-                const artifact = allData.artifacts?.find(a => {
-                    return a.start <= mousePosition && a.end >= mousePosition;
-                });
-                if (artifact) {
-                    content = (
-                        <div className="p-2">
-                            <div className="font-medium">Time: {time.toLocaleString()}</div>
-                            <div>Epoch: {epoch}</div>
-                        </div>
-                    );
-                }
-                break;
-
-            case 'mark':
-                // const mark = marks?.find(m => {
-                //     const markSample = millisecondsToSamples(m..Start.epochMilliseconds - allData.processedEDF.startDate.epochMilliseconds, allData.processedEDF.signals[0].samplingRate);
-                //     return markSample <= mousePosition && markSample + SECONDS_PER_EPOCH >= mousePosition;
-                // });
-                // if (mark) {
-                //     content = (
-                //         <div className="p-2">
-                //             <div className="font-medium">Time: {time.toLocaleString()}</div>
-                //             <div>Epoch: {epoch}</div>
-                //             <div>Mark: {mark.text}</div>
-                //         </div>
-                //     );
-                // }
-                break;
-
-            case 'movement':
-                const movement = allData.rawPhysicalFeatures?.find(m => {
-                    const movementSample = millisecondsToSamples(m.timestamp - allData.processedEDF.startDate.epochMilliseconds, allData.processedEDF.signals[0].samplingRate);
-                    return movementSample <= mousePosition && movementSample + SECONDS_PER_EPOCH >= mousePosition;
-                });
-                if (movement) {
-                    content = (
-                        <div className="p-2">
-                            <div className="font-medium">Time: {time.toLocaleString()}</div>
-                            <div>Epoch: {epoch}</div>
-                            <div>Movement: {movement.movement.toFixed(2)}</div>
-                        </div>
-                    );
-                }
-                break;
-
-            case 'microwaking':
-                const microwaking = allData.microwakings?.find(m => {
-                    const microwakingSample = millisecondsToSamples(m.Start.epochMilliseconds - allData.processedEDF.startDate.epochMilliseconds, allData.processedEDF.signals[0].samplingRate);
-                    return microwakingSample <= mousePosition && microwakingSample + SECONDS_PER_EPOCH >= mousePosition;
-                });
-                if (microwaking) {
-                    content = (
-                        <div className="p-2">
-                            <div className="font-medium">Time: {time.toLocaleString()}</div>
-                            <div>Epoch: {epoch}</div>
-                            <div>Microwaking Duration: {(microwaking.End.epochMilliseconds - microwaking.Start.epochMilliseconds) / 1000}s</div>
-                        </div>
-                    );
-                }
-                break;
-
-            case 'feature':
-                // if (channel) {
-                //     const featureData = allData.sleepStages?.[epoch]?.Channels?.[channel];
-                //     if (featureData) {
-                //         content = (
-                //             <div className="p-2">
-                //                 <div className="font-medium">Time: {time.toLocaleString()}</div>
-                //                 <div>Epoch: {epoch}</div>
-                //                 <div>Channel: {channel}</div>
-                //                 <div>Feature: {selectedFeature}</div>
-                //                 <div>Value: {featureData[selectedFeature]?.toFixed(2)}</div>
-                //             </div>
-                //         );
-                //     }
-                // }
-                break;
-
-            case 'combined':
-                if (channel) {
-                    const slowWave = allData.slowWaveEvents?.[channel]?.find(s => s.Start <= mousePosition && s.End >= mousePosition);
-                    const spindle = allData.spindleEvents?.[channel]?.find(s => s.Start <= mousePosition && s.End >= mousePosition);
-                    content = (
-                        <div className="p-2">
-                            <div className="font-medium">Time: {time.toLocaleString()}</div>
-                            <div>Epoch: {epoch}</div>
-                            <div>Channel: {channel}</div>
-                            {slowWave && <div>Slow Wave Present</div>}
-                            {spindle && <div>Spindle Present</div>}
-                        </div>
-                    );
-                }
-                break;
-        }
-    } catch (error) {
-        console.error("Error in TimelineTooltip", error);
-    }
-
-    return content;
-};
