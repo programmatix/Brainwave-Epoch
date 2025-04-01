@@ -10,7 +10,7 @@ import { DefiniteAwakeSleepTimeline } from './DefiniteAwakeSleepTimeline';
 import { CombinedSlowWaveSpindleTimeline } from './CombinedSlowWaveSpindleTimeline';
 import { FeatureTimeline } from './FeatureTimeline';
 import { getFirstNonAggregatedChannel, getOrderedKeys } from './EEGChartAnnotations';
-import { SpectrogramTimeline } from './SpectrogramTimeline'; // Add import
+import { SpectrogramTimeline } from './SpectrogramTimeline';
 import { ScoredEpochsTimeline } from './ScoredEpochsTimeline';
 import { PredictedSleepStageTimeline } from './PredictedSleepStageTimeline';
 import { StoreState, useStore } from '../Store/Store';
@@ -27,6 +27,9 @@ import { millisecondsToSamples, sampleIndexToTime } from './ChartUtils';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { SECONDS_PER_EPOCH } from './EEGCharts';
+import Tippy from '@tippyjs/react';
+import 'tippy.js/dist/tippy.css';
+import 'tippy.js/themes/light.css';
 
 interface TimelineNavigationProps {
     allData: AllData;
@@ -114,20 +117,20 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = React.memo(
         const currentEpoch = Math.floor(scrollPosition / samplesPerEpoch);
         const newScrollPosition = Math.max(0, (currentEpoch - 1) * samplesPerEpoch);
         setScrollPosition(newScrollPosition);
-        
+
         // Find videos in the new epoch
-        const newEpochStartTime = allData.processedEDF.startDate.add({ 
-            seconds: Math.floor(newScrollPosition / samplesPerSecond) 
+        const newEpochStartTime = allData.processedEDF.startDate.add({
+            seconds: Math.floor(newScrollPosition / samplesPerSecond)
         });
         const newEpochEndTime = newEpochStartTime.add({ seconds: SECONDS_PER_EPOCH });
-        
+
         // Find first video in the new epoch
         const videosInNewEpoch = allData.videos.filter(video => {
             const videoTime = video.timestamp;
-            return videoTime >= newEpochStartTime.epochMilliseconds && 
-                   videoTime <= newEpochEndTime.epochMilliseconds;
+            return videoTime >= newEpochStartTime.epochMilliseconds &&
+                videoTime <= newEpochEndTime.epochMilliseconds;
         });
-        
+
         // Play the first video if available
         if (videosInNewEpoch.length > 0) {
             setCurrentVideo(videosInNewEpoch[0]);
@@ -138,20 +141,20 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = React.memo(
         const currentEpoch = Math.floor(scrollPosition / samplesPerEpoch);
         const newScrollPosition = Math.min(totalSamples - 1, (currentEpoch + 1) * samplesPerEpoch);
         setScrollPosition(newScrollPosition);
-        
+
         // Find videos in the new epoch
-        const newEpochStartTime = allData.processedEDF.startDate.add({ 
-            seconds: Math.floor(newScrollPosition / samplesPerSecond) 
+        const newEpochStartTime = allData.processedEDF.startDate.add({
+            seconds: Math.floor(newScrollPosition / samplesPerSecond)
         });
         const newEpochEndTime = newEpochStartTime.add({ seconds: SECONDS_PER_EPOCH });
-        
+
         // Find first video in the new epoch
         const videosInNewEpoch = allData.videos.filter(video => {
             const videoTime = video.timestamp;
-            return videoTime >= newEpochStartTime.epochMilliseconds && 
-                   videoTime <= newEpochEndTime.epochMilliseconds;
+            return videoTime >= newEpochStartTime.epochMilliseconds &&
+                videoTime <= newEpochEndTime.epochMilliseconds;
         });
-        
+
         // Play the first video if available
         if (videosInNewEpoch.length > 0) {
             setCurrentVideo(videosInNewEpoch[0]);
@@ -227,10 +230,10 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = React.memo(
         const currentSample = scrollPosition;
         const currentEpoch = Math.floor(currentSample / samplesPerEpoch);
         const isNext = direction === 'next';
-        
+
         // Create a map of epochs that contain events
         const epochsWithEvents = new Map<number, Array<{ type: string, name?: string, video?: VideoFile }>>();
-        
+
         // Function to record an event in an epoch
         const recordEventInEpoch = (position: number, type: string, name?: string, video?: VideoFile) => {
             const epoch = Math.floor(position / samplesPerEpoch);
@@ -266,10 +269,10 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = React.memo(
 
         // Get all epochs with events
         const epochIndices = Array.from(epochsWithEvents.keys()).sort((a, b) => a - b);
-        
+
         // Find the next/previous epoch with events
         let targetEpoch: number | null = null;
-        
+
         if (isNext) {
             // Find the first epoch greater than current epoch
             targetEpoch = epochIndices.find(epoch => epoch > currentEpoch) ?? null;
@@ -277,23 +280,23 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = React.memo(
             // Find the last epoch less than current epoch
             targetEpoch = epochIndices.filter(epoch => epoch < currentEpoch).pop() ?? null;
         }
-        
+
         if (targetEpoch !== null) {
             // Move to the target epoch
             setScrollPosition(targetEpoch * samplesPerEpoch);
-            
+
             // Get the events in this epoch for the notification
             const events = epochsWithEvents.get(targetEpoch) || [];
             const eventTypes = [...new Set(events.map(e => e.type))].join(', ');
             const eventCount = events.length;
-            
+
             // Auto-play video if one exists in this epoch
             const videoEvent = events.find(e => e.type === 'Video' && e.video);
             if (videoEvent && videoEvent.video) {
                 // Use the setCurrentVideo action from the store
                 setCurrentVideo(videoEvent.video);
             }
-            
+
             // Show toast notification
             toast.info(`${isNext ? 'Next' : 'Previous'} epoch with ${eventTypes} (${eventCount} event${eventCount !== 1 ? 's' : ''})
 From epoch ${currentEpoch} to ${targetEpoch}`, {
@@ -323,7 +326,7 @@ From epoch ${currentEpoch} to ${targetEpoch}`, {
     const startDate = allData.processedEDF.startDate.epochSeconds;
 
     return (
-        <div className="timeline-navigation bg-gray-100 p-4 rounded-lg shadow-md">
+        <div className="timeline-navigation bg-gray-100 p-4 rounded-lg shadow-md w-full">
             <ToastContainer position="top-right" />
 
             <div className="navigation-controls bg-white p-3 rounded-md shadow mb-4">
@@ -394,22 +397,26 @@ From epoch ${currentEpoch} to ${targetEpoch}`, {
                 </div> */}
             </div>
 
-            <div className="timeline-container">
+            <div className="timeline-container w-full">
                 <table className="w-full">
                     <tbody>
                         {allData.slowWaveEvents && allData.spindleEvents && Object.keys(allData.slowWaveEvents).map(channel => (
                             <tr key={`combined-${channel}`} className="timeline-row">
                                 <td className="timeline-label w-40 font-medium text-gray-700 pr-4 py-2">Slow Waves & Spindles {channel}</td>
-                                <td className="timeline-data bg-white rounded-md shadow p-1">
-                                    <CombinedSlowWaveSpindleTimeline
-                                        key={channel}
-                                        allData={allData}
-                                        channel={channel}
-                                        scrollPosition={scrollPosition}
-                                        totalSamples={totalSamples}
-                                        width={TIMELINE_WIDTH}
-                                        onTimelineClick={handleTimelineClick}
-                                    />
+                                <td className="timeline-data bg-white rounded-md shadow p-1 flex-grow">
+                                    <Tippy content={<TimelineTooltip allData={allData} scrollPosition={scrollPosition} type="combined" channel={channel} />}>
+                                        <div className="w-full">
+                                            <CombinedSlowWaveSpindleTimeline
+                                                key={channel}
+                                                allData={allData}
+                                                channel={channel}
+                                                scrollPosition={scrollPosition}
+                                                totalSamples={totalSamples}
+                                                width={window.innerWidth - 200}
+                                                onTimelineClick={handleTimelineClick}
+                                            />
+                                        </div>
+                                    </Tippy>
                                 </td>
                             </tr>
                         ))}
@@ -417,14 +424,18 @@ From epoch ${currentEpoch} to ${targetEpoch}`, {
                         {allData.nightEvents && (
                             <tr className="timeline-row">
                                 <td className="timeline-label w-40 font-medium text-gray-700 pr-4 py-2">Night Events</td>
-                                <td className="timeline-data bg-white rounded-md shadow p-1">
-                                    <NightEventsTimeline
-                                        allData={allData}
-                                        scrollPosition={scrollPosition}
-                                        totalSamples={totalSamples}
-                                        width={TIMELINE_WIDTH}
-                                        onTimelineClick={handleTimelineClick}
-                                    />
+                                <td className="timeline-data bg-white rounded-md shadow p-1 flex-grow">
+                                    <Tippy content={<TimelineTooltip allData={allData} scrollPosition={scrollPosition} type="nightEvents" />}>
+                                        <div className="w-full">
+                                            <NightEventsTimeline
+                                                allData={allData}
+                                                scrollPosition={scrollPosition}
+                                                totalSamples={totalSamples}
+                                                width={window.innerWidth - 200}
+                                                onTimelineClick={handleTimelineClick}
+                                            />
+                                        </div>
+                                    </Tippy>
                                 </td>
                             </tr>
                         )}
@@ -450,17 +461,21 @@ From epoch ${currentEpoch} to ${targetEpoch}`, {
                                         )}
                                     </div>
                                 </td>
-                                <td className="timeline-data bg-white rounded-md shadow p-1">
+                                <td className="timeline-data bg-white rounded-md shadow p-1 flex-grow">
                                     {selectedFeature && (
-                                        <FeatureTimeline
-                                            allData={allData}
-                                            scrollPosition={scrollPosition}
-                                            totalSamples={totalSamples}
-                                            width={TIMELINE_WIDTH}
-                                            onTimelineClick={handleTimelineClick}
-                                            selectedFeature={selectedFeature}
-                                            channel={channel}
-                                        />
+                                        <Tippy content={<TimelineTooltip allData={allData} scrollPosition={scrollPosition} type="feature" channel={channel} />}>
+                                            <div className="w-full">
+                                                <FeatureTimeline
+                                                    allData={allData}
+                                                    scrollPosition={scrollPosition}
+                                                    totalSamples={totalSamples}
+                                                    width={window.innerWidth - 200}
+                                                    onTimelineClick={handleTimelineClick}
+                                                    selectedFeature={selectedFeature}
+                                                    channel={channel}
+                                                />
+                                            </div>
+                                        </Tippy>
                                     )}
                                 </td>
                             </tr>
@@ -469,16 +484,20 @@ From epoch ${currentEpoch} to ${targetEpoch}`, {
                         {allData.sleepStages && (
                             <tr className="timeline-row">
                                 <td className="timeline-label w-40 font-medium text-gray-700 pr-4 py-2">YASA Hypnogram</td>
-                                <td className="timeline-data bg-white rounded-md shadow p-1">
-                                    <SleepStageTimeline
-                                        sleepStages={allData.sleepStages}
-                                        scrollPosition={scrollPosition}
-                                        totalSamples={totalSamples}
-                                        samplesPerSecond={samplesPerSecond}
-                                        samplesPerEpoch={samplesPerEpoch}
-                                        width={TIMELINE_WIDTH}
-                                        onTimelineClick={handleTimelineClick}
-                                    />
+                                <td className="timeline-data bg-white rounded-md shadow p-1 flex-grow">
+                                    <Tippy content={<TimelineTooltip allData={allData} scrollPosition={scrollPosition} type="sleepStage" />}>
+                                        <div className="w-full">
+                                            <SleepStageTimeline
+                                                sleepStages={allData.sleepStages}
+                                                scrollPosition={scrollPosition}
+                                                totalSamples={totalSamples}
+                                                samplesPerSecond={samplesPerSecond}
+                                                samplesPerEpoch={samplesPerEpoch}
+                                                width={window.innerWidth - 200}
+                                                onTimelineClick={handleTimelineClick}
+                                            />
+                                        </div>
+                                    </Tippy>
                                 </td>
                             </tr>
                         )}
@@ -486,15 +505,19 @@ From epoch ${currentEpoch} to ${targetEpoch}`, {
                         {allData.fitbitHypnogram && (
                             <tr className="timeline-row">
                                 <td className="timeline-label w-40 font-medium text-gray-700 pr-4 py-2">Fitbit Hypnogram</td>
-                                <td className="timeline-data bg-white rounded-md shadow p-1">
-                                    <FitbitHypnogramTimeline
-                                        fitbitHypnogram={allData.fitbitHypnogram}
-                                        scrollPosition={scrollPosition}
-                                        totalSamples={totalSamples}
-                                        width={TIMELINE_WIDTH}
-                                        onTimelineClick={handleTimelineClick}
-                                        allData={allData}
-                                    />
+                                <td className="timeline-data bg-white rounded-md shadow p-1 flex-grow">
+                                    <Tippy content={<TimelineTooltip allData={allData} scrollPosition={scrollPosition} type="fitbit" />}>
+                                        <div className="w-full">
+                                            <FitbitHypnogramTimeline
+                                                fitbitHypnogram={allData.fitbitHypnogram}
+                                                scrollPosition={scrollPosition}
+                                                totalSamples={totalSamples}
+                                                width={window.innerWidth - 200}
+                                                onTimelineClick={handleTimelineClick}
+                                                allData={allData}
+                                            />
+                                        </div>
+                                    </Tippy>
                                 </td>
                             </tr>
                         )}
@@ -502,14 +525,18 @@ From epoch ${currentEpoch} to ${targetEpoch}`, {
                         {allData.artifacts && (
                             <tr className="timeline-row">
                                 <td className="timeline-label w-40 font-medium text-gray-700 pr-4 py-2">Artifacts</td>
-                                <td className="timeline-data bg-white rounded-md shadow p-1">
-                                    <ArtifactsTimeline
-                                        allData={allData}
-                                        scrollPosition={scrollPosition}
-                                        totalSamples={totalSamples}
-                                        width={TIMELINE_WIDTH}
-                                        onTimelineClick={handleTimelineClick}
-                                    />
+                                <td className="timeline-data bg-white rounded-md shadow p-1 flex-grow">
+                                    <Tippy content={<TimelineTooltip allData={allData} scrollPosition={scrollPosition} type="artifact" />}>
+                                        <div className="w-full">
+                                            <ArtifactsTimeline
+                                                allData={allData}
+                                                scrollPosition={scrollPosition}
+                                                totalSamples={totalSamples}
+                                                width={window.innerWidth - 200}
+                                                onTimelineClick={handleTimelineClick}
+                                            />
+                                        </div>
+                                    </Tippy>
                                 </td>
                             </tr>
                         )}
@@ -517,14 +544,18 @@ From epoch ${currentEpoch} to ${targetEpoch}`, {
                         {marks && (
                             <tr className="timeline-row">
                                 <td className="timeline-label w-40 font-medium text-gray-700 pr-4 py-2">Marks</td>
-                                <td className="timeline-data bg-white rounded-md shadow p-1">
-                                    <MarksTimeline
-                                        scrollPosition={scrollPosition}
-                                        totalSamples={totalSamples}
-                                        samplesPerEpoch={samplesPerEpoch}
-                                        width={TIMELINE_WIDTH}
-                                        onTimelineClick={handleTimelineClick}
-                                    />
+                                <td className="timeline-data bg-white rounded-md shadow p-1 flex-grow">
+                                    <Tippy content={<TimelineTooltip allData={allData} scrollPosition={scrollPosition} type="mark" />}>
+                                        <div className="w-full">
+                                            <MarksTimeline
+                                                scrollPosition={scrollPosition}
+                                                totalSamples={totalSamples}
+                                                samplesPerEpoch={samplesPerEpoch}
+                                                width={window.innerWidth - 200}
+                                                onTimelineClick={handleTimelineClick}
+                                            />
+                                        </div>
+                                    </Tippy>
                                 </td>
                             </tr>
                         )}
@@ -532,14 +563,18 @@ From epoch ${currentEpoch} to ${targetEpoch}`, {
                         {allData.rawPhysicalFeatures && (
                             <tr className="timeline-row">
                                 <td className="timeline-label w-40 font-medium text-gray-700 pr-4 py-2">Movement</td>
-                                <td className="timeline-data bg-white rounded-md shadow p-1">
-                                    <RawPhysicalFeaturesTimeline
-                                        allData={allData}
-                                        scrollPosition={scrollPosition}
-                                        totalSamples={totalSamples}
-                                        width={TIMELINE_WIDTH}
-                                        onTimelineClick={handleTimelineClick}
-                                    />
+                                <td className="timeline-data bg-white rounded-md shadow p-1 flex-grow">
+                                    <Tippy content={<TimelineTooltip allData={allData} scrollPosition={scrollPosition} type="movement" />}>
+                                        <div className="w-full">
+                                            <RawPhysicalFeaturesTimeline
+                                                allData={allData}
+                                                scrollPosition={scrollPosition}
+                                                totalSamples={totalSamples}
+                                                width={window.innerWidth - 200}
+                                                onTimelineClick={handleTimelineClick}
+                                            />
+                                        </div>
+                                    </Tippy>
                                 </td>
                             </tr>
                         )}
@@ -564,29 +599,37 @@ From epoch ${currentEpoch} to ${targetEpoch}`, {
                         {allData.microwakings && (
                             <tr className="timeline-row">
                                 <td className="timeline-label w-40 font-medium text-gray-700 pr-4 py-2">Microwakings</td>
-                                <td className="timeline-data bg-white rounded-md shadow p-1">
-                                    <MicrowakingsTimeline
-                                        allData={allData}
-                                        scrollPosition={scrollPosition}
-                                        totalSamples={totalSamples}
-                                        width={TIMELINE_WIDTH}
-                                        onTimelineClick={handleTimelineClick}
-                                    />
+                                <td className="timeline-data bg-white rounded-md shadow p-1 flex-grow">
+                                    <Tippy content={<TimelineTooltip allData={allData} scrollPosition={scrollPosition} type="microwaking" />}>
+                                        <div className="w-full">
+                                            <MicrowakingsTimeline
+                                                allData={allData}
+                                                scrollPosition={scrollPosition}
+                                                totalSamples={totalSamples}
+                                                width={window.innerWidth - 200}
+                                                onTimelineClick={handleTimelineClick}
+                                            />
+                                        </div>
+                                    </Tippy>
                                 </td>
                             </tr>
                         )}
 
                         <tr className="timeline-row">
                             <td className="timeline-label w-40 font-medium text-gray-700 pr-4 py-2">Videos</td>
-                            <td className="timeline-data bg-white rounded-md shadow p-1">
-                                <VideoTimeline
-                                    allData={allData}
-                                    videoFiles={allData.videos}
-                                    startTime={allData.processedEDF.startDate}
-                                    duration={allData.processedEDF.duration}
-                                    width={TIMELINE_WIDTH}
-                                    onTimelineClick={handleTimelineClick}
-                                />
+                            <td className="timeline-data bg-white rounded-md shadow p-1 flex-grow">
+                                <Tippy content={<TimelineTooltip allData={allData} scrollPosition={scrollPosition} type="video" />}>
+                                    <div className="w-full">
+                                        <VideoTimeline
+                                            allData={allData}
+                                            videoFiles={allData.videos}
+                                            startTime={allData.processedEDF.startDate}
+                                            duration={allData.processedEDF.duration}
+                                            width={window.innerWidth - 200}
+                                            onTimelineClick={handleTimelineClick}
+                                        />
+                                    </div>
+                                </Tippy>
                             </td>
                         </tr>
                     </tbody>
@@ -595,3 +638,156 @@ From epoch ${currentEpoch} to ${targetEpoch}`, {
         </div>
     );
 });
+
+interface TimelineTooltipProps {
+    allData: AllData;
+    scrollPosition: number;
+    type: string;
+    channel?: string;
+}
+
+const TimelineTooltip: React.FC<TimelineTooltipProps> = ({ allData, scrollPosition, type, channel }) => {
+    const time = sampleIndexToTime(allData, scrollPosition);
+    const epoch = Math.floor(scrollPosition / SECONDS_PER_EPOCH);
+
+    let content = (
+        <div className="p-2">
+            <div className="font-medium">Time: {time.toLocaleString()}</div>
+            <div>Epoch: {epoch}</div>
+        </div>
+    );
+
+    try {
+        switch (type) {
+            case 'video':
+                const video = allData.videos.find(v => {
+                    const videoStartSample = millisecondsToSamples(v.timestamp - allData.processedEDF.startDate.epochMilliseconds, allData.processedEDF.signals[0].samplingRate);
+                    return videoStartSample <= scrollPosition && videoStartSample + SECONDS_PER_EPOCH >= scrollPosition;
+                });
+
+                if (video) {
+                    content = (
+                        <div className="p-2">
+                            <div className="font-medium">Time: {time.toLocaleString()}</div>
+                            <div>Epoch: {epoch}</div>
+                            <div>Video: {video.name}</div>
+                        </div>
+                    );
+                }
+                break;
+
+            case 'sleepStage':
+                const sleepStage = allData.sleepStages?.[epoch];
+                if (sleepStage) {
+                    content = (
+                        <div className="p-2">
+                            <div className="font-medium">Time: {time.toLocaleString()}</div>
+                            <div>Epoch: {epoch}</div>
+                            <div>Stage: {sleepStage.Stage}</div>
+                        </div>
+                    );
+                }
+                break;
+
+            case 'fitbit':
+                const fitbitStage = allData.fitbitHypnogram?.[epoch];
+                if (fitbitStage) {
+                    content = (
+                        <div className="p-2">
+                            <div className="font-medium">Time: {time.toLocaleString()}</div>
+                            <div>Epoch: {epoch}</div>
+                            <div>Fitbit Stage: {fitbitStage.state}</div>
+                        </div>
+                    );
+                }
+                break;
+
+            case 'artifact':
+                const artifact = allData.artifacts?.find(a => {
+                    return a.start <= scrollPosition && a.end >= scrollPosition;
+                });
+                if (artifact) {
+                    content = (
+                        <div className="p-2">
+                            <div className="font-medium">Time: {time.toLocaleString()}</div>
+                            <div>Epoch: {epoch}</div>
+                        </div>
+                    );
+                }
+                break;
+
+            case 'mark':
+
+                break;
+
+            case 'movement':
+                const movement = allData.rawPhysicalFeatures?.find(m => {
+                    const movementSample = millisecondsToSamples(m.timestamp - allData.processedEDF.startDate.epochMilliseconds, allData.processedEDF.signals[0].samplingRate);
+                    return movementSample <= scrollPosition && movementSample + SECONDS_PER_EPOCH >= scrollPosition;
+                });
+                if (movement) {
+                    content = (
+                        <div className="p-2">
+                            <div className="font-medium">Time: {time.toLocaleString()}</div>
+                            <div>Epoch: {epoch}</div>
+                            <div>Movement: {movement.movement.toFixed(2)}</div>
+                        </div>
+                    );
+                }
+                break;
+
+            case 'microwaking':
+                // const microwaking = allData.microwakings?.find(m => {
+                //     const microwakingSample = millisecondsToSamples(m.timestamp - allData.processedEDF.startDate.epochMilliseconds, allData.processedEDF.signals[0].samplingRate);
+                //     return microwakingSample <= scrollPosition && microwakingSample + SECONDS_PER_EPOCH >= scrollPosition;
+                // });
+                // if (microwaking) {
+                //     content = (
+                //         <div className="p-2">
+                //             <div className="font-medium">Time: {time.toLocaleString()}</div>
+                //             <div>Epoch: {epoch}</div>
+                //             <div>Microwaking Duration: {microwaking.end.epochMilliseconds - microwaking.start.epochMilliseconds}s</div>
+                //         </div>
+                //     );
+                // }
+                break;
+
+            case 'feature':
+                if (channel) {
+                    const featureData = allData.sleepStages?.[epoch]?.Channels?.[channel];
+                    if (featureData) {
+                        content = (
+                            <div className="p-2">
+                                <div className="font-medium">Time: {time.toLocaleString()}</div>
+                                <div>Epoch: {epoch}</div>
+                                <div>Channel: {channel}</div>
+                                {/* <div>Feature: {selectedFeature}</div> */}
+                                {/* <div>Value: {featureData[selectedFeature]?.toFixed(2)}</div> */}
+                            </div>
+                        );
+                    }
+                }
+                break;
+
+            case 'combined':
+                // if (channel) {
+                //     const slowWave = allData.slowWaveEvents?.[channel]?.find(s => s.start <= scrollPosition && s.end >= scrollPosition);
+                //     const spindle = allData.spindleEvents?.[channel]?.find(s => s.start <= scrollPosition && s.end >= scrollPosition);
+                //     content = (
+                //         <div className="p-2">
+                //             <div className="font-medium">Time: {time.toLocaleString()}</div>
+                //             <div>Epoch: {epoch}</div>
+                //             <div>Channel: {channel}</div>
+                //             {slowWave && <div>Slow Wave Present</div>}
+                //             {spindle && <div>Spindle Present</div>}
+                //         </div>
+                //     );
+                // }
+                break;
+        }
+    } catch (error) {
+        console.error("Error in TimelineTooltip", error);
+    }
+
+    return content;
+};
