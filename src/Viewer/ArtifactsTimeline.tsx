@@ -8,6 +8,7 @@ interface ArtifactsTimelineProps {
     totalSamples: number;
     width: number;
     onTimelineClick: (position: number) => void;
+    onMouseMove: (e: React.MouseEvent<SVGSVGElement>, width: number, duration: number) => void;
 }
 
 export const ArtifactsTimeline: React.FC<ArtifactsTimelineProps> = ({
@@ -16,6 +17,7 @@ export const ArtifactsTimeline: React.FC<ArtifactsTimelineProps> = ({
     totalSamples,
     width,
     onTimelineClick,
+    onMouseMove,
 }) => {
     const handleClick = (e: React.MouseEvent<SVGSVGElement>) => {
         const rect = e.currentTarget.getBoundingClientRect();
@@ -24,13 +26,17 @@ export const ArtifactsTimeline: React.FC<ArtifactsTimelineProps> = ({
         onTimelineClick(newPosition);
     };
 
+    const handleMouseMove = (e: React.MouseEvent<SVGSVGElement>) => {
+        onMouseMove(e, width, allData.processedEDF.duration);
+    };
+
     const scrollIndicatorPosition = (scrollPosition / totalSamples) * width;
     const startDate = allData.processedEDF.startDate.epochSeconds;
     const duration = allData.processedEDF.duration;
 
     return (
         <div>
-            <svg width={width} height="15" onClick={handleClick}>
+            <svg width={width} height="15" onClick={handleClick} onMouseMove={handleMouseMove}>
                 {allData.artifacts?.map((artifact: Artifact, index: number) => {
                     const artifactStartDate = sampleIndexToTime(allData, artifact.start);   
                     const artifactEndDate = sampleIndexToTime(allData, artifact.end);

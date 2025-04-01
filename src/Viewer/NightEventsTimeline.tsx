@@ -7,6 +7,7 @@ interface NightEventsTimelineProps {
     totalSamples: number;
     width: number;
     onTimelineClick: (position: number) => void;
+    onMouseMove: (e: React.MouseEvent<SVGSVGElement>, width: number, duration: number) => void;
 }
 
 export const NightEventsTimeline: React.FC<NightEventsTimelineProps> = ({
@@ -15,6 +16,7 @@ export const NightEventsTimeline: React.FC<NightEventsTimelineProps> = ({
     totalSamples,
     width,
     onTimelineClick,
+    onMouseMove,
 }) => {
     const handleClick = (e: React.MouseEvent<SVGSVGElement>) => {
         const rect = e.currentTarget.getBoundingClientRect();
@@ -23,9 +25,12 @@ export const NightEventsTimeline: React.FC<NightEventsTimelineProps> = ({
         onTimelineClick(newPosition);
     };
 
+    const handleMouseMove = (e: React.MouseEvent<SVGSVGElement>) => {
+        onMouseMove(e, width, allData.processedEDF.duration);
+    };
+
     const scrollIndicatorPosition = (scrollPosition / totalSamples) * width;
     const totalTimePeriod = allData.processedEDF.duration;
-
 
     const convertToScreenSpace = (value: number) => {
         return ((value - allData.processedEDF.startDate.epochSeconds) / totalTimePeriod) * width;
@@ -33,7 +38,7 @@ export const NightEventsTimeline: React.FC<NightEventsTimelineProps> = ({
 
     return (
         <div>
-            <svg width={width} height="15" onClick={handleClick}>
+            <svg width={width} height="15" onClick={handleClick} onMouseMove={handleMouseMove}>
                 {allData.nightEvents.map((event, eventIndex) => {
                     const durationSecs = event.durationSecs;
                     const startX = convertToScreenSpace(event.timestamp.epochSeconds);

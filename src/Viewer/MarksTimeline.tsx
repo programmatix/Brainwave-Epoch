@@ -17,6 +17,7 @@ interface MarksTimelineProps {
     samplesPerEpoch: number;
     width: number;
     onTimelineClick: (position: number) => void;
+    onMouseMove: (e: React.MouseEvent<SVGSVGElement>, width: number, duration: number) => void;
 }
 
 export const MarksTimeline: React.FC<MarksTimelineProps> = ({
@@ -25,6 +26,7 @@ export const MarksTimeline: React.FC<MarksTimelineProps> = ({
     samplesPerEpoch,
     width,
     onTimelineClick,
+    onMouseMove,
 }) => {
     const totalEpochs = Math.ceil(totalSamples / samplesPerEpoch);
     const epochWidth = width / totalEpochs;
@@ -41,9 +43,12 @@ export const MarksTimeline: React.FC<MarksTimelineProps> = ({
         onTimelineClick(newPosition);
     };
 
-    return (
-        <svg width={width} height="20" onClick={handleClick}>
+    const handleMouseMove = (e: React.MouseEvent<SVGSVGElement>) => {
+        onMouseMove(e, width, allData.processedEDF.duration);
+    };
 
+    return (
+        <svg width={width} height="20" onClick={handleClick} onMouseMove={handleMouseMove}>
             {marks.map((mark, index) => {
                 const time = parseDateString(mark.timestamp).toInstant();
                 const sample = millisecondsToSamples(time.epochMilliseconds - startDateMillis, allData.processedEDF.signals[0].samplingRate);

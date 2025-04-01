@@ -8,6 +8,7 @@ interface CombinedSlowWaveSpindleTimelineProps {
     totalSamples: number;
     width: number;
     onTimelineClick: (position: number) => void;
+    onMouseMove: (e: React.MouseEvent<SVGSVGElement>, width: number, duration: number) => void;
 }
 
 export const CombinedSlowWaveSpindleTimeline: React.FC<CombinedSlowWaveSpindleTimelineProps> = ({
@@ -17,12 +18,17 @@ export const CombinedSlowWaveSpindleTimeline: React.FC<CombinedSlowWaveSpindleTi
     totalSamples,
     width,
     onTimelineClick,
+    onMouseMove,
 }) => {
     const handleClick = (e: React.MouseEvent<SVGSVGElement>) => {
         const rect = e.currentTarget.getBoundingClientRect();
         const x = e.clientX - rect.left;
         const newPosition = Math.floor((x / width) * totalSamples);
         onTimelineClick(newPosition);
+    };
+
+    const handleMouseMove = (e: React.MouseEvent<SVGSVGElement>) => {
+        onMouseMove(e, width, totalSamples / allData.processedEDF.signals[0].samplingRate);
     };
 
     const secondsToSamples = (seconds: number) => {
@@ -51,7 +57,7 @@ export const CombinedSlowWaveSpindleTimeline: React.FC<CombinedSlowWaveSpindleTi
 
     return (
         <div>
-            <svg width={width} height="15" onClick={handleClick}>
+            <svg width={width} height="15" onClick={handleClick} onMouseMove={handleMouseMove}>
                 {slowWaveEvents.map(event => renderEvent(event, 'blue'))}
                 {spindleEvents.map(event => renderEvent(event, 'purple'))}
                 <line

@@ -11,6 +11,7 @@ interface VideoTimelineProps {
   width: number;
   onTimelineClick: (newEpoch: number) => void;
   scrollPosition?: number;
+  onMouseMove: (e: React.MouseEvent<SVGSVGElement>, width: number, duration: number) => void;
 }
 
 export const VideoTimeline: React.FC<VideoTimelineProps> = ({
@@ -20,7 +21,8 @@ export const VideoTimeline: React.FC<VideoTimelineProps> = ({
   duration,
   width,
   onTimelineClick,
-  scrollPosition
+  scrollPosition,
+  onMouseMove,
 }) => {
   const start = allData.processedEDF.startDate.epochMilliseconds
 
@@ -34,13 +36,17 @@ export const VideoTimeline: React.FC<VideoTimelineProps> = ({
     onTimelineClick(clickTimeSamples);
   };
 
+  const handleMouseMove = (e: React.MouseEvent<SVGSVGElement>) => {
+    onMouseMove(e, width, duration);
+  };
+
   const currentX = scrollPosition !== undefined 
     ? (scrollPosition / duration) * width 
     : null;
 
   return (
     <div>
-      <svg width={width} height="30" className="cursor-pointer" onClick={handleTimelineClick}>
+      <svg width={width} height="30" className="cursor-pointer" onClick={handleTimelineClick} onMouseMove={handleMouseMove}>
         {videoFiles.map((video, index) => {
           const startX = ((video.timestamp - start) / 1000 / duration) * width;
           //console.info("VideoTimeline", video.name, video.timestamp, startX, start)

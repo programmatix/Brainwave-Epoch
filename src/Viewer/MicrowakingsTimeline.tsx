@@ -7,6 +7,7 @@ interface MicrowakingsTimelineProps {
     totalSamples: number;
     width: number;
     onTimelineClick: (position: number) => void;
+    onMouseMove: (e: React.MouseEvent<SVGSVGElement>, width: number, duration: number) => void;
 }
 
 export const MicrowakingsTimeline: React.FC<MicrowakingsTimelineProps> = ({
@@ -15,6 +16,7 @@ export const MicrowakingsTimeline: React.FC<MicrowakingsTimelineProps> = ({
     totalSamples,
     width,
     onTimelineClick,
+    onMouseMove,
 }) => {
     const handleClick = (e: React.MouseEvent<SVGSVGElement>) => {
         const rect = e.currentTarget.getBoundingClientRect();
@@ -23,13 +25,17 @@ export const MicrowakingsTimeline: React.FC<MicrowakingsTimelineProps> = ({
         onTimelineClick(newPosition);
     };
 
+    const handleMouseMove = (e: React.MouseEvent<SVGSVGElement>) => {
+        onMouseMove(e, width, allData.processedEDF.duration);
+    };
+
     const scrollIndicatorPosition = (scrollPosition / totalSamples) * width;
     const startDate = allData.processedEDF.startDate.epochSeconds;
     const duration = allData.processedEDF.duration;
 
     return (
         <div>
-            <svg width={width} height="15" onClick={handleClick}>
+            <svg width={width} height="15" onClick={handleClick} onMouseMove={handleMouseMove}>
                 {allData.microwakings?.map((microwaking: Microwaking, index: number) => {
                     const startX = ((microwaking.Start.epochSeconds - startDate) / duration) * width;
                     const endX = ((microwaking.End.epochSeconds - startDate) / duration) * width;

@@ -10,6 +10,7 @@ interface FeatureTimelineProps {
     onTimelineClick: (position: number) => void;
     selectedFeature: string;
     channel: string;
+    onMouseMove: (e: React.MouseEvent<SVGSVGElement>, width: number, duration: number) => void;
 }
 
 export const FeatureTimeline: React.FC<FeatureTimelineProps> = ({
@@ -20,6 +21,7 @@ export const FeatureTimeline: React.FC<FeatureTimelineProps> = ({
     onTimelineClick,
     selectedFeature,
     channel,
+    onMouseMove,
 }) => {
     const handleClick = (e: React.MouseEvent<SVGSVGElement>) => {
         const rect = e.currentTarget.getBoundingClientRect();
@@ -28,11 +30,15 @@ export const FeatureTimeline: React.FC<FeatureTimelineProps> = ({
         onTimelineClick(newPosition);
     };
 
+    const handleMouseMove = (e: React.MouseEvent<SVGSVGElement>) => {
+        onMouseMove(e, width, totalSamples / allData.processedEDF.signals[0].samplingRate);
+    };
+
     const scrollIndicatorPosition = (scrollPosition / totalSamples) * width;
 
     return (
         <div>
-            <svg width={width} height="15" onClick={handleClick}>
+            <svg width={width} height="15" onClick={handleClick} onMouseMove={handleMouseMove}>
                 {allData.sleepStages?.map((stage, index) => {
                     const featureValue = stage.Channels[channel]?.[selectedFeature];
                     const minMax = allData.sleepStageFeatureMinMax?.[channel][selectedFeature].forLocalFile.All;

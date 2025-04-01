@@ -19,6 +19,7 @@ interface SleepStageTimelineProps {
   samplesPerEpoch: number;
   width: number;
   onTimelineClick: (position: number) => void;
+  onMouseMove: (e: React.MouseEvent<SVGSVGElement>, width: number, duration: number) => void;
 }
 
 export const SleepStageTimeline: React.FC<SleepStageTimelineProps> = ({
@@ -29,6 +30,7 @@ export const SleepStageTimeline: React.FC<SleepStageTimelineProps> = ({
   samplesPerEpoch,
   width,
   onTimelineClick,
+  onMouseMove,
 }) => {
   const [isDragging, setIsDragging] = useState(false);
 
@@ -43,11 +45,16 @@ export const SleepStageTimeline: React.FC<SleepStageTimelineProps> = ({
     onTimelineClick(newPosition);
   };
 
+  const handleMouseMove = (e: React.MouseEvent<SVGSVGElement>) => {
+    onMouseMove(e, width, totalSamples / samplesPerSecond);
+  };
+
   return (
     <svg
       width={width}
       height="15"
       onClick={handleTimelineClick}
+      onMouseMove={handleMouseMove}
     >
       {sleepStages?.map((stage, index) => (
         <rect

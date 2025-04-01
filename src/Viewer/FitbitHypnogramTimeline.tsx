@@ -9,6 +9,7 @@ interface FitbitHypnogramTimelineProps {
   width: number;
   onTimelineClick: (position: number) => void;
   allData: AllData;
+  onMouseMove: (e: React.MouseEvent<SVGSVGElement>, width: number, duration: number) => void;
 }
 
 const stateColorMap: Record<string, string> = {
@@ -25,12 +26,17 @@ export const FitbitHypnogramTimeline: React.FC<FitbitHypnogramTimelineProps> = (
   width,
   onTimelineClick,
   allData,
+  onMouseMove,
 }) => {
   const handleClick = (e: React.MouseEvent<SVGSVGElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const newPosition = Math.floor((x / width) * totalSamples);
     onTimelineClick(newPosition);
+  };
+
+  const handleMouseMove = (e: React.MouseEvent<SVGSVGElement>) => {
+    onMouseMove(e, width, allData.processedEDF.duration);
   };
 
   const startDate = allData.processedEDF.startDate.epochSeconds;
@@ -40,7 +46,7 @@ export const FitbitHypnogramTimeline: React.FC<FitbitHypnogramTimelineProps> = (
 
   return (
     <div>
-      <svg width={width} height="15" onClick={handleClick}>
+      <svg width={width} height="15" onClick={handleClick} onMouseMove={handleMouseMove}>
         {fitbitHypnogram.map((entry, index) => {
           const startX = ((entry.startTime.epochSeconds - startDate) / duration) * width;
           const endX = ((entry.endTime.epochSeconds - startDate) / duration) * width;
