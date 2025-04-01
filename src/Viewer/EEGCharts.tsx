@@ -581,6 +581,7 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition })
                         duration={allData.processedEDF.duration}
                         currentTime={currentTime}
                         secondsToShow={SECONDS_PER_EPOCH}
+                        audioFiles={allData.audio}
                     />
 
                     <AudioViewer

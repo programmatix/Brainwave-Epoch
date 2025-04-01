@@ -51,9 +51,9 @@ export const VideoFilmstrip: React.FC<VideoFilmstripChartProps> = ({
         const visibleVideos = videoFiles.filter(video => {
             const videoTime = video.timestamp;
             const visible = videoTime >= visibleStartTime && videoTime <= visibleEndTime;
-            if (visible) {
-                console.info(`VideoFilmstrip visibleVideos`, video.name, videoTime, visibleStartTime, visibleEndTime, visible)
-            }
+            // if (visible) {
+            //     console.info(`VideoFilmstrip visibleVideos`, video.name, videoTime, visibleStartTime, visibleEndTime, visible)
+            // }
             return visible;
         });
 
@@ -118,7 +118,7 @@ export const VideoFilmstrip: React.FC<VideoFilmstripChartProps> = ({
             }
         });
 
-        console.info(`VideoFilmstrip visibleVideos=${visibleVideos.length} currentTime=${currentTime} secondsToShow=${secondsToShow} currentVideoTime=${currentVideoTime} currentVideo=${currentVideo} visibleStartTime=${visibleStartTime} visibleEndTime=${visibleEndTime}`, annotations)
+        // console.info(`VideoFilmstrip visibleVideos=${visibleVideos.length} currentTime=${currentTime} secondsToShow=${secondsToShow} currentVideoTime=${currentVideoTime} currentVideo=${currentVideo} visibleStartTime=${visibleStartTime} visibleEndTime=${visibleEndTime}`, annotations)
 
         if (currentVideoTime !== undefined && currentVideo) {
             const playbackPosition = currentVideo.timestamp + (currentVideoTime * 1000);

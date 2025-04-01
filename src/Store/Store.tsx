@@ -5,6 +5,7 @@ import fs from 'fs'
 import path from 'path'
 import { Temporal } from '@js-temporal/polyfill'
 import { VideoFile } from '../Videos/Videos'
+import { AudioFile } from '../Audio/Audio'
 
 type DisturbanceValue = 'Unset' | 'No' | 'Yes' | 'Unclear';
 
@@ -57,6 +58,8 @@ export interface StoreState {
     disturbances: DisturbanceEntry[]
     markingMode: string
     currentVideo: VideoFile | null
+    currentAudio: AudioFile | null
+    isAudioSyncedWithVideo: boolean
     saveScoring: (newScoring: ScoringEntry) => void
     saveDisturbance: (newDisturbance: DisturbanceEntry) => void
     updateMarks: (newMarks: Mark[]) => void
@@ -67,6 +70,8 @@ export interface StoreState {
     deleteMark: (timestamp: string, channel: string) => void
     setMarkingMode: (mode: StoreState['markingMode']) => void
     setCurrentVideo: (video: VideoFile | null) => void
+    setCurrentAudio: (audio: AudioFile | null) => void
+    setAudioSyncedWithVideo: (isSynced: boolean) => void
 }
 
 export const useStore = create<StoreState>()(devtools((set) => ({
@@ -76,6 +81,8 @@ export const useStore = create<StoreState>()(devtools((set) => ({
     disturbances: [],
     markingMode: 'None',
     currentVideo: null,
+    currentAudio: null,
+    isAudioSyncedWithVideo: false,
     handleChartClick: (timestamp: Temporal.ZonedDateTime, channel: string) => {
         console.log("handleChartClick", timestamp, channel)
         set((state) => {
@@ -167,5 +174,11 @@ export const useStore = create<StoreState>()(devtools((set) => ({
     },
     setCurrentVideo: (video) => {
         set({ currentVideo: video })
+    },
+    setCurrentAudio: (audio) => {
+        set({ currentAudio: audio })
+    },
+    setAudioSyncedWithVideo: (isSynced) => {
+        set({ isAudioSyncedWithVideo: isSynced })
     },
 })))

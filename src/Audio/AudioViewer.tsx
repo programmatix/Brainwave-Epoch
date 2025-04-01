@@ -3,6 +3,7 @@ import { Temporal } from '@js-temporal/polyfill';
 import { AudioFilmstrip } from './AudioFilmstrip';
 import { AudioFile } from './Audio';
 import { AllData } from '../Loader/LoaderTypes';
+import { useStore, StoreState } from '../Store/Store';
 
 interface AudioViewerProps {
   allData: AllData;
@@ -23,13 +24,64 @@ export const AudioViewer: React.FC<AudioViewerProps> = ({
   currentTime,
   secondsToShow,
 }) => {
-  const [currentAudio, setCurrentAudio] = useState<AudioFile | null>(null);
+  const { 
+    currentAudio, 
+    setCurrentAudio, 
+    currentVideo, 
+    isAudioSyncedWithVideo, 
+    setAudioSyncedWithVideo 
+  } = useStore((state: StoreState) => ({
+    currentAudio: state.currentAudio,
+    setCurrentAudio: state.setCurrentAudio,
+    currentVideo: state.currentVideo,
+    isAudioSyncedWithVideo: state.isAudioSyncedWithVideo,
+    setAudioSyncedWithVideo: state.setAudioSyncedWithVideo
+  }));
   const [playbackTime, setPlaybackTime] = useState<number>(0);
   const audioRef = useRef<HTMLAudioElement>(null);
 
   const handleAudioClick = (audio: AudioFile) => {
-    setCurrentAudio(audio);
-    setPlaybackTime(0);
+    console.log('[AudioClick]', {
+      clickedAudio: audio.name,
+      currentAudio: currentAudio?.name,
+      inSyncMode: isAudioSyncedWithVideo,
+      currentVideo: currentVideo?.name
+    });
+    
+    // If we're currently in sync mode, clear it and play the clicked audio independently
+    if (isAudioSyncedWithVideo) {
+      console.log('[AudioClick] Exiting sync mode and playing selected audio');
+      // Clear sync state
+      setAudioSyncedWithVideo(false);
+      
+      // Set new audio and play it
+      setCurrentAudio(audio);
+      setPlaybackTime(0);
+      
+      // Small delay to ensure DOM is updated
+      setTimeout(() => {
+        if (audioRef.current) {
+          console.log('[AudioClick] Starting playback of:', audio.name);
+          audioRef.current.currentTime = 0;
+          audioRef.current.play().catch(e => console.error('[AudioClick] Error playing audio:', e));
+        }
+      }, 50);
+      
+      return;
+    }
+    
+    if (currentAudio && audio.name === currentAudio.name) {
+      console.log('[AudioClick] Same audio clicked, restarting from beginning');
+      if (audioRef.current) {
+        audioRef.current.currentTime = 0;
+        audioRef.current.play().catch(e => console.error('[AudioClick] Error playing audio:', e));
+      }
+      setPlaybackTime(0);
+    } else {
+      console.log('[AudioClick] New audio selected:', audio.name);
+      setCurrentAudio(audio);
+      setPlaybackTime(0);
+    }
   };
 
   const handleTimeUpdate = () => {
@@ -38,11 +90,22 @@ export const AudioViewer: React.FC<AudioViewerProps> = ({
     }
   };
 
+  // Add useEffect to handle audio playback when currentAudio changes
   useEffect(() => {
-    if (audioRef.current) {
-    //   audioRef.current.playbackRate = 3;
+    if (currentAudio && !isAudioSyncedWithVideo && audioRef.current) {
+      console.log('[AudioEffect] Setting up audio for independent playback:', currentAudio.name);
+      audioRef.current.currentTime = 0;
+      
+      // Small delay to ensure DOM is updated
+      setTimeout(() => {
+        if (audioRef.current) {
+          console.log('[AudioEffect] Starting playback of audio:', currentAudio.name);
+          audioRef.current.play()
+            .catch(e => console.error('[AudioEffect] Error playing audio:', e));
+        }
+      }, 50);
     }
-  }, [currentAudio]);
+  }, [currentAudio, isAudioSyncedWithVideo]);
 
   return (
     <div className="audio-viewer">
@@ -53,23 +116,38 @@ export const AudioViewer: React.FC<AudioViewerProps> = ({
         currentTime={currentTime}
         secondsToShow={secondsToShow}
         onAudioClick={handleAudioClick}
-        currentAudioTime={currentAudio ? playbackTime : undefined}
+        currentAudioTime={currentAudio && !isAudioSyncedWithVideo ? playbackTime : undefined}
         currentAudio={currentAudio}
       />
-      {currentAudio && (
+      {currentAudio && !isAudioSyncedWithVideo && (
         <div className="audio-player">
           <div className="audio-info">
             <div><strong>{currentAudio.name}</strong></div>
             <div>Start: {new Date(currentAudio.timestamp).toLocaleString()}</div>
             <div>Duration: {(currentAudio.duration_ms / 1000).toFixed(1)}s</div>
+            <div className="text-sm text-gray-600">Independent playback mode</div>
           </div>
           <audio
             ref={audioRef}
             src={`http://192.168.1.180:5000/audio/${currentAudio.name}`}
             controls
             autoPlay
+            onPlay={() => console.log('[Audio] Playback started:', currentAudio.name)}
+            onPause={() => console.log('[Audio] Playback paused:', currentAudio.name)}
+            onError={(e) => console.error('[Audio] Playback error:', e)}
             onTimeUpdate={handleTimeUpdate}
           />
+        </div>
+      )}
+      {isAudioSyncedWithVideo && currentAudio && (
+        <div className="audio-player">
+          <div className="audio-info">
+            <div className="text-blue-600 italic">
+              <strong>Synced with video: {currentAudio.name}</strong>
+            </div>
+            <div>Audio playback is currently controlled by video.</div>
+            <div className="text-sm text-gray-600">Click any audio to exit sync mode</div>
+          </div>
         </div>
       )}
     </div>

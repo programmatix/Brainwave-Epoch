@@ -38,8 +38,6 @@ interface TimelineNavigationProps {
     samplesPerEpoch: number;
 }
 
-const TIMELINE_WIDTH = 1000;
-
 export const TimelineNavigation: React.FC<TimelineNavigationProps> = React.memo(({
     allData,
     scrollPosition,
@@ -48,7 +46,7 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = React.memo(
     samplesPerSecond,
     samplesPerEpoch,
 }) => {
-    console.info("TimelineNavigation", allData, scrollPosition, setScrollPosition, totalSamples, samplesPerSecond, samplesPerEpoch)
+    //console.info("TimelineNavigation", allData, scrollPosition, setScrollPosition, totalSamples, samplesPerSecond, samplesPerEpoch)
 
     const [epochInput, setEpochInput] = useState('');
     const [selectedFeature, setSelectedFeature] = useState<string>('');
