@@ -514,6 +514,21 @@ From epoch ${currentEpoch} to ${targetEpoch}`, {
                             </tr>
                         )}
 
+                        {marks && (
+                            <tr className="timeline-row">
+                                <td className="timeline-label w-40 font-medium text-gray-700 pr-4 py-2">Marks</td>
+                                <td className="timeline-data bg-white rounded-md shadow p-1">
+                                    <MarksTimeline
+                                        scrollPosition={scrollPosition}
+                                        totalSamples={totalSamples}
+                                        samplesPerEpoch={samplesPerEpoch}
+                                        width={TIMELINE_WIDTH}
+                                        onTimelineClick={handleTimelineClick}
+                                    />
+                                </td>
+                            </tr>
+                        )}
+
                         {allData.rawPhysicalFeatures && (
                             <tr className="timeline-row">
                                 <td className="timeline-label w-40 font-medium text-gray-700 pr-4 py-2">Movement</td>
