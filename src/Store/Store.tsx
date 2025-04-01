@@ -7,6 +7,15 @@ import { Temporal } from '@js-temporal/polyfill'
 import { VideoFile } from '../Videos/Videos'
 import { AudioFile } from '../Audio/Audio'
 
+// Declare global window type extension
+declare global {
+  interface Window {
+    storeAPI?: {
+      getState: () => StoreState;
+    };
+  }
+}
+
 type DisturbanceValue = 'Unset' | 'No' | 'Yes' | 'Unclear';
 
 interface DisturbanceEntry {
@@ -182,3 +191,10 @@ export const useStore = create<StoreState>()(devtools((set) => ({
         set({ isAudioSyncedWithVideo: isSynced })
     },
 })))
+
+// Make store API accessible globally for components that can't use the hook directly
+if (typeof window !== 'undefined') {
+    window.storeAPI = {
+        getState: useStore.getState
+    };
+}

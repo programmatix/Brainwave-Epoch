@@ -1,6 +1,6 @@
 import { Chart, ChartConfiguration, registerables } from 'chart.js';
 import annotationPlugin from 'chartjs-plugin-annotation';
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Temporal } from '@js-temporal/polyfill';
 import { AudioFile } from './Audio';
 import { eegChartOptions } from '../Viewer/ChartUtils';
@@ -34,6 +34,57 @@ export const AudioFilmstrip: React.FC<AudioFilmstripChartProps> = ({
 }) => {
     const chartRef = useRef<HTMLCanvasElement | null>(null);
     const chartInstance = useRef<Chart | null>(null);
+    const [forceUpdate, setForceUpdate] = useState<number>(0);
+
+    // Listen for audio position updates from the video player
+    useEffect(() => {
+        const handleAudioPositionUpdate = (event: CustomEvent) => {
+            // If we have a chart instance and currentAudio, try to update the playback line directly
+            if (chartInstance.current && currentAudio && typeof window !== 'undefined' && window.storeAPI) {
+                const state = window.storeAPI.getState();
+                if (state.isAudioSyncedWithVideo && state.currentVideo && state.currentAudio) {
+                    const { videoTime, videoTimestamp, audioTimestamp } = event.detail;
+                    
+                    let playbackPosition: number | undefined;
+                    
+                    if (videoTimestamp >= audioTimestamp) {
+                        // Video starts after audio
+                        const offsetSeconds = (videoTimestamp - audioTimestamp) / 1000;
+                        playbackPosition = audioTimestamp + ((videoTime + offsetSeconds) * 1000);
+                    } else {
+                        // Audio starts after video
+                        const offsetSeconds = (audioTimestamp - videoTimestamp) / 1000;
+                        if (videoTime >= offsetSeconds) {
+                            playbackPosition = audioTimestamp + ((videoTime - offsetSeconds) * 1000);
+                        }
+                    }
+                    
+                    if (playbackPosition) {
+                        // Update the existing annotation instead of recreating the chart
+                        const annotations = chartInstance.current.options.plugins?.annotation?.annotations as any;
+                        if (annotations && annotations['playback-position']) {
+                            annotations['playback-position'].xMin = playbackPosition;
+                            annotations['playback-position'].xMax = playbackPosition;
+                            chartInstance.current.update('none'); // Minimal update
+                            return; // Skip full redraw
+                        } else {
+                            // If no annotation exists yet, force a full update
+                            setForceUpdate(prev => prev + 1);
+                        }
+                    }
+                }
+            } else {
+                // Fallback to force redraw
+                setForceUpdate(prev => prev + 1);
+            }
+        };
+
+        window.addEventListener('audioPositionUpdate', handleAudioPositionUpdate as EventListener);
+        
+        return () => {
+            window.removeEventListener('audioPositionUpdate', handleAudioPositionUpdate as EventListener);
+        };
+    }, [currentAudio]);
 
     useEffect(() => {
         if (!chartRef.current) return;
@@ -84,18 +135,60 @@ export const AudioFilmstrip: React.FC<AudioFilmstripChartProps> = ({
             };
         });
 
-        if (currentAudioTime !== undefined && currentAudio) {
-            const playbackPosition = currentAudio.timestamp + (currentAudioTime * 1000);
-            annotations['playback-position'] = {
-                type: 'line',
-                xMin: playbackPosition,
-                xMax: playbackPosition,
-                yMin: 0,
-                yMax: 1,
-                borderColor: 'rgba(0, 0, 255, 0.8)',
-                borderWidth: 2,
-                borderDash: [6, 6],
-            };
+        // Show playback position in both independent mode and sync mode
+        if (currentAudio) {
+            let playbackPosition: number | undefined;
+            
+            if (currentAudioTime !== undefined) {
+                // Independent mode - use the provided currentAudioTime
+                playbackPosition = currentAudio.timestamp + (currentAudioTime * 1000);
+            } else if (typeof window !== 'undefined' && window.storeAPI) {
+                // Try to get state from the global store API for sync mode
+                const state = window.storeAPI.getState();
+                if (state.isAudioSyncedWithVideo && state.currentVideo && state.currentAudio && state.currentAudio.name === currentAudio.name) {
+                    // Find the video element to get current playback time
+                    const videoElement = document.querySelector('video');
+                    if (videoElement) {
+                        const videoPlaybackTime = videoElement.currentTime;
+                        const videoTimestamp = state.currentVideo.timestamp;
+                        const audioTimestamp = state.currentAudio.timestamp;
+                        
+                        console.log('[AudioFilmstrip] Calculating sync position:', {
+                            videoTime: videoPlaybackTime,
+                            videoTimestamp,
+                            audioTimestamp
+                        });
+                        
+                        if (videoTimestamp >= audioTimestamp) {
+                            // Video starts after audio
+                            const offsetSeconds = (videoTimestamp - audioTimestamp) / 1000;
+                            // Calculate position based on video time and offset
+                            playbackPosition = audioTimestamp + ((videoPlaybackTime + offsetSeconds) * 1000);
+                        } else {
+                            // Audio starts after video
+                            const offsetSeconds = (audioTimestamp - videoTimestamp) / 1000;
+                            if (videoPlaybackTime >= offsetSeconds) {
+                                playbackPosition = audioTimestamp + ((videoPlaybackTime - offsetSeconds) * 1000);
+                            }
+                        }
+                        
+                        console.log('[AudioFilmstrip] Calculated playback position:', playbackPosition);
+                    }
+                }
+            }
+            
+            if (playbackPosition) {
+                annotations['playback-position'] = {
+                    type: 'line',
+                    xMin: playbackPosition,
+                    xMax: playbackPosition,
+                    yMin: 0,
+                    yMax: 1,
+                    borderColor: 'rgba(0, 0, 255, 0.8)',
+                    borderWidth: 2,
+                    borderDash: [6, 6],
+                };
+            }
         }
 
         const config: ChartConfiguration = {
@@ -163,7 +256,7 @@ export const AudioFilmstrip: React.FC<AudioFilmstripChartProps> = ({
                 chartInstance.current.destroy();
             }
         };
-    }, [audioFiles, currentTime, secondsToShow, onAudioClick, currentAudioTime, currentAudio]);
+    }, [audioFiles, currentTime, secondsToShow, onAudioClick, currentAudioTime, currentAudio, forceUpdate]);
 
     return (
         <div className="w-full" style={{ height: '100px' }}>
