@@ -33,6 +33,8 @@ export const TimelineTooltip: React.FC<TimelineTooltipProps> = ({ allData, mouse
         marks: state.marks,
     }));
 
+    //console.time('TimelineTooltip');
+
     let content = (
         <div>
             <div className="font-bold text-gray-800 text-sm">Time: {time.toLocaleString()}</div>
@@ -116,21 +118,21 @@ export const TimelineTooltip: React.FC<TimelineTooltipProps> = ({ allData, mouse
                 // }
                 break;
 
-            case 'movement':
-                const movement = allData.rawPhysicalFeatures?.find(m => {
-                    const movementSample = millisecondsToSamples(m.timestamp - allData.processedEDF.startDate.epochMilliseconds, allData.processedEDF.signals[0].samplingRate);
-                    return movementSample <= mousePosition && movementSample + SECONDS_PER_EPOCH >= mousePosition;
-                });
-                if (movement) {
-                    content = (
-                        <div>
-                            <div className="font-bold text-gray-800 text-sm">Time: {time.toLocaleString()}</div>
-                            <div className="text-gray-600 mt-1">Epoch: {epoch}</div>
-                            <div className="text-orange-600 font-semibold mt-1">Movement: {movement.movement.toFixed(2)}</div>
-                        </div>
-                    );
-                }
-                break;
+            // case 'movement':
+            //     const movement = allData.rawPhysicalFeatures?.find(m => {
+            //         const movementSample = millisecondsToSamples(m.timestamp - allData.processedEDF.startDate.epochMilliseconds, allData.processedEDF.signals[0].samplingRate);
+            //         return movementSample <= mousePosition && movementSample + SECONDS_PER_EPOCH >= mousePosition;
+            //     });
+            //     if (movement) {
+            //         content = (
+            //             <div>
+            //                 <div className="font-bold text-gray-800 text-sm">Time: {time.toLocaleString()}</div>
+            //                 <div className="text-gray-600 mt-1">Epoch: {epoch}</div>
+            //                 <div className="text-orange-600 font-semibold mt-1">Movement: {movement.movement.toFixed(2)}</div>
+            //             </div>
+            //         );
+            //     }
+            //     break;
 
             case 'microwaking':
                 const microwaking = allData.microwakings?.find(m => {
@@ -184,6 +186,7 @@ export const TimelineTooltip: React.FC<TimelineTooltipProps> = ({ allData, mouse
     } catch (error) {
         console.error("Error in TimelineTooltip", error);
     }
+    //console.timeEnd('TimelineTooltip');
 
     return (
         <>
