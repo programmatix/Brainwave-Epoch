@@ -58,6 +58,16 @@ export const AudioFilmstrip: React.FC<AudioFilmstripChartProps> = ({
                             playbackPosition = audioTimestamp + ((videoTime - offsetSeconds) * 1000);
                         }
                     }
+
+                    console.log('[AudioFilmstrip] Calculated playback position:', {
+                        videoTime,
+                        videoTimestamp,
+                        videoTimestampDate: new Date(videoTimestamp).toLocaleString(),
+                        audioTimestamp,
+                        audioTimestampDate: new Date(audioTimestamp).toLocaleString(),
+                        playbackPosition,
+                        playbackPositionDate: new Date(playbackPosition).toLocaleString()
+                    });
                     
                     if (playbackPosition) {
                         // Update the existing annotation instead of recreating the chart
@@ -150,7 +160,7 @@ export const AudioFilmstrip: React.FC<AudioFilmstripChartProps> = ({
                     const videoElement = document.querySelector('video');
                     if (videoElement) {
                         const videoPlaybackTime = videoElement.currentTime;
-                        const videoTimestamp = state.currentVideo.timestamp;
+                        const videoTimestamp = state.currentVideo.real_start_timestamp;
                         const audioTimestamp = state.currentAudio.timestamp;
                         
                         console.log('[AudioFilmstrip] Calculating sync position:', {

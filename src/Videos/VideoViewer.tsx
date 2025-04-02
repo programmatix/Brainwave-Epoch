@@ -55,7 +55,7 @@ export const VideoViewer: React.FC<VideoViewerProps> = ({
     }
 
     try {
-      const videoTimestamp = currentVideo.timestamp;
+      const videoTimestamp = currentVideo.real_start_timestamp;
       const audioTimestamp = currentAudio.timestamp;
       
       // Calculate time offset between video and audio
@@ -83,9 +83,14 @@ export const VideoViewer: React.FC<VideoViewerProps> = ({
           return;
         }
       }
+
+      const targetAudioTimestamp = currentAudio?.timestamp + targetAudioTime * 1000;
       
       console.log('[VideoSync] Syncing audio position', {
-        videoTime: currentVideoTime,
+        currentVideoTime: currentVideoTime,
+        videoRealStartTimestamp: currentVideo?.real_start_timestamp ? new Date(currentVideo.real_start_timestamp).toLocaleString() : 'unknown',
+        audioStartTimestamp: currentAudio?.timestamp ? new Date(currentAudio.timestamp).toLocaleString() : 'unknown',
+        targetAudioTimestamp: targetAudioTimestamp ? new Date(targetAudioTimestamp).toLocaleString() : 'unknown',
         offsetSeconds: offsetSeconds,
         targetAudioTime: targetAudioTime,
         audioDuration: audioRef.current.duration
@@ -115,7 +120,7 @@ export const VideoViewer: React.FC<VideoViewerProps> = ({
 
     // Find the audio file closest to the video timestamp
     // Preference for audio files that start before the video
-    const videoTimestamp = video.timestamp;
+    const videoTimestamp = video.real_start_timestamp;
     
     console.log('[FindAudio] Looking for audio matching video:', video.name, 'at timestamp:', videoTimestamp, 'from', audioFiles.length, 'files');
     
@@ -200,6 +205,11 @@ export const VideoViewer: React.FC<VideoViewerProps> = ({
   };
 
   const handleTimeUpdate = () => {
+    console.log('[TimeUpdate]', {
+      'videoTime': videoRef.current?.currentTime,
+      'videoTimestamp': currentVideo?.real_start_timestamp,
+      'audioTimestamp': currentAudio?.timestamp
+    });
     if (videoRef.current) {
       setPlaybackTime(videoRef.current.currentTime);
       
@@ -209,7 +219,7 @@ export const VideoViewer: React.FC<VideoViewerProps> = ({
         const updateEvent = new CustomEvent('audioPositionUpdate', {
           detail: {
             videoTime: videoRef.current.currentTime,
-            videoTimestamp: currentVideo?.timestamp,
+            videoTimestamp: currentVideo?.real_start_timestamp,
             audioTimestamp: currentAudio?.timestamp
           }
         });
@@ -283,6 +293,30 @@ export const VideoViewer: React.FC<VideoViewerProps> = ({
     }
   };
   
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      if (currentAudio && audioRef.current) {
+        console.log('[Audio2]', {
+          'currentAudio': currentAudio.name,
+          'isAudioSyncedWithVideo': isAudioSyncedWithVideo,
+          'currentAudioTime': audioRef.current.currentTime,
+          'currentAudioTimestamp': new Date(currentAudio.timestamp + audioRef.current.currentTime * 1000).toLocaleString(),
+          'audioStartTimestamp': currentAudio.timestamp,
+          'audioDuration': audioRef.current.duration
+        });
+      }
+      else {
+          console.log('[Audio2] No audio selected', currentAudio, audioRef.current);
+      }
+    }, 1000);
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+    };
+  }, [currentVideo, audioRef.current]);
+  
+
   // Add volume change handler
   const handleVolumeChange = () => {
     if (videoRef.current && audioRef.current && isAudioSyncedWithVideo) {
@@ -351,21 +385,18 @@ export const VideoViewer: React.FC<VideoViewerProps> = ({
           const updateEvent = new CustomEvent('audioPositionUpdate', {
             detail: {
               videoTime: videoRef.current.currentTime,
-              videoTimestamp: currentVideo.timestamp,
+              videoTimestamp: currentVideo.real_start_timestamp,
               audioTimestamp: currentAudio.timestamp
             }
           });
           window.dispatchEvent(updateEvent);
         }
       }, 200); // 5 times per second
-      
-      console.log('[VideoSync] Started filmstrip update interval');
     }
     
     return () => {
       if (intervalId) {
         clearInterval(intervalId);
-        console.log('[VideoSync] Cleared filmstrip update interval');
       }
     };
   }, [isAudioSyncedWithVideo, currentVideo, currentAudio, playbackTime]);

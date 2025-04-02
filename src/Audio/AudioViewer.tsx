@@ -84,6 +84,30 @@ export const AudioViewer: React.FC<AudioViewerProps> = ({
     }
   };
 
+  useEffect(() => {
+    const intervalHandler = setInterval(() => {
+      if (currentAudio && audioRef.current) {
+        console.log('[Audio]', {
+          'currentAudio': currentAudio.name,
+          'isAudioSyncedWithVideo': isAudioSyncedWithVideo,
+          'currentAudioTime': audioRef.current.currentTime,
+          'currentAudioTimestamp': new Date(currentAudio.timestamp + audioRef.current.currentTime * 1000).toLocaleString(),
+          'audioStartTimestamp': currentAudio.timestamp,
+          'audioDuration': audioRef.current.duration
+        });
+      }
+      else {
+          console.log('[Audio] No audio selected', currentAudio, audioRef.current);
+      }
+    }, 1000);
+    return () => {
+      if (intervalHandler) {
+        clearInterval(intervalHandler);
+      }
+    };
+  }, [currentAudio, isAudioSyncedWithVideo]);
+  
+
   const handleTimeUpdate = () => {
     if (audioRef.current) {
       setPlaybackTime(audioRef.current.currentTime);
