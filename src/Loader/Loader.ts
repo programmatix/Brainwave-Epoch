@@ -773,8 +773,13 @@ export async function readArtifacts(filePath: string): Promise<Artifacts | undef
 }
 
 export function formatDate(date: Date): string {
-    const padZero = (num: number) => num.toString().padStart(2, '0');
-    return `${padZero(date.getUTCHours())}:${padZero(date.getUTCMinutes())}:${padZero(date.getUTCSeconds())}`;
+    return date.toLocaleString('en-GB', {
+        timeZone: 'Europe/London',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false
+    });
 }
 
 export function processEDFData(edfData: EDFData): ProcessedEDFData {
