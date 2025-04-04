@@ -156,9 +156,19 @@ export const VideoFilmstrip: React.FC<VideoFilmstripChartProps> = ({
                         max: visibleEndTime,
                         ticks: {
                             count: 10,
-                            callback: (value) => {
-                                const date = new Date(value);
-                                return formatDate(date);
+                            callback: (value, index, ticks) => {
+                                const tickEvery = 3000 // ticks.length / 10;
+                                if (index % tickEvery === 0) {
+                                    // console.log('[VideoFilmstrip] Ticks', {
+                                    //     value,
+                                    //     index,
+                                    //     ticks: ticks.length,
+                                    //     tickEvery
+                                    // });
+                                    const date = new Date(value);
+                                    return formatDate(date);
+                                }
+                                return undefined;
                             }
                         }
                     },

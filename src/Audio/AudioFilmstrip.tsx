@@ -278,9 +278,19 @@ export const AudioFilmstrip: React.FC<AudioFilmstripChartProps> = ({
                         max: visibleEndTime,
                         ticks: {
                             count: 10,
-                            callback: (value) => {
-                                const date = new Date(value);
-                                return formatDate(date);
+                            callback: (value, index, ticks) => {
+                                const tickEvery = 3000 // ticks.length / 10;
+                                if (index % tickEvery === 0) {
+                                    const date = new Date(value);
+                                    // console.log('[AudioFilmstrip] Ticks', {
+                                    //     value,
+                                    //     index,
+                                    //     ticks: ticks.length,
+                                    //     tickEvery
+                                    // });
+                                    return formatDate(date);
+                                }
+                                return undefined;
                             }
                         }
                     },
