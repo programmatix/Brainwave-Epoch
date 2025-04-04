@@ -112,9 +112,7 @@ export const AudioFilmstrip: React.FC<AudioFilmstripChartProps> = ({
         const visibleAudios = audioFiles.filter(audio => {
             const audioStartTime = audio.timestamp;
             const audioEndTime = audio.timestamp + audio.duration_ms;
-            // Audio is visible if any part of it overlaps with the visible range
-            const visible = (audioStartTime <= visibleEndTime && audioEndTime >= visibleStartTime);
-            return visible;
+            return (audioStartTime <= visibleEndTime && audioEndTime >= visibleStartTime);
         });
 
         const annotations: any = {};
@@ -122,15 +120,57 @@ export const AudioFilmstrip: React.FC<AudioFilmstripChartProps> = ({
         visibleAudios.forEach((audio, index) => {
             const isCurrentAudio = currentAudio && audio.name === currentAudio.name;
             
+            // Add segment boxes first (so they appear on top)
+            audio.metadata?.audio?.forEach((segment, segmentIndex) => {
+                const segmentStartTime = new Date(segment.start_timestamp).getTime();
+                const segmentEndTime = new Date(segment.end_timestamp).getTime();
+                
+                annotations[`audio-${index}-segment-${segmentIndex}`] = {
+                    type: 'box',
+                    xMin: segmentStartTime,
+                    xMax: segmentEndTime,
+                    yMin: 0.1,
+                    yMax: 0.9,
+                    backgroundColor: 'rgba(255, 165, 0, 0.3)',
+                    borderColor: 'rgba(255, 165, 0, 0.8)',
+                    borderWidth: 2,
+                    z: 2,
+                    label: {
+                        content: `Segment ${segmentIndex + 1}`,
+                        enabled: true,
+                        position: 'center',
+                        font: {
+                            size: 10
+                        }
+                    },
+                    click: () => {
+                        console.log('[AudioFilmstrip] Clicked segment', {
+                            audio,
+                            segment
+                        });
+                        onAudioClick(audio);
+                        // Dispatch a custom event to seek to the segment start time
+                        window.dispatchEvent(new CustomEvent('seekAudio', {
+                            detail: {
+                                audioFile: audio,
+                                time: segment.start_time
+                            }
+                        }));
+                    }
+                };
+            });
+
+            // Add the main audio file box (with lower z-index)
             annotations[`audio-${index}`] = {
                 type: 'box',
                 xMin: audio.timestamp,
                 xMax: audio.timestamp + audio.duration_ms,
                 yMin: 0,
                 yMax: 1,
-                backgroundColor: isCurrentAudio ? 'rgba(65, 105, 225, 0.4)' : 'rgba(65, 105, 225, 0.2)', // Royal blue
+                backgroundColor: isCurrentAudio ? 'rgba(65, 105, 225, 0.4)' : 'rgba(65, 105, 225, 0.2)',
                 borderColor: isCurrentAudio ? 'rgba(65, 105, 225, 0.9)' : 'rgba(65, 105, 225, 0.6)',
                 borderWidth: isCurrentAudio ? 3 : 2,
+                z: 1,
                 label: {
                     content: isCurrentAudio ? `♪ ${audio.name}` : audio.name,
                     enabled: true,
@@ -212,6 +252,25 @@ export const AudioFilmstrip: React.FC<AudioFilmstripChartProps> = ({
                 eegChartOptions(`Audio`, allData, scrollPosition), {
                 responsive: true,
                 maintainAspectRatio: false,
+                onClick: (event, elements) => {
+                    if (elements && elements.length > 0) {
+                        const element = elements[0];
+                        const annotation = chartInstance.current?.options.plugins?.annotation?.annotations[element.element.options.id];
+                        if (annotation && annotation.click) {
+                            annotation.click();
+                        }
+                    }
+                },
+                onHover: (event, elements) => {
+                    if (event.native) {
+                        const target = event.native.target as HTMLElement;
+                        if (elements && elements.length > 0) {
+                            target.style.cursor = 'pointer';
+                        } else {
+                            target.style.cursor = 'default';
+                        }
+                    }
+                },
                 scales: {
                     x: {
                         type: 'time',

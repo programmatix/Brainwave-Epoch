@@ -1,5 +1,17 @@
 import { Temporal } from '@js-temporal/polyfill';
 
+export type AudioSegment = {
+    start_sample: number;
+    end_sample: number;
+    duration_samples: number;
+    start_time: number;
+    end_time: number;
+    duration_time: number;
+    start_timestamp: string;
+    end_timestamp: string;
+    sample_rate: number;
+};
+
 export type AudioFile = {
     name: string;
     // Epoch milliseconds
@@ -9,6 +21,9 @@ export type AudioFile = {
     file_size_in_bytes: number;
     duration_ms: number;
     filename_as_epoch_millis: number;
+    metadata?: {
+        audio?: AudioSegment[];
+    };
 };
 
 export type AudioFiles = AudioFile[];

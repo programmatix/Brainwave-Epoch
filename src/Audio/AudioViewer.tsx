@@ -86,19 +86,19 @@ export const AudioViewer: React.FC<AudioViewerProps> = ({
 
   useEffect(() => {
     const intervalHandler = setInterval(() => {
-      if (currentAudio && audioRef.current) {
-        console.log('[Audio]', {
-          'currentAudio': currentAudio.name,
-          'isAudioSyncedWithVideo': isAudioSyncedWithVideo,
-          'currentAudioTime': audioRef.current.currentTime,
-          'currentAudioTimestamp': new Date(currentAudio.timestamp + audioRef.current.currentTime * 1000).toLocaleString(),
-          'audioStartTimestamp': currentAudio.timestamp,
-          'audioDuration': audioRef.current.duration
-        });
-      }
-      else {
-          console.log('[Audio] No audio selected', currentAudio, audioRef.current);
-      }
+      // if (currentAudio && audioRef.current) {
+      //   console.trace('[Audio]', {
+      //     'currentAudio': currentAudio.name,
+      //     'isAudioSyncedWithVideo': isAudioSyncedWithVideo,
+      //     'currentAudioTime': audioRef.current.currentTime,
+      //     'currentAudioTimestamp': new Date(currentAudio.timestamp + audioRef.current.currentTime * 1000).toLocaleString(),
+      //     'audioStartTimestamp': currentAudio.timestamp,
+      //     'audioDuration': audioRef.current.duration
+      //   });
+      // }
+      // else {
+      //     console.trace('[Audio] No audio selected', currentAudio, audioRef.current);
+      // }
     }, 1000);
     return () => {
       if (intervalHandler) {
@@ -129,6 +129,27 @@ export const AudioViewer: React.FC<AudioViewerProps> = ({
         }
       }, 50);
     }
+  }, [currentAudio, isAudioSyncedWithVideo]);
+
+  useEffect(() => {
+    const handleSeekAudio = (event: CustomEvent) => {
+      const { audioFile, time } = event.detail;
+      
+      // Only handle if we're not in sync mode and the audio file matches
+      if (!isAudioSyncedWithVideo && currentAudio && audioFile.name === currentAudio.name) {
+        console.log('[AudioViewer] Seeking to time:', time);
+        if (audioRef.current) {
+          audioRef.current.currentTime = time;
+          audioRef.current.play().catch(e => console.error('[AudioViewer] Error playing audio after seek:', e));
+        }
+      }
+    };
+
+    window.addEventListener('seekAudio', handleSeekAudio as EventListener);
+    
+    return () => {
+      window.removeEventListener('seekAudio', handleSeekAudio as EventListener);
+    };
   }, [currentAudio, isAudioSyncedWithVideo]);
 
   return (

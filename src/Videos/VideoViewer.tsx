@@ -295,19 +295,19 @@ export const VideoViewer: React.FC<VideoViewerProps> = ({
   
   useEffect(() => {
     const intervalId = setInterval(() => {
-      if (currentAudio && audioRef.current) {
-        console.log('[Audio2]', {
-          'currentAudio': currentAudio.name,
-          'isAudioSyncedWithVideo': isAudioSyncedWithVideo,
-          'currentAudioTime': audioRef.current.currentTime,
-          'currentAudioTimestamp': new Date(currentAudio.timestamp + audioRef.current.currentTime * 1000).toLocaleString(),
-          'audioStartTimestamp': currentAudio.timestamp,
-          'audioDuration': audioRef.current.duration
-        });
-      }
-      else {
-          console.log('[Audio2] No audio selected', currentAudio, audioRef.current);
-      }
+      // if (currentAudio && audioRef.current) {
+      //   console.trace('[Audio2]', {
+      //     'currentAudio': currentAudio.name,
+      //     'isAudioSyncedWithVideo': isAudioSyncedWithVideo,
+      //     'currentAudioTime': audioRef.current.currentTime,
+      //     'currentAudioTimestamp': new Date(currentAudio.timestamp + audioRef.current.currentTime * 1000).toLocaleString(),
+      //     'audioStartTimestamp': currentAudio.timestamp,
+      //     'audioDuration': audioRef.current.duration
+      //   });
+      // }
+      // else {
+      //     console.trace('[Audio2] No audio selected', currentAudio, audioRef.current);
+      // }
     }, 1000);
     return () => {
       if (intervalId) {
