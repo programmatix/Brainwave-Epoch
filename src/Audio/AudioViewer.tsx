@@ -38,7 +38,27 @@ export const AudioViewer: React.FC<AudioViewerProps> = ({
     setAudioSyncedWithVideo: state.setAudioSyncedWithVideo
   }));
   const [playbackTime, setPlaybackTime] = useState<number>(0);
+  const [gain, setGain] = useState<number>(1);
   const audioRef = useRef<HTMLAudioElement>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const gainNodeRef = useRef<GainNode | null>(null);
+  const sourceNodeRef = useRef<MediaElementAudioSourceNode | null>(null);
+
+  useEffect(() => {
+    if (audioRef.current && !audioContextRef.current) {
+      audioContextRef.current = new AudioContext();
+      gainNodeRef.current = audioContextRef.current.createGain();
+      sourceNodeRef.current = audioContextRef.current.createMediaElementSource(audioRef.current);
+      sourceNodeRef.current.connect(gainNodeRef.current);
+      gainNodeRef.current.connect(audioContextRef.current.destination);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (gainNodeRef.current) {
+      gainNodeRef.current.gain.value = gain;
+    }
+  }, [gain]);
 
   const handleAudioClick = (audio: AudioFile) => {
     console.log('[AudioClick]', {
@@ -84,28 +104,28 @@ export const AudioViewer: React.FC<AudioViewerProps> = ({
     }
   };
 
-  useEffect(() => {
-    const intervalHandler = setInterval(() => {
-      // if (currentAudio && audioRef.current) {
-      //   console.trace('[Audio]', {
-      //     'currentAudio': currentAudio.name,
-      //     'isAudioSyncedWithVideo': isAudioSyncedWithVideo,
-      //     'currentAudioTime': audioRef.current.currentTime,
-      //     'currentAudioTimestamp': new Date(currentAudio.timestamp + audioRef.current.currentTime * 1000).toLocaleString(),
-      //     'audioStartTimestamp': currentAudio.timestamp,
-      //     'audioDuration': audioRef.current.duration
-      //   });
-      // }
-      // else {
-      //     console.trace('[Audio] No audio selected', currentAudio, audioRef.current);
-      // }
-    }, 1000);
-    return () => {
-      if (intervalHandler) {
-        clearInterval(intervalHandler);
-      }
-    };
-  }, [currentAudio, isAudioSyncedWithVideo]);
+  // useEffect(() => {
+  //   const intervalHandler = setInterval(() => {
+  //     // if (currentAudio && audioRef.current) {
+  //     //   console.trace('[Audio]', {
+  //     //     'currentAudio': currentAudio.name,
+  //     //     'isAudioSyncedWithVideo': isAudioSyncedWithVideo,
+  //     //     'currentAudioTime': audioRef.current.currentTime,
+  //     //     'currentAudioTimestamp': new Date(currentAudio.timestamp + audioRef.current.currentTime * 1000).toLocaleString(),
+  //     //     'audioStartTimestamp': currentAudio.timestamp,
+  //     //     'audioDuration': audioRef.current.duration
+  //     //   });
+  //     // }
+  //     // else {
+  //     //     console.trace('[Audio] No audio selected', currentAudio, audioRef.current);
+  //     // }
+  //   }, 1000);
+  //   return () => {
+  //     if (intervalHandler) {
+  //       clearInterval(intervalHandler);
+  //     }
+  //   };
+  // }, [currentAudio, isAudioSyncedWithVideo]);
   
 
   const handleTimeUpdate = () => {
@@ -171,6 +191,19 @@ export const AudioViewer: React.FC<AudioViewerProps> = ({
             <div>Start: {new Date(currentAudio.timestamp).toLocaleString()}</div>
             <div>Duration: {(currentAudio.duration_ms / 1000).toFixed(1)}s</div>
             <div className="text-sm text-gray-600">Independent playback mode</div>
+            <div className="gain-control">
+              <label>
+                Gain: {gain.toFixed(1)}x
+                <input
+                  type="range"
+                  min="0"
+                  max="3"
+                  step="0.1"
+                  value={gain}
+                  onChange={(e) => setGain(parseFloat(e.target.value))}
+                />
+              </label>
+            </div>
           </div>
           <audio
             ref={audioRef}

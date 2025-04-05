@@ -416,13 +416,28 @@ export const VideoViewer: React.FC<VideoViewerProps> = ({
       {currentVideo && (
         <div className="video-player">
           <div className="video-info">
-            <div><strong>{currentVideo.name}</strong></div>
-            <div>{new Date(currentVideo.timestamp).toLocaleString()}</div>
-            {isAudioSyncedWithVideo && currentAudio && (
-              <div className="text-green-600 text-sm">
-                Synced with audio: {currentAudio.name}
+            <div className="flex justify-between items-center">
+              <div>
+                <strong>{currentVideo.name}</strong>
+                <div>{new Date(currentVideo.timestamp).toLocaleString()}</div>
+                {isAudioSyncedWithVideo && currentAudio && (
+                  <div className="text-green-600 text-sm">
+                    Synced with audio: {currentAudio.name}
+                  </div>
+                )}
               </div>
-            )}
+              <button 
+                onClick={() => {
+                  setCurrentVideo(null);
+                  setCurrentAudio(null);
+                  setAudioSyncedWithVideo(false);
+                  setPlaybackTime(0);
+                }}
+                className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600"
+              >
+                Close Video
+              </button>
+            </div>
           </div>
           <video
             ref={videoRef}

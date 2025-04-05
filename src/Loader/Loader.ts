@@ -414,7 +414,7 @@ export async function readBinaryEEG(filePath: string): Promise<ProcessedEDFData>
         const currentTime = new Date(startTimeMs + milliseconds - offsetMilliseconds);
         timeLabels.push({
             timestamp: startTimeMs + milliseconds,
-            formatted: formatDate(currentTime)
+            formatted: formatDateFastButBad(currentTime)
         });
     }
     
@@ -782,7 +782,6 @@ export function formatDate(date: Date): string {
         return cacheResult
     }
 
-    // todo: correct but too slow!
     const out = date.toLocaleString('en-GB', {
         timeZone: 'Europe/London',
         hour: '2-digit',
@@ -793,11 +792,13 @@ export function formatDate(date: Date): string {
     dateCache[date.getTime()] = out
     //console.log('[formatDate] out', out);
     return out
+}
 
-    // const padZero = (num: number) => num.toString().padStart(2, '0');
-    // const out = `${padZero(date.getUTCHours())}:${padZero(date.getUTCMinutes())}:${padZero(date.getUTCSeconds())}`;
+export function formatDateFastButBad(date: Date): string {
+   const padZero = (num: number) => num.toString().padStart(2, '0');
+    const out = `${padZero(date.getUTCHours())}:${padZero(date.getUTCMinutes())}:${padZero(date.getUTCSeconds())}`;
     // console.log('[formatDate] out', out);
-    // return out;
+    return out;
 }
 
 export function processEDFData(edfData: EDFData): ProcessedEDFData {
@@ -822,7 +823,7 @@ export function processEDFData(edfData: EDFData): ProcessedEDFData {
             const milliseconds = Math.round(i / samplingRate * 1000);
             const currentTime = new Date(startTime + milliseconds - offsetMilliseconds);
 
-            const formattedTime = formatDate(currentTime);
+            const formattedTime = formatDateFastButBad(currentTime);
 
             timeLabels.push({
                 timestamp: startTime + milliseconds,

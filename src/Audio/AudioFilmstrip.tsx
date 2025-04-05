@@ -37,64 +37,64 @@ export const AudioFilmstrip: React.FC<AudioFilmstripChartProps> = ({
     const [forceUpdate, setForceUpdate] = useState<number>(0);
 
     // Listen for audio position updates from the video player
-    useEffect(() => {
-        const handleAudioPositionUpdate = (event: CustomEvent) => {
-            // If we have a chart instance and currentAudio, try to update the playback line directly
-            if (chartInstance.current && currentAudio && typeof window !== 'undefined' && window.storeAPI) {
-                const state = window.storeAPI.getState();
-                if (state.isAudioSyncedWithVideo && state.currentVideo && state.currentAudio) {
-                    const { videoTime, videoTimestamp, audioTimestamp } = event.detail;
+    // useEffect(() => {
+    //     const handleAudioPositionUpdate = (event: CustomEvent) => {
+    //         // If we have a chart instance and currentAudio, try to update the playback line directly
+    //         if (chartInstance.current && currentAudio && typeof window !== 'undefined' && window.storeAPI) {
+    //             const state = window.storeAPI.getState();
+    //             if (state.isAudioSyncedWithVideo && state.currentVideo && state.currentAudio) {
+    //                 const { videoTime, videoTimestamp, audioTimestamp } = event.detail;
                     
-                    let playbackPosition: number | undefined;
+    //                 let playbackPosition: number | undefined;
                     
-                    if (videoTimestamp >= audioTimestamp) {
-                        // Video starts after audio
-                        const offsetSeconds = (videoTimestamp - audioTimestamp) / 1000;
-                        playbackPosition = audioTimestamp + ((videoTime + offsetSeconds) * 1000);
-                    } else {
-                        // Audio starts after video
-                        const offsetSeconds = (audioTimestamp - videoTimestamp) / 1000;
-                        if (videoTime >= offsetSeconds) {
-                            playbackPosition = audioTimestamp + ((videoTime - offsetSeconds) * 1000);
-                        }
-                    }
+    //                 if (videoTimestamp >= audioTimestamp) {
+    //                     // Video starts after audio
+    //                     const offsetSeconds = (videoTimestamp - audioTimestamp) / 1000;
+    //                     playbackPosition = audioTimestamp + ((videoTime + offsetSeconds) * 1000);
+    //                 } else {
+    //                     // Audio starts after video
+    //                     const offsetSeconds = (audioTimestamp - videoTimestamp) / 1000;
+    //                     if (videoTime >= offsetSeconds) {
+    //                         playbackPosition = audioTimestamp + ((videoTime - offsetSeconds) * 1000);
+    //                     }
+    //                 }
 
-                    console.log('[AudioFilmstrip] Calculated playback position:', {
-                        videoTime,
-                        videoTimestamp,
-                        videoTimestampDate: new Date(videoTimestamp).toLocaleString(),
-                        audioTimestamp,
-                        audioTimestampDate: new Date(audioTimestamp).toLocaleString(),
-                        playbackPosition,
-                        playbackPositionDate: new Date(playbackPosition).toLocaleString()
-                    });
+    //                 console.log('[AudioFilmstrip] Calculated playback position:', {
+    //                     videoTime,
+    //                     videoTimestamp,
+    //                     videoTimestampDate: new Date(videoTimestamp).toLocaleString(),
+    //                     audioTimestamp,
+    //                     audioTimestampDate: new Date(audioTimestamp).toLocaleString(),
+    //                     playbackPosition,
+    //                     playbackPositionDate: new Date(playbackPosition).toLocaleString()
+    //                 });
                     
-                    if (playbackPosition) {
-                        // Update the existing annotation instead of recreating the chart
-                        const annotations = chartInstance.current.options.plugins?.annotation?.annotations as any;
-                        if (annotations && annotations['playback-position']) {
-                            annotations['playback-position'].xMin = playbackPosition;
-                            annotations['playback-position'].xMax = playbackPosition;
-                            chartInstance.current.update('none'); // Minimal update
-                            return; // Skip full redraw
-                        } else {
-                            // If no annotation exists yet, force a full update
-                            setForceUpdate(prev => prev + 1);
-                        }
-                    }
-                }
-            } else {
-                // Fallback to force redraw
-                setForceUpdate(prev => prev + 1);
-            }
-        };
+    //                 if (playbackPosition) {
+    //                     // Update the existing annotation instead of recreating the chart
+    //                     const annotations = chartInstance.current.options.plugins?.annotation?.annotations as any;
+    //                     if (annotations && annotations['playback-position']) {
+    //                         annotations['playback-position'].xMin = playbackPosition;
+    //                         annotations['playback-position'].xMax = playbackPosition;
+    //                         chartInstance.current.update('none'); // Minimal update
+    //                         return; // Skip full redraw
+    //                     } else {
+    //                         // If no annotation exists yet, force a full update
+    //                         setForceUpdate(prev => prev + 1);
+    //                     }
+    //                 }
+    //             }
+    //         } else {
+    //             // Fallback to force redraw
+    //             setForceUpdate(prev => prev + 1);
+    //         }
+    //     };
 
-        window.addEventListener('audioPositionUpdate', handleAudioPositionUpdate as EventListener);
+    //     window.addEventListener('audioPositionUpdate', handleAudioPositionUpdate as EventListener);
         
-        return () => {
-            window.removeEventListener('audioPositionUpdate', handleAudioPositionUpdate as EventListener);
-        };
-    }, [currentAudio]);
+    //     return () => {
+    //         window.removeEventListener('audioPositionUpdate', handleAudioPositionUpdate as EventListener);
+    //     };
+    // }, [currentAudio]);
 
     useEffect(() => {
         if (!chartRef.current) return;
@@ -172,7 +172,9 @@ export const AudioFilmstrip: React.FC<AudioFilmstripChartProps> = ({
                 borderWidth: isCurrentAudio ? 3 : 2,
                 z: 1,
                 label: {
-                    content: isCurrentAudio ? `♪ ${audio.name}` : audio.name,
+                    content: isCurrentAudio 
+                        ? `♪ ${audio.name} ${audio.metadata?.audio ? `(${audio.metadata.audio.length} samples)` : '(no metadata)'}`
+                        : `${audio.name} ${audio.metadata?.audio ? `(${audio.metadata.audio.length} samples)` : '(no metadata)'}`,
                     enabled: true,
                     position: 'start',
                     font: {
