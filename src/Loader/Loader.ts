@@ -778,7 +778,7 @@ const dateCache = {}
 export function formatDate(date: Date): string {
     const cacheResult = dateCache[date.getTime()]
     if (cacheResult) {
-        console.log('[formatDate] cache hit', cacheResult);
+        //console.log('[formatDate] cache hit', cacheResult);
         return cacheResult
     }
 
@@ -791,7 +791,7 @@ export function formatDate(date: Date): string {
         hour12: false
     });
     dateCache[date.getTime()] = out
-    console.log('[formatDate] out', out);
+    //console.log('[formatDate] out', out);
     return out
 
     // const padZero = (num: number) => num.toString().padStart(2, '0');

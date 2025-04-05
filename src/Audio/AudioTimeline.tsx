@@ -2,6 +2,7 @@ import React from 'react';
 import { AudioFile } from './Audio';
 import { Temporal } from '@js-temporal/polyfill';
 import { AllData } from '../Loader/LoaderTypes';
+import { SECONDS_PER_EPOCH } from '../Viewer/EEGCharts';
 
 interface AudioTimelineProps {
     allData: AllData;
@@ -28,8 +29,13 @@ export const AudioTimeline: React.FC<AudioTimelineProps> = ({
     const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
         const rect = e.currentTarget.getBoundingClientRect();
         const x = e.clientX - rect.left;
-        const position = (x / width) * duration;
-        onTimelineClick(position);
+
+        const clickTimeSeconds = (x / width) * duration;
+        const clickTimeSamples = clickTimeSeconds * allData.processedEDF.signals[0].samplingRate;
+        const epoch = Math.floor(clickTimeSamples / SECONDS_PER_EPOCH);
+        console.info("AudioTimeline handleTimelineClick", epoch, clickTimeSeconds, x, width, duration)
+    
+        onTimelineClick(clickTimeSamples);
     };
 
     return (

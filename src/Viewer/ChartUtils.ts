@@ -1,6 +1,7 @@
 import { Temporal } from "@js-temporal/polyfill";
 import { AllData, FeatureMinMax } from "../Loader/LoaderTypes";
 import { EpochAnnotation } from "./EEGChartAnnotations";
+import { SECONDS_PER_EPOCH } from "./EEGCharts";
 
 export type KeyGroup = 'Relative bandpowers' | 'Relative bandpowers derived' | 'Absolute bandpowers' | 'Absolute bandpowers derived' | 'Power' | 'Derived' | 'Complexity' | 'Other' | 'Symmetry' | 'Frequency';
 
@@ -108,6 +109,11 @@ export function createLabelCanvas(content: EpochAnnotation[], width: number, hei
     });
 
     return canvas;
+}
+
+export function sampleToEpoch(allData: AllData, index: number): number {
+    const samplingRate = allData.processedEDF.signals[0].samplingRate;
+    return Math.floor(index / (SECONDS_PER_EPOCH * samplingRate));
 }
 
 export function sampleIndexToTime(allData: AllData, index: number): Temporal.ZonedDateTime {

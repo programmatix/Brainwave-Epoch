@@ -271,11 +271,11 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition })
                     },
                     enter: ({ element }) => {
                         element.label.options.display = true;
-                        element.chart.update('none');
+                        element.chart?.update('none');
                     },
                     leave: ({ element }) => {
                         element.label.options.display = false;
-                        element.chart.update('none');
+                        element.chart?.update('none');
                     }
                 }];
             }).filter(Boolean) || [] : [];

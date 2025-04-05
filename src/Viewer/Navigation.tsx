@@ -23,7 +23,7 @@ import { PhysicalFeatureTimeline } from './PhysicalFeatureTimeline';
 import { FinalWakeModelFeatureTimeline } from './FinalWakeModelFeatureTimeline';
 import { ArtifactsTimeline } from './ArtifactsTimeline';
 import { RawPhysicalFeaturesTimeline } from './RawPhysicalFeaturesTimeline';
-import { millisecondsToSamples, sampleIndexToTime } from './ChartUtils';
+import { millisecondsToSamples, sampleIndexToTime, sampleToEpoch } from './ChartUtils';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { SECONDS_PER_EPOCH } from './EEGCharts';
@@ -57,7 +57,7 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = React.memo(
         setCurrentVideo: state.setCurrentVideo,
         currentVideo: state.currentVideo,
     }))
-    console.info("scorings", scorings)
+    //console.info("scorings", scorings)
     const [isAutoScrolling, setIsAutoScrolling] = useState(false);
     const [mousePosition, setMousePosition] = useState<number>(0);
     const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
@@ -109,7 +109,8 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = React.memo(
 
     const handleTimelineClick = useCallback((newPosition: number) => {
         const newScrollPosition = Math.min(totalSamples - 1, Math.max(0, newPosition))
-        console.info("handleTimelineClick", newPosition, newScrollPosition)
+        const epoch = sampleToEpoch(allData, newScrollPosition)
+        console.info("handleTimelineClick", { newPosition, newScrollPosition, epoch })
         setScrollPosition(newScrollPosition);
     }, []);
 

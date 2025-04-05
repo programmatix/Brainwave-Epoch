@@ -1,6 +1,6 @@
 import React from 'react';
 import { AllData } from '../Loader/LoaderTypes';
-import { sampleIndexToTime, millisecondsToSamples } from './ChartUtils';
+import { sampleIndexToTime, millisecondsToSamples, sampleToEpoch } from './ChartUtils';
 import { SECONDS_PER_EPOCH } from './EEGCharts';
 import { StoreState, useStore } from '../Store/Store';
 
@@ -28,17 +28,19 @@ interface TimelineTooltipProps {
 
 export const TimelineTooltip: React.FC<TimelineTooltipProps> = ({ allData, mousePosition, type, channel, position }) => {
     const time = sampleIndexToTime(allData, mousePosition);
-    const epoch = Math.floor(mousePosition / SECONDS_PER_EPOCH);
+    const sample = mousePosition
+    const epoch = sampleToEpoch(allData, mousePosition);
     const { marks } = useStore((state: StoreState) => ({
         marks: state.marks,
     }));
 
-    //console.time('TimelineTooltip');
+    // console.log('[TimelineTooltip] mousePosition', { mousePosition, time, epoch, sample, allData });
 
     let content = (
         <div>
             <div className="font-bold text-gray-800 text-sm">Time: {time.toLocaleString()}</div>
             <div className="text-gray-600 mt-1">Epoch: {epoch}</div>
+            <div className="text-gray-600 mt-1">Sample: {Math.floor(sample)}</div>
         </div>
     );
 
@@ -55,7 +57,7 @@ export const TimelineTooltip: React.FC<TimelineTooltipProps> = ({ allData, mouse
                         <div>
                             <div className="font-bold text-gray-800 text-sm">Time: {time.toLocaleString()}</div>
                             <div className="text-gray-600 mt-1">Epoch: {epoch}</div>
-                            <div className="text-blue-600 font-semibold mt-1">Video: {video.name}</div>
+N                            <div className="text-blue-600 font-semibold mt-1">Video: {video.name}</div>
                         </div>
                     );
                 }

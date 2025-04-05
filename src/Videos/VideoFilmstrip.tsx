@@ -24,7 +24,7 @@ interface VideoFilmstripChartProps {
 
 export const VideoFilmstrip: React.FC<VideoFilmstripChartProps> = ({
     allData,
-    scrollPosition,
+    scrollPosition: scrollPositionSamples,
     videoFiles,
     currentTime,
     secondsToShow,
@@ -146,7 +146,7 @@ export const VideoFilmstrip: React.FC<VideoFilmstripChartProps> = ({
                 }]
             },
             options: merge(
-                eegChartOptions(`Videos`, allData, scrollPosition), {
+                eegChartOptions(`Videos`, allData, scrollPositionSamples), {
                 responsive: true,
                 maintainAspectRatio: false,
                 scales: {
