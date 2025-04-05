@@ -772,20 +772,32 @@ export async function readArtifacts(filePath: string): Promise<Artifacts | undef
     }
 }
 
-export function formatDate(date: Date): string {
-    // todo: correct but too slow!
-    // return date.toLocaleString('en-GB', {
-    //     timeZone: 'Europe/London',
-    //     hour: '2-digit',
-    //     minute: '2-digit',
-    //     second: '2-digit',
-    //     hour12: false
-    // });
 
-    const padZero = (num: number) => num.toString().padStart(2, '0');
-    const out = `${padZero(date.getUTCHours())}:${padZero(date.getUTCMinutes())}:${padZero(date.getUTCSeconds())}`;
-    //console.log('[formatDate] out', out);
-    return out;
+const dateCache = {}
+
+export function formatDate(date: Date): string {
+    const cacheResult = dateCache[date.getTime()]
+    if (cacheResult) {
+        console.log('[formatDate] cache hit', cacheResult);
+        return cacheResult
+    }
+
+    // todo: correct but too slow!
+    const out = date.toLocaleString('en-GB', {
+        timeZone: 'Europe/London',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false
+    });
+    dateCache[date.getTime()] = out
+    console.log('[formatDate] out', out);
+    return out
+
+    // const padZero = (num: number) => num.toString().padStart(2, '0');
+    // const out = `${padZero(date.getUTCHours())}:${padZero(date.getUTCMinutes())}:${padZero(date.getUTCSeconds())}`;
+    // console.log('[formatDate] out', out);
+    // return out;
 }
 
 export function processEDFData(edfData: EDFData): ProcessedEDFData {

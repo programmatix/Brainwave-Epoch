@@ -28,6 +28,7 @@ import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { SECONDS_PER_EPOCH } from './EEGCharts';
 import { TimelineTooltip } from './TimelineTooltip';
+import { AudioTimeline } from '../Audio/AudioTimeline';
 
 interface TimelineNavigationProps {
     allData: AllData;
@@ -679,6 +680,28 @@ From epoch ${currentEpoch} to ${targetEpoch}`, {
                                 </div>
                             </td>
                         </tr>
+
+                        <tr className="timeline-row">
+                            <td className="timeline-label w-40 font-medium text-gray-700 pr-4 py-2">Audio</td>
+                            <td className="timeline-data bg-white rounded-md shadow p-1 flex-grow">
+                                <div 
+                                    className="w-full cursor-pointer"
+                                    onMouseMove={(e) => handleMouseMove(e, window.innerWidth - 200, totalSamples / samplesPerSecond, 'audio')}
+                                    onMouseLeave={handleMouseLeave}
+                                >
+                                    <AudioTimeline
+                                        allData={allData}
+                                        audioFiles={allData.audio}
+                                        startTime={allData.processedEDF.startDate}
+                                        duration={allData.processedEDF.duration}
+                                        width={window.innerWidth - 200}
+                                        onTimelineClick={handleTimelineClick}
+                                        onMouseMove={(e) => {}}
+                                    />
+                                </div>
+                            </td>
+                        </tr>
+
                     </tbody>
                 </table>
             </div>
