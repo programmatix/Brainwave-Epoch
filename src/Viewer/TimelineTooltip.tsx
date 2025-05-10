@@ -38,7 +38,7 @@ export const TimelineTooltip: React.FC<TimelineTooltipProps> = ({ allData, mouse
 
     let content = (
         <div>
-            <div className="font-bold text-gray-800 text-sm">Time: {time.toLocaleString()}</div>
+            <div className="font-bold text-gray-800 text-sm">Time: {time.withTimeZone('Europe/London').toLocaleString('en-GB')}</div>
             <div className="text-gray-600 mt-1">Epoch: {epoch}</div>
             <div className="text-gray-600 mt-1">Sample: {Math.floor(sample)}</div>
         </div>
@@ -55,9 +55,9 @@ export const TimelineTooltip: React.FC<TimelineTooltipProps> = ({ allData, mouse
                 if (video) {
                     content = (
                         <div>
-                            <div className="font-bold text-gray-800 text-sm">Time: {time.toLocaleString()}</div>
+                            <div className="font-bold text-gray-800 text-sm">Time: {time.withTimeZone('Europe/London').toLocaleString('en-GB')}</div>
                             <div className="text-gray-600 mt-1">Epoch: {epoch}</div>
-N                            <div className="text-blue-600 font-semibold mt-1">Video: {video.name}</div>
+                            <div className="text-blue-600 font-semibold mt-1">Video: {video.name}</div>
                         </div>
                     );
                 }
@@ -68,7 +68,7 @@ N                            <div className="text-blue-600 font-semibold mt-1">V
                 if (sleepStage) {
                     content = (
                         <div>
-                            <div className="font-bold text-gray-800 text-sm">Time: {time.toLocaleString()}</div>
+                            <div className="font-bold text-gray-800 text-sm">Time: {time.withTimeZone('Europe/London').toLocaleString('en-GB')}</div>
                             <div className="text-gray-600 mt-1">Epoch: {epoch}</div>
                             <div className="text-purple-600 font-semibold mt-1">Stage: {sleepStage.Stage}</div>
                         </div>
@@ -81,7 +81,7 @@ N                            <div className="text-blue-600 font-semibold mt-1">V
                 if (fitbitStage) {
                     content = (
                         <div>
-                            <div className="font-bold text-gray-800 text-sm">Time: {time.toLocaleString()}</div>
+                            <div className="font-bold text-gray-800 text-sm">Time: {time.withTimeZone('Europe/London').toLocaleString('en-GB')}</div>
                             <div className="text-gray-600 mt-1">Epoch: {epoch}</div>
                             <div className="text-green-600 font-semibold mt-1">Fitbit Stage: {fitbitStage.state}</div>
                         </div>
@@ -96,7 +96,7 @@ N                            <div className="text-blue-600 font-semibold mt-1">V
                 if (artifact) {
                     content = (
                         <div>
-                            <div className="font-bold text-gray-800 text-sm">Time: {time.toLocaleString()}</div>
+                            <div className="font-bold text-gray-800 text-sm">Time: {time.withTimeZone('Europe/London').toLocaleString('en-GB')}</div>
                             <div className="text-gray-600 mt-1">Epoch: {epoch}</div>
                             <div className="text-red-600 font-semibold mt-1">Artifact detected</div>
                         </div>
@@ -144,7 +144,7 @@ N                            <div className="text-blue-600 font-semibold mt-1">V
                 if (microwaking) {
                     content = (
                         <div>
-                            <div className="font-bold text-gray-800 text-sm">Time: {time.toLocaleString()}</div>
+                            <div className="font-bold text-gray-800 text-sm">Time: {time.withTimeZone('Europe/London').toLocaleString('en-GB')}</div>
                             <div className="text-gray-600 mt-1">Epoch: {epoch}</div>
                             <div className="text-amber-600 font-semibold mt-1">Microwaking Duration: {(microwaking.End.epochMilliseconds - microwaking.Start.epochMilliseconds) / 1000}s</div>
                         </div>
@@ -175,7 +175,7 @@ N                            <div className="text-blue-600 font-semibold mt-1">V
                     const spindle = allData.spindleEvents?.[channel]?.find(s => s.Start <= mousePosition && s.End >= mousePosition);
                     content = (
                         <div>
-                            <div className="font-bold text-gray-800 text-sm">Time: {time.toLocaleString()}</div>
+                            <div className="font-bold text-gray-800 text-sm">Time: {time.withTimeZone('Europe/London').toLocaleString('en-GB')}</div>
                             <div className="text-gray-600 mt-1">Epoch: {epoch}</div>
                             <div className="text-indigo-600 mt-1">Channel: {channel}</div>
                             {slowWave && <div className="text-blue-600 font-semibold mt-1">Slow Wave Present</div>}

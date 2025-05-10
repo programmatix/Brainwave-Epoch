@@ -15,9 +15,14 @@ export type NormalizedValue = {
     maxUsed?: number;
     maxUsedLabel?: string;
 
+    // The real min and max values
     actualMax?: number;
     actualMin?: number;
 
+    // The useful min and max values, which are the p10 and p90 values +/- a set amount
+    usefulMax?: number;
+    usefulMin?: number;
+    
     color?: string;
 }
 
@@ -68,9 +73,65 @@ export type LabelContentItem = {
 export type LabelContent = LabelContentItem[];
 
 export function getColorForValue(value: number, min: number, max: number): string {
-    const normalizedValue = (value - min) / (max - min);
-    const hue = normalizedValue * 120; // 0 (red) to 120 (green)
-    return `hsl(${hue}, 100%, 50%)`;
+    // Handle edge cases to avoid division by zero or NaN
+    if (min === max || isNaN(value) || isNaN(min) || isNaN(max)) {
+        return `rgb(68, 1, 84)`;  // Return the first color of viridis
+    }
+    
+    // Clamp the normalized value between 0 and 1
+    let normalizedValue = (value - min) / (max - min);
+    
+    // Check for NaN or invalid values and provide a default
+    if (isNaN(normalizedValue) || !isFinite(normalizedValue)) {
+        normalizedValue = 0;
+    } else {
+        normalizedValue = Math.max(0, Math.min(1, normalizedValue));
+    }
+    
+    // Viridis palette RGB values at different positions
+    const viridisColors = [
+        [68, 1, 84],     // Position 0.0
+        [72, 33, 115],   // Position 0.1
+        [64, 67, 135],   // Position 0.2
+        [52, 94, 141],   // Position 0.3
+        [41, 120, 142],  // Position 0.4
+        [32, 144, 140],  // Position 0.5
+        [34, 167, 132],  // Position 0.6
+        [68, 190, 112],  // Position 0.7
+        [121, 209, 81],  // Position 0.8
+        [189, 222, 38],  // Position 0.9
+        [253, 231, 36]   // Position 1.0
+    ];
+    
+    // Calculate the position in the color array
+    const position = normalizedValue * (viridisColors.length - 1);
+    const index = Math.floor(position);
+    
+    // Safety check to ensure index is valid and within bounds
+    let safeIndex = 0;
+    if (!isNaN(index) && isFinite(index)) {
+        safeIndex = Math.max(0, Math.min(viridisColors.length - 1, index));
+    }
+    
+    // If we're at the last color or beyond, return the last color
+    if (safeIndex >= viridisColors.length - 1) {
+        const [r, g, b] = viridisColors[viridisColors.length - 1];
+        return `rgb(${r}, ${g}, ${b})`;
+    }
+    
+    // Get the two colors to interpolate between
+    const [r1, g1, b1] = viridisColors[safeIndex];
+    const [r2, g2, b2] = viridisColors[safeIndex + 1];
+    
+    // Calculate the interpolation fraction
+    const fraction = !isNaN(position) && isFinite(position) ? position - safeIndex : 0;
+    
+    // Interpolate between the two closest colors
+    const r = Math.round(r1 + fraction * (r2 - r1));
+    const g = Math.round(g1 + fraction * (g2 - g1));
+    const b = Math.round(b1 + fraction * (b2 - b1));
+    
+    return `rgb(${r}, ${g}, ${b})`;
 }
 
 export function getColorForValueFromMinMax(value: number, minMax: FeatureMinMax): string {

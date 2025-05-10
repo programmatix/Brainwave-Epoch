@@ -175,6 +175,9 @@ function createNormalizedValue(value: number, minMax: FeatureMinMax): Normalized
             color: 'red'
         }
     }
+    const usefulMin = minMax.p10 - (minMax.p90 - minMax.p10) * 1;
+    const usefulMax = minMax.p90 + (minMax.p90 - minMax.p10) * 1;
+
     return {
         normalizedValue: ((value - minMax.p10) / (minMax.p90 - minMax.p10)),
         minUsed: minMax.p10,
@@ -183,7 +186,9 @@ function createNormalizedValue(value: number, minMax: FeatureMinMax): Normalized
         maxUsedLabel: '90%',
         actualMin: minMax.min,
         actualMax: minMax.max,
-        color: getColorForValueFromMinMax(value, minMax)
+        usefulMin,
+        usefulMax,
+        color: getColorForValue(value, usefulMin, usefulMax)
     };
 }
 

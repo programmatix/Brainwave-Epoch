@@ -79,6 +79,8 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition })
     }, [compareEpochInput]);
 
     useEffect(() => {
+        console.log(`useEffect`)
+
         const samplesToShow = Math.floor(samplesPerSecond * SECONDS_TO_SHOW);
         const signalsToShow = allData.processedEDF.signals.filter(signal => signal.label !== 'EDF Annotations');
 
@@ -104,6 +106,8 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition })
         const startDateMillis = allData.processedEDF.startDate.epochMilliseconds;
 
         const newCharts = signalsToShow.map((signal, index) => {
+            console.log(`signal`, signal)
+
             const ctx = chartRefs.current[index]?.getContext('2d');
             if (!ctx) return null;
 
@@ -114,6 +118,8 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition })
                 ) || false;
                 return isInArtifact ? NaN : value;
             }) : signal.samples.slice(scrollPosition, scrollPosition + samplesToShow);
+
+            console.log(`data`, data)
 
             const datasets = [{
                 label: signal.label,
@@ -146,6 +152,8 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition })
                 });
             }
 
+            console.log(`signal.label`, signal.label)
+
             const slowWaveEvents = allData.slowWaveEvents?.[signal.label] || [];
             const visibleSlowWaveEvents = showSlowWaveEvents ? slowWaveEvents.filter(event => {
                 const eventStartSample = secondsToSamples(event.Start);
@@ -159,6 +167,8 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition })
                 const eventEndSample = secondsToSamples(event.End);
                 return eventStartSample < scrollPosition + samplesToShow && eventEndSample > scrollPosition;
             }) : [];
+
+            console.log(`visibleSlowWaveEvents`, visibleSlowWaveEvents)
 
             const markAnnotations = marks.filter(mark => mark.channel === signal.label).map((mark, index) => ({
                 type: 'line',
@@ -181,7 +191,7 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition })
                 }
             }))
 
-            //console.log(`markAnnotations`, markAnnotations)
+            console.log(`markAnnotations`, markAnnotations)
 
             const microwakingAnnotations = allData.microwakings?.map((microwaking: Microwaking, index: number) => {
 
@@ -208,7 +218,7 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition })
                 };
             }) || [];
 
-            //console.log(`microwakingAnnotations`, microwakingAnnotations)
+            console.log(`microwakingAnnotations`, microwakingAnnotations)
 
             const blinkAnnotations = showBlinks ? Object.fromEntries(
                 detectBlinks(signal.samples.slice(scrollPosition, scrollPosition + samplesToShow), samplesPerSecond)
@@ -560,8 +570,7 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition })
                         );
                     })}
 
-                    {/* Raw Physical Features */}
-                    {allData.rawPhysicalFeatures ? (
+                    {/* {allData.rawPhysicalFeatures ? (
                         <RawPhysicalFeaturesChart
                             allData={allData}
                             scrollPosition={scrollPosition}
@@ -592,7 +601,7 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition })
                         duration={allData.processedEDF.duration}
                         currentTime={currentTime}   
                         secondsToShow={SECONDS_PER_EPOCH}
-                    />
+                    /> */}
                 </div>
             </div>
         </div>

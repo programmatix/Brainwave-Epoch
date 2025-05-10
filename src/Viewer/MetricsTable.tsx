@@ -74,7 +74,6 @@ const ValueTooltip: React.FC<{
             <div className="mb-4">
                 <p>Key: {annotation.key}</p>
                 <p>Value: {formatNumber(annotation.value)}</p>
-                <p>Scaled Value (_s): {formatNumber(annotation.scaledValue)}</p>
                 <p>Channel: {annotation.channel}</p>
                 <p>Current Epoch: {annotation.currentEpoch}</p>
                 <p>Current Epoch Stage: {annotation.currentEpochStage}</p>
@@ -84,11 +83,11 @@ const ValueTooltip: React.FC<{
                 <thead>
                     <tr>
                         <th className="whitespace-nowrap"></th>
-                        <th>Used Min</th>
-                        <th>Used Max</th>
-                        <th>Min</th>
-                        <th>Max</th>
-                        <th className="w-96">Distribution</th>
+                        <th style={{ width: '100px' }}>p10</th>
+                        <th style={{ width: '100px' }}>p90</th>
+                        <th style={{ width: '100px' }}>p10 - a set amount</th>
+                        <th style={{ width: '100px' }}>p90 + a set amount</th>
+                        <th className="w-96">Distribution (lines are p10 and p90)</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -102,22 +101,22 @@ const ValueTooltip: React.FC<{
                                 <td className="whitespace-nowrap">{formatLabel(selector)}</td>
                                 <td>{formatNumber(normalizedData.minUsed)}</td>
                                 <td>{formatNumber(normalizedData.maxUsed)}</td>
-                                <td>{formatNumber(normalizedData.actualMin)}</td>
-                                <td>{formatNumber(normalizedData.actualMax)}</td>
+                                <td>{formatNumber(normalizedData.usefulMin)}</td>
+                                <td>{formatNumber(normalizedData.usefulMax)}</td>
                                 <td>
                                     <div className="relative w-full h-2 bg-gray-200 rounded">
                                         <div className="absolute h-full rounded" style={{
-                                            width: `${Math.min(100, Math.max(0, ((annotation.value - normalizedData.actualMin) /
-                                                (normalizedData.actualMax - normalizedData.actualMin)) * 100))}%`,
+                                            width: `${Math.min(100, Math.max(0, ((annotation.value - normalizedData.usefulMin) /
+                                                (normalizedData.usefulMax - normalizedData.usefulMin)) * 100))}%`,
                                             backgroundColor: normalizedData.color
                                         }} />
                                         <div className="absolute h-full border-l border-black" style={{
-                                            left: `${((normalizedData.minUsed - normalizedData.actualMin) /
-                                                (normalizedData.actualMax - normalizedData.actualMin)) * 100}%`
+                                            left: `${((normalizedData.minUsed - normalizedData.usefulMin) /
+                                                (normalizedData.usefulMax - normalizedData.usefulMin)) * 100}%`
                                         }} />
                                         <div className="absolute h-full border-l border-black" style={{
-                                            left: `${((normalizedData.maxUsed - normalizedData.actualMin) /
-                                                (normalizedData.actualMax - normalizedData.actualMin)) * 100}%`
+                                            left: `${((normalizedData.maxUsed - normalizedData.usefulMin) /
+                                                (normalizedData.usefulMax - normalizedData.usefulMin)) * 100}%`
                                         }} />
                                     </div>
                                 </td>
@@ -134,22 +133,22 @@ const ValueTooltip: React.FC<{
                                 <td className="whitespace-nowrap">{formatLabel(selector)}</td>
                                 <td>{formatNumber(normalizedData.minUsed)}</td>
                                 <td>{formatNumber(normalizedData.maxUsed)}</td>
-                                <td>{formatNumber(normalizedData.actualMin)}</td>
-                                <td>{formatNumber(normalizedData.actualMax)}</td>
+                                <td>{formatNumber(normalizedData.usefulMin)}</td>
+                                <td>{formatNumber(normalizedData.usefulMax)}</td>
                                 <td>
                                     <div className="relative w-full h-2 bg-gray-200 rounded">
                                         <div className="absolute h-full rounded" style={{
-                                            width: `${Math.min(100, Math.max(0, ((annotation.value - normalizedData.actualMin) /
-                                                (normalizedData.actualMax - normalizedData.actualMin)) * 100))}%`,
+                                            width: `${Math.min(100, Math.max(0, ((annotation.value - normalizedData.usefulMin) /
+                                                (normalizedData.usefulMax - normalizedData.usefulMin)) * 100))}%`,
                                             backgroundColor: normalizedData.color
                                         }} />
                                         <div className="absolute h-full border-l border-black" style={{
-                                            left: `${((normalizedData.minUsed - normalizedData.actualMin) /
-                                                (normalizedData.actualMax - normalizedData.actualMin)) * 100}%`
+                                            left: `${((normalizedData.minUsed - normalizedData.usefulMin) /
+                                                (normalizedData.usefulMax - normalizedData.usefulMin)) * 100}%`
                                         }} />
                                         <div className="absolute h-full border-l border-black" style={{
-                                            left: `${((normalizedData.maxUsed - normalizedData.actualMin) /
-                                                (normalizedData.actualMax - normalizedData.actualMin)) * 100}%`
+                                            left: `${((normalizedData.maxUsed - normalizedData.usefulMin) /
+                                                (normalizedData.usefulMax - normalizedData.usefulMin)) * 100}%`
                                         }} />
                                     </div>
                                 </td>
@@ -386,8 +385,8 @@ const formatNumber = (num: number): string => {
     if (isNaN(num) || num === undefined) return '-';
     if (Math.abs(num) < 0.000001) return '0';
     return num.toLocaleString('en-US', {
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 20,
+        minimumFractionDigits: 4,
+        maximumFractionDigits: 4,
         useGrouping: false
     });
 };
