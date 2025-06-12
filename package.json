@@ -28,7 +28,7 @@
     "concurrently": "^9.1.2",
     "cross-env": "^7.0.3",
     "customize-cra": "^1.0.0",
-    "nw": "^0.100.1-sdk",
+    "nw": "0.91.0-sdk",
     "nw-builder": "^4.13.14",
     "postcss": "^8.5.5",
     "postcss-cli": "^11.0.1",

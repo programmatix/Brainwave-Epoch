@@ -161,7 +161,7 @@ export async function readSleepStages(filePath: string, postHumansStagesPath: st
                 minute: parseInt(minute),
                 second: parseInt(second),
                 nanosecond: parseInt(nanos || '0'),
-                timeZone: Temporal.TimeZone.from(`+${offset}`)
+                timeZone: `+${offset}`
             });
 
             const channels = {
@@ -256,7 +256,7 @@ export const parseDateString = (dateStr: string): Temporal.ZonedDateTime => {
                 minute: parseInt(minute),
                 second: parseInt(secondPart),
                 millisecond: parseInt(millisecond?.slice(0, 3) || '0'),
-                timeZone: Temporal.TimeZone.from(`+${offset}`)
+                timeZone: `+${offset}`
             });
         }
     }
@@ -331,7 +331,10 @@ export function setupFileMenu(onFileLoad: (filePath: string) => Promise<void>) {
 
     menu.append(new window.nw.MenuItem({
         label: 'File',
-        submenu: fileMenu
+        submenu: fileMenu,
+        click: () => {
+            console.log('File clicked');
+        }
     }));
 
     window.nw.Window.get().menu = menu;
