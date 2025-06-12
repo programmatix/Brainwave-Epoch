@@ -28,7 +28,7 @@
     "concurrently": "^9.1.2",
     "cross-env": "^7.0.3",
     "customize-cra": "^1.0.0",
-    "nw": "0.91.0-sdk",
+    "nw": "0.89.0-sdk",
     "nw-builder": "^4.13.14",
     "postcss": "^8.5.5",
     "postcss-cli": "^11.0.1",
@@ -43,7 +43,7 @@
     "web-vitals": "^5.0.3"
   },
   "scripts": {
-    "dev": "concurrently -k \"npm start\" \"wait-on http://127.0.0.1:3042 && cross-env NWJS_START_URL=http://127.0.0.1:3042 nw --enable-logging=stderr --remote-debugging-port=9222 --disable-gpu --disable-software-rasterizer --no-sandbox --mixed-context .\"",
+    "dev": "concurrently -k \"npm start\" \"wait-on http://127.0.0.1:3042 && cross-env NWJS_START_URL=http://127.0.0.1:3042 nw --no-sandbox --disable-gpu .\"",
     "dev-chrome": "./chromium-dev.sh",
     "dev2": "concurrently -k \"cross-env NWJS_START_URL=http://127.0.0.1:3043 nw --enable-logging=stderr --remote-debugging-port=9222 .\"",
     "dev-tools": "concurrently -k \"react-devtools\" \"cross-env REACT_APP_DEVTOOLS=enabled npm start\" \"wait-on http://127.0.0.1:3042 && cross-env NWJS_START_URL=http://127.0.0.1:3042 nw --enable-logging=stderr --remote-debugging-port=9222 .\"",
