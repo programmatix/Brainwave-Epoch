@@ -45,7 +45,7 @@ export const FitbitHypnogramChart: React.FC<FitbitHypnogramChartProps> = ({
             chartInstance.current.destroy();
         }
 
-        const startTime = allData.processedEDF.startDate.epochSeconds;
+        const startTime = allData.processedEDF.startDate.epochMilliseconds / 1000;
         const endTime = startTime + allData.processedEDF.duration;
         const visibleStartTime = startTime + scrollPosition / samplesPerSecond;
         const visibleEndTime = visibleStartTime + secondsToShow;
@@ -54,9 +54,9 @@ export const FitbitHypnogramChart: React.FC<FitbitHypnogramChartProps> = ({
             const data = allData.fitbitHypnogram
                 .filter(entry => entry.state === state)
                 .flatMap(entry => [
-                    { x: entry.startTime.epochSeconds, y: yValue },
-                    { x: entry.endTime.epochSeconds, y: yValue },
-                    { x: entry.endTime.epochSeconds, y: null },
+                    { x: entry.startTime.epochMilliseconds / 1000, y: yValue },
+                    { x: entry.endTime.epochMilliseconds / 1000, y: yValue },
+                    { x: entry.endTime.epochMilliseconds / 1000, y: null },
                 ]);
 
             return {

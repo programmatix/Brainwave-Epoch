@@ -102,7 +102,7 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition })
         };
 
 
-        const startDate = allData.processedEDF.startDate.epochSeconds;
+        const startDate = allData.processedEDF.startDate.epochMilliseconds / 1000;
         const startDateMillis = allData.processedEDF.startDate.epochMilliseconds;
 
         const newCharts = signalsToShow.map((signal, index) => {
@@ -402,7 +402,7 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition })
                             const time = sampleIndexToTime(allData, sampleIndex);
                             const channel = signal.label;
 
-                            console.log('Chart click', time.toInstant().epochSeconds, time.toInstant().toString());
+                            console.log('Chart click', time.toInstant().epochMilliseconds / 1000, time.toInstant().toString());
                             handleChartClick(time, channel);
                         },
                     }) as any

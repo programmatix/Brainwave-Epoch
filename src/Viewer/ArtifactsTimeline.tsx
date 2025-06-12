@@ -31,7 +31,7 @@ export const ArtifactsTimeline: React.FC<ArtifactsTimelineProps> = ({
     };
 
     const scrollIndicatorPosition = (scrollPosition / totalSamples) * width;
-    const startDate = allData.processedEDF.startDate.epochSeconds;
+    const startDate = allData.processedEDF.startDate.epochMilliseconds / 1000;
     const duration = allData.processedEDF.duration;
 
     return (
@@ -40,8 +40,8 @@ export const ArtifactsTimeline: React.FC<ArtifactsTimelineProps> = ({
                 {allData.artifacts?.map((artifact: Artifact, index: number) => {
                     const artifactStartDate = sampleIndexToTime(allData, artifact.start);   
                     const artifactEndDate = sampleIndexToTime(allData, artifact.end);
-                    const startX = ((artifactStartDate.epochSeconds - startDate) / duration) * width;
-                    const endX = ((artifactEndDate.epochSeconds - startDate) / duration) * width;
+                    const startX = ((artifactStartDate.epochMilliseconds / 1000 - startDate) / duration) * width;
+                    const endX = ((artifactEndDate.epochMilliseconds / 1000 - startDate) / duration) * width;
                     return (
                         <rect
                             key={index}

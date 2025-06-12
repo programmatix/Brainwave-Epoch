@@ -343,11 +343,11 @@ From epoch ${currentEpoch} to ${targetEpoch}`, {
         setActiveTooltip(null);
     }, []);
 
-    const startDate = allData.processedEDF.startDate.epochSeconds;
+    const startDate = allData.processedEDF.startDate.epochMilliseconds / 1000;
 
     return (
         <div className="timeline-navigation bg-gray-100 p-4 rounded-lg shadow-md w-full">
-            <ToastContainer position="top-right" />
+            <ToastContainer position="top-right" aria-label="Notifications" />
 
             <div className="navigation-controls bg-white p-3 rounded-md shadow mb-4">
                 <div className="flex flex-wrap items-center gap-2 mb-2">

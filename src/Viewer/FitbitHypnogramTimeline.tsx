@@ -39,7 +39,7 @@ export const FitbitHypnogramTimeline: React.FC<FitbitHypnogramTimelineProps> = (
     onMouseMove(e, width, allData.processedEDF.duration);
   };
 
-  const startDate = allData.processedEDF.startDate.epochSeconds;
+  const startDate = allData.processedEDF.startDate.epochMilliseconds / 1000;
   const duration = allData.processedEDF.duration;
 
   const scrollIndicatorPosition = (scrollPosition / totalSamples) * width;
@@ -48,8 +48,8 @@ export const FitbitHypnogramTimeline: React.FC<FitbitHypnogramTimelineProps> = (
     <div>
       <svg width={width} height="15" onClick={handleClick} onMouseMove={handleMouseMove}>
         {fitbitHypnogram.map((entry, index) => {
-          const startX = ((entry.startTime.epochSeconds - startDate) / duration) * width;
-          const endX = ((entry.endTime.epochSeconds - startDate) / duration) * width;
+          const startX = ((entry.startTime.epochMilliseconds / 1000 - startDate) / duration) * width;
+          const endX = ((entry.endTime.epochMilliseconds / 1000 - startDate) / duration) * width;
           return (
             <rect
               key={index}

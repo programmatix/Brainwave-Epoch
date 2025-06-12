@@ -62,7 +62,7 @@ export const AppEEG: React.FC = () => {
         return () => {
             loaderEvents.removeAllListeners('log');
         };
-    }, []);
+    }, [updateAllData]);
 
     return (
         <div className="h-full">
@@ -77,6 +77,7 @@ export const AppEEG: React.FC = () => {
                 pauseOnFocusLoss
                 draggable
                 pauseOnHover
+                aria-label="Notifications"
             />
             
             <div className="flex flex-col h-full">

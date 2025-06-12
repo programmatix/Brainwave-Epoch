@@ -33,7 +33,7 @@ export const NightEventsTimeline: React.FC<NightEventsTimelineProps> = ({
     const totalTimePeriod = allData.processedEDF.duration;
 
     const convertToScreenSpace = (value: number) => {
-        return ((value - allData.processedEDF.startDate.epochSeconds) / totalTimePeriod) * width;
+        return ((value - allData.processedEDF.startDate.epochMilliseconds / 1000) / totalTimePeriod) * width;
     }
 
     return (
@@ -41,10 +41,10 @@ export const NightEventsTimeline: React.FC<NightEventsTimelineProps> = ({
             <svg width={width} height="15" onClick={handleClick} onMouseMove={handleMouseMove}>
                 {allData.nightEvents.map((event, eventIndex) => {
                     const durationSecs = event.durationSecs;
-                    const startX = convertToScreenSpace(event.timestamp.epochSeconds);
-                    const endX = convertToScreenSpace(event.timestamp.epochSeconds + durationSecs);
+                    const startX = convertToScreenSpace(event.timestamp.epochMilliseconds / 1000);
+                    const endX = convertToScreenSpace(event.timestamp.epochMilliseconds / 1000 + durationSecs);
                     const w = Math.max(1, endX - startX)
-                    //console.log(event.source, startX, endX, event.timestamp.epochSeconds, event.timestamp.epochSeconds + durationSecs, allData.processedEDF.startDate.epochSeconds, durationSecs, totalTimePeriod, width, w);
+                    //console.log(event.source, startX, endX, event.timestamp.epochMilliseconds / 1000, event.timestamp.epochMilliseconds / 1000 + durationSecs, allData.processedEDF.startDate.epochMilliseconds / 1000, durationSecs, totalTimePeriod, width, w);
                     return (
                         <rect
                             key={`${eventIndex}`}

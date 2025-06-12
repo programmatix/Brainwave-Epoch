@@ -61,7 +61,7 @@ const MovementTimeline: React.FC<MovementTimelineProps> = ({
 
         const max = d3.max(movementData.values) || 10;
         const yScale = d3.scaleLinear()
-            .domain([0, max])
+            .domain([0, max as number])
             .range([innerHeight, 0]);
 
         const line = d3.line<number>()

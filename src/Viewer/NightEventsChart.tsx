@@ -31,12 +31,12 @@ export const NightEventsChart: React.FC<NightEventsChartProps> = ({
             chartInstance.current.destroy();
         }
 
-        const startTime = allData.processedEDF.startDate.epochSeconds;
+        const startTime = allData.processedEDF.startDate.epochMilliseconds / 1000;
         const visibleStartTime = startTime + scrollPosition / samplesPerSecond;
         const visibleEndTime = visibleStartTime + secondsToShow;
 
         const visibleEvents = allData.nightEvents?.filter(event => {
-            const eventTime = event.timestamp.epochSeconds;
+            const eventTime = event.timestamp.epochMilliseconds / 1000;
             return eventTime >= visibleStartTime && eventTime <= visibleEndTime;
         }) || [];
 
@@ -82,8 +82,8 @@ export const NightEventsChart: React.FC<NightEventsChartProps> = ({
                     annotation: {
                         annotations: visibleEvents.map((event, index) => ({
                             type: 'line',
-                            xMin: event.timestamp.epochSeconds,
-                            xMax: event.timestamp.epochSeconds,
+                            xMin: event.timestamp.epochMilliseconds / 1000,
+                            xMax: event.timestamp.epochMilliseconds / 1000,
                             borderColor: 'rgba(255, 99, 132, 0.8)',
                             borderWidth: 2,
                             label: {

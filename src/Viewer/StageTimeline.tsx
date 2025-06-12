@@ -1,3 +1,4 @@
+import React from 'react';
 import { ProcessedSleepStages } from "../Loader/LoaderTypes";
 
 interface StageTimelineProps {

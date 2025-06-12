@@ -30,15 +30,15 @@ export const MicrowakingsTimeline: React.FC<MicrowakingsTimelineProps> = ({
     };
 
     const scrollIndicatorPosition = (scrollPosition / totalSamples) * width;
-    const startDate = allData.processedEDF.startDate.epochSeconds;
+    const startDate = allData.processedEDF.startDate.epochMilliseconds / 1000;
     const duration = allData.processedEDF.duration;
 
     return (
         <div>
             <svg width={width} height="15" onClick={handleClick} onMouseMove={handleMouseMove}>
                 {allData.microwakings?.map((microwaking: Microwaking, index: number) => {
-                    const startX = ((microwaking.Start.epochSeconds - startDate) / duration) * width;
-                    const endX = ((microwaking.End.epochSeconds - startDate) / duration) * width;
+                    const startX = ((microwaking.Start.epochMilliseconds / 1000 - startDate) / duration) * width;
+                    const endX = ((microwaking.End.epochMilliseconds / 1000 - startDate) / duration) * width;
                     return (
                         <rect
                             key={index}
