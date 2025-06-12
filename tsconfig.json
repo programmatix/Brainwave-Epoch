@@ -13,6 +13,7 @@
     "moduleResolution": "node",
     "resolveJsonModule": true,
     "jsx": "react-jsx",
+    "useDefineForClassFields": true,
     "paths": {
       "*": ["node_modules/*"]
     }
