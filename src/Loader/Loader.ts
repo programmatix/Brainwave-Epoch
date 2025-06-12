@@ -540,7 +540,8 @@ export async function readBinaryEEG(filePath: string): Promise<ProcessedEDFData>
 
 export async function loadFiles(edfPath: string): Promise<AllData> {
     const start = performance.now();
-    loaderEvents.emit('log', `${new Date().toISOString()}: Starting to load files`);
+    loaderEvents.emit('log', `${new Date().toISOString()}: Starting to load files from ${edfPath}`);
+    console.log(`Starting to load files from ${edfPath}`);
     window.nw.Window.get().title = edfPath;
 
     let processedEDF: ProcessedEDFData;
@@ -569,7 +570,8 @@ export async function loadFiles(edfPath: string): Promise<AllData> {
     const scoringsPath = `${basePath}.scorings.json`;
     const microwakingsPath = `${basePath}.microwakings.csv`;
     const artifactsPath = `${basePath}.artifacts.csv`;
-    const sleepStatsPath = "C:\\dev\\play\\brainwave-data\\stats.csv";
+    // todo find a non-hardcoded solution
+    const sleepStatsPath = `/home/grahamp/dev/brainwave-data/stats.csv`;
     const finalWakeModelPath = `${basePath}.final_wake_model.csv`;
     const rawPhysicalFeaturesPath = `${basePath}.physical_features.1s.csv`;
     
@@ -873,8 +875,7 @@ export async function readAndProcessEDF(filePath: string): Promise<ProcessedEDFD
 
 async function readStats(sleepStatsPath: string): Promise<{ [key: string]: StatsCSVRow }> {
     try {
-        const response = await fetch(sleepStatsPath);
-        const text = await response.text();
+        const text = await fs.readFile(sleepStatsPath, 'utf8');
         const lines = text.split('\n');
         const headerLine = lines[0];
         const rows = lines.slice(1);
@@ -894,38 +895,46 @@ async function readStats(sleepStatsPath: string): Promise<{ [key: string]: Stats
 
             stats[column] = {
                 Column: column,
-                P10: parseFloat(values[columnIndexes['P10']]),
-                P90: parseFloat(values[columnIndexes['P90']]),
-                Min: parseFloat(values[columnIndexes['Min']]),
-                Max: parseFloat(values[columnIndexes['Max']]),
-                W_P10: parseFloat(values[columnIndexes['W_P10']]),
-                W_P90: parseFloat(values[columnIndexes['W_P90']]),
-                W_Min: parseFloat(values[columnIndexes['W_Min']]),
-                W_Max: parseFloat(values[columnIndexes['W_Max']]),
-                N1_P10: parseFloat(values[columnIndexes['N1_P10']]),
-                N1_P90: parseFloat(values[columnIndexes['N1_P90']]),
-                N1_Min: parseFloat(values[columnIndexes['N1_Min']]),
-                N1_Max: parseFloat(values[columnIndexes['N1_Max']]),
-                N2_P10: parseFloat(values[columnIndexes['N2_P10']]),
-                N2_P90: parseFloat(values[columnIndexes['N2_P90']]),
-                N2_Min: parseFloat(values[columnIndexes['N2_Min']]),
-                N2_Max: parseFloat(values[columnIndexes['N2_Max']]),
-                N3_P10: parseFloat(values[columnIndexes['N3_P10']]),
-                N3_P90: parseFloat(values[columnIndexes['N3_P90']]),
-                N3_Min: parseFloat(values[columnIndexes['N3_Min']]),
-                N3_Max: parseFloat(values[columnIndexes['N3_Max']]),
-                R_P10: parseFloat(values[columnIndexes['R_P10']]),
-                R_P90: parseFloat(values[columnIndexes['R_P90']]),
-                R_Min: parseFloat(values[columnIndexes['R_Min']]),
-                R_Max: parseFloat(values[columnIndexes['R_Max']]),
-                Sleep_P10: parseFloat(values[columnIndexes['Sleep_P10']]),
-                Sleep_P90: parseFloat(values[columnIndexes['Sleep_P90']]),
-                Sleep_Min: parseFloat(values[columnIndexes['Sleep_Min']]),
-                Sleep_Max: parseFloat(values[columnIndexes['Sleep_Max']]),
-                NonDeepSleep_P10: parseFloat(values[columnIndexes['NonDeepSleep_P10']]),
-                NonDeepSleep_P90: parseFloat(values[columnIndexes['NonDeepSleep_P90']]),
-                NonDeepSleep_Min: parseFloat(values[columnIndexes['NonDeepSleep_Min']]),
-                NonDeepSleep_Max: parseFloat(values[columnIndexes['NonDeepSleep_Max']])
+                P10: parseFloat(values[columnIndexes['P10']]) || 0,
+                P90: parseFloat(values[columnIndexes['P90']]) || 0,
+                Min: parseFloat(values[columnIndexes['Min']]) || 0,
+                Max: parseFloat(values[columnIndexes['Max']]) || 0,
+                StdDev: parseFloat(values[columnIndexes['StdDev']]) || 0,
+                W_P10: parseFloat(values[columnIndexes['W_P10']]) || 0,
+                W_P90: parseFloat(values[columnIndexes['W_P90']]) || 0,
+                W_Min: parseFloat(values[columnIndexes['W_Min']]) || 0,
+                W_Max: parseFloat(values[columnIndexes['W_Max']]) || 0,
+                W_StdDev: parseFloat(values[columnIndexes['W_StdDev']]) || 0,
+                N1_P10: parseFloat(values[columnIndexes['N1_P10']]) || 0,
+                N1_P90: parseFloat(values[columnIndexes['N1_P90']]) || 0,
+                N1_Min: parseFloat(values[columnIndexes['N1_Min']]) || 0,
+                N1_Max: parseFloat(values[columnIndexes['N1_Max']]) || 0,
+                N1_StdDev: parseFloat(values[columnIndexes['N1_StdDev']]) || 0,
+                N2_P10: parseFloat(values[columnIndexes['N2_P10']]) || 0,
+                N2_P90: parseFloat(values[columnIndexes['N2_P90']]) || 0,
+                N2_Min: parseFloat(values[columnIndexes['N2_Min']]) || 0,
+                N2_Max: parseFloat(values[columnIndexes['N2_Max']]) || 0,
+                N2_StdDev: parseFloat(values[columnIndexes['N2_StdDev']]) || 0,
+                N3_P10: parseFloat(values[columnIndexes['N3_P10']]) || 0,
+                N3_P90: parseFloat(values[columnIndexes['N3_P90']]) || 0,
+                N3_Min: parseFloat(values[columnIndexes['N3_Min']]) || 0,
+                N3_Max: parseFloat(values[columnIndexes['N3_Max']]) || 0,
+                N3_StdDev: parseFloat(values[columnIndexes['N3_StdDev']]) || 0,
+                R_P10: parseFloat(values[columnIndexes['R_P10']]) || 0,
+                R_P90: parseFloat(values[columnIndexes['R_P90']]) || 0,
+                R_Min: parseFloat(values[columnIndexes['R_Min']]) || 0,
+                R_Max: parseFloat(values[columnIndexes['R_Max']]) || 0,
+                R_StdDev: parseFloat(values[columnIndexes['R_StdDev']]) || 0,
+                Sleep_P10: parseFloat(values[columnIndexes['Sleep_P10']]) || 0,
+                Sleep_P90: parseFloat(values[columnIndexes['Sleep_P90']]) || 0,
+                Sleep_Min: parseFloat(values[columnIndexes['Sleep_Min']]) || 0,
+                Sleep_Max: parseFloat(values[columnIndexes['Sleep_Max']]) || 0,
+                Sleep_StdDev: parseFloat(values[columnIndexes['Sleep_StdDev']]) || 0,
+                NonDeepSleep_P10: parseFloat(values[columnIndexes['NonDeepSleep_P10']]) || 0,
+                NonDeepSleep_P90: parseFloat(values[columnIndexes['NonDeepSleep_P90']]) || 0,
+                NonDeepSleep_Min: parseFloat(values[columnIndexes['NonDeepSleep_Min']]) || 0,
+                NonDeepSleep_Max: parseFloat(values[columnIndexes['NonDeepSleep_Max']]) || 0,
+                NonDeepSleep_StdDev: parseFloat(values[columnIndexes['NonDeepSleep_StdDev']]) || 0
             };
         });
 
@@ -938,11 +947,11 @@ async function readStats(sleepStatsPath: string): Promise<{ [key: string]: Stats
 
 function createFeatureMinMaxFromStats(statsRow: StatsCSVRow, prefix: string): FeatureMinMax {
     return {
-        min: statsRow[`${prefix}Min`],
-        max: statsRow[`${prefix}Max`],
-        stdDev: statsRow[`${prefix}StdDev`],
-        p10: statsRow[`${prefix}P10`],
-        p90: statsRow[`${prefix}P90`],
+        min: statsRow[`${prefix}Min`] ?? 0,
+        max: statsRow[`${prefix}Max`] ?? 0,
+        stdDev: statsRow[`${prefix}StdDev`] ?? 0,
+        p10: statsRow[`${prefix}P10`] ?? 0,
+        p90: statsRow[`${prefix}P90`] ?? 0,
     };
 }
 
@@ -1040,6 +1049,11 @@ async function calculateSleepStageFeatureMinMax(stats: { [key: string]: StatsCSV
                 stages.forEach(stage => {
                     const prefix = stage === 'All' ? '' : (stage + "_");
                     result[channel][key].forAllStats[stage] = createFeatureMinMaxFromStats(statsRow, prefix);
+                });
+            } else {
+                // Set default values if stats are not available for this key
+                stages.forEach(stage => {
+                    result[channel][key].forAllStats[stage] = { min: 0, max: 0, stdDev: 0, p10: 0, p90: 0 };
                 });
             }
         });
