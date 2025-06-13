@@ -570,7 +570,7 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition })
                         );
                     })}
 
-                    {/* {allData.rawPhysicalFeatures ? (
+                    {allData.rawPhysicalFeatures ? (
                         <RawPhysicalFeaturesChart
                             allData={allData}
                             scrollPosition={scrollPosition}
@@ -601,7 +601,7 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition })
                         duration={allData.processedEDF.duration}
                         currentTime={currentTime}   
                         secondsToShow={SECONDS_PER_EPOCH}
-                    /> */}
+                    />
                 </div>
             </div>
         </div>
