@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState, useCallback } from 'react';
+import React, { useRef, useEffect, useState, useCallback, Profiler } from 'react';
 import { Chart, ChartConfiguration, registerables } from 'chart.js';
 import annotationPlugin from 'chartjs-plugin-annotation';
 import { AllData, Artifact, Microwaking } from '../Loader/LoaderTypes';
@@ -585,28 +585,40 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition, s
                     )}
 
                     {showVideo && (
-                        <VideoViewer
-                            allData={allData}
-                            scrollPosition={scrollPosition}
-                            videoFiles={allData.videos}
-                            startTime={allData.processedEDF.startDate}
-                            duration={allData.processedEDF.duration}
-                            currentTime={currentTime}
-                            secondsToShow={SECONDS_PER_EPOCH}
-                            audioFiles={allData.audio}
-                        />
+                        <Profiler id="VideoViewer" onRender={(id, phase, actualDuration) => {
+                            if (actualDuration > 16) { // Log if render takes more than 16ms (60fps threshold)
+                                console.warn(`[Profiler] ${id} ${phase} render took ${actualDuration}ms`);
+                            }
+                        }}>
+                            <VideoViewer
+                                allData={allData}
+                                scrollPosition={scrollPosition}
+                                videoFiles={allData.videos}
+                                startTime={allData.processedEDF.startDate}
+                                duration={allData.processedEDF.duration}
+                                currentTime={currentTime}
+                                secondsToShow={SECONDS_PER_EPOCH}
+                                audioFiles={allData.audio}
+                            />
+                        </Profiler>
                     )}
 
                     {showAudio && (
-                        <AudioViewer
-                            allData={allData}
-                            scrollPosition={scrollPosition}
-                            audioFiles={allData.audio}
-                            startTime={allData.processedEDF.startDate}
-                            duration={allData.processedEDF.duration}
-                            currentTime={currentTime}   
-                            secondsToShow={SECONDS_PER_EPOCH}
-                        />
+                        <Profiler id="AudioViewer" onRender={(id, phase, actualDuration) => {
+                            if (actualDuration > 16) { // Log if render takes more than 16ms (60fps threshold)
+                                console.warn(`[Profiler] ${id} ${phase} render took ${actualDuration}ms`);
+                            }
+                        }}>
+                            <AudioViewer
+                                allData={allData}
+                                scrollPosition={scrollPosition}
+                                audioFiles={allData.audio}
+                                startTime={allData.processedEDF.startDate}
+                                duration={allData.processedEDF.duration}
+                                currentTime={currentTime}   
+                                secondsToShow={SECONDS_PER_EPOCH}
+                            />
+                        </Profiler>
                     )}
                 </div>
             </div>

@@ -784,11 +784,13 @@ export function formatDate(date: Date): string {
     const timestamp = date.getTime();
     const cacheResult = dateCache[timestamp];
     if (cacheResult) {
+        console.log('[formatDate] cache hit', timestamp, cacheResult);
         return cacheResult;
     }
 
     // Use the fast formatter for better performance
     const out = formatDateFastButBad(date);
+    console.log('[formatDate] cache miss', timestamp, out);
     dateCache[timestamp] = out;
     return out;
 }

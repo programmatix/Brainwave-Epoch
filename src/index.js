@@ -5,6 +5,11 @@ import { AppEEG } from './AppEEG';
 import './index.css';
 import reportWebVitals from './reportWebVitals';
 
+// Connect to React DevTools if available
+if (process.env.REACT_APP_DEV_TOOLS === 'true' && window.__REACT_DEVTOOLS_GLOBAL_HOOK__) {
+  console.log('React DevTools detected and enabled');
+}
+
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
