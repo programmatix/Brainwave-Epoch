@@ -28,9 +28,11 @@ export const SECONDS_TO_SHOW = 30;
 interface EEGChartsProps {
     allData: AllData;
     scrollPosition: number;
+    showVideo?: boolean;
+    showAudio?: boolean;
 }
 
-export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition }) => {
+export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition, showVideo = false, showAudio = false }) => {
     const chartRefs = useRef<(HTMLCanvasElement | null)[]>([]);
     const [charts, setCharts] = useState<(Chart | null)[]>([]);
     const [compareEpoch, setCompareEpoch] = useState<number | null>(null);
@@ -582,26 +584,30 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition })
                         <div className="text-center p-4">No raw physical features data available</div>
                     )}
 
-                    <VideoViewer
-                        allData={allData}
-                        scrollPosition={scrollPosition}
-                        videoFiles={allData.videos}
-                        startTime={allData.processedEDF.startDate}
-                        duration={allData.processedEDF.duration}
-                        currentTime={currentTime}
-                        secondsToShow={SECONDS_PER_EPOCH}
-                        audioFiles={allData.audio}
-                    />
+                    {showVideo && (
+                        <VideoViewer
+                            allData={allData}
+                            scrollPosition={scrollPosition}
+                            videoFiles={allData.videos}
+                            startTime={allData.processedEDF.startDate}
+                            duration={allData.processedEDF.duration}
+                            currentTime={currentTime}
+                            secondsToShow={SECONDS_PER_EPOCH}
+                            audioFiles={allData.audio}
+                        />
+                    )}
 
-                    <AudioViewer
-                        allData={allData}
-                        scrollPosition={scrollPosition}
-                        audioFiles={allData.audio}
-                        startTime={allData.processedEDF.startDate}
-                        duration={allData.processedEDF.duration}
-                        currentTime={currentTime}   
-                        secondsToShow={SECONDS_PER_EPOCH}
-                    />
+                    {showAudio && (
+                        <AudioViewer
+                            allData={allData}
+                            scrollPosition={scrollPosition}
+                            audioFiles={allData.audio}
+                            startTime={allData.processedEDF.startDate}
+                            duration={allData.processedEDF.duration}
+                            currentTime={currentTime}   
+                            secondsToShow={SECONDS_PER_EPOCH}
+                        />
+                    )}
                 </div>
             </div>
         </div>

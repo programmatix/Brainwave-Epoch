@@ -13,7 +13,8 @@ const EEGViewer: React.FC<EEGViewerProps> = ({ allData }) => {
   const [scrollPosition, setScrollPosition] = useState(0);
   const [showScoring, setShowScoring] = useState(false);
   const [showDisturbances, setShowDisturbances] = useState(false);
-  const [showVideo, setShowVideo] = useState(true);
+  const [showVideo, setShowVideo] = useState(false);
+  const [showAudio, setShowAudio] = useState(false);
 
   const samplesPerSecond = allData.processedEDF.signals[0]?.samplingRate || 1;
   const totalSamples = allData.processedEDF.signals[0]?.samples.length || 0;
@@ -78,9 +79,32 @@ const EEGViewer: React.FC<EEGViewerProps> = ({ allData }) => {
         )}
       </div>
 
+      <div className="bg-base-200 mb-2 flex gap-4 p-2">
+        <label className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            checked={showVideo}
+            onChange={(e) => setShowVideo(e.target.checked)}
+            className="checkbox"
+          />
+          <span>Show Video</span>
+        </label>
+        <label className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            checked={showAudio}
+            onChange={(e) => setShowAudio(e.target.checked)}
+            className="checkbox"
+          />
+          <span>Show Audio</span>
+        </label>
+      </div>
+
       <EEGCharts
         allData={allData}
         scrollPosition={scrollPosition}
+        showVideo={showVideo}
+        showAudio={showAudio}
       />
     </div>
   );
