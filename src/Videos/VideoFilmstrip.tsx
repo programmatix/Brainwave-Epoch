@@ -7,6 +7,7 @@ import { eegChartOptions } from '../Viewer/ChartUtils';
 import { merge } from 'lodash';
 import { AllData } from '../Loader/LoaderTypes';
 import { formatDate } from '../Loader/Loader';
+import { formatTimestampFast } from '../Viewer/ChartUtils';
 import 'chartjs-adapter-date-fns';
 
 Chart.register(...registerables, annotationPlugin);
@@ -193,7 +194,7 @@ export const VideoFilmstrip: React.FC<VideoFilmstripChartProps> = ({
                                 if (!video) return '';
                                 
                                 const labels = [
-                                    `Time: ${new Date(video.timestamp).toLocaleString()}`
+                                    `Time: ${video.formattedTime || formatTimestampFast(video.timestamp)}`
                                 ];
                                 
                                 if (video.event_id) {

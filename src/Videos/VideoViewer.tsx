@@ -6,6 +6,7 @@ import { VideoFile } from './Videos';
 import { AllData } from '../Loader/LoaderTypes';
 import { useStore, StoreState } from '../Store/Store';
 import { AudioFile } from '../Audio/Audio';
+import { formatTimestampFast } from '../Viewer/ChartUtils';
 
 interface VideoViewerProps {
   allData: AllData;
@@ -86,15 +87,7 @@ export const VideoViewer: React.FC<VideoViewerProps> = ({
 
       const targetAudioTimestamp = currentAudio?.timestamp + targetAudioTime * 1000;
       
-      console.log('[VideoSync] Syncing audio position', {
-        currentVideoTime: currentVideoTime,
-        videoRealStartTimestamp: currentVideo?.real_start_timestamp ? new Date(currentVideo.real_start_timestamp).toLocaleString() : 'unknown',
-        audioStartTimestamp: currentAudio?.timestamp ? new Date(currentAudio.timestamp).toLocaleString() : 'unknown',
-        targetAudioTimestamp: targetAudioTimestamp ? new Date(targetAudioTimestamp).toLocaleString() : 'unknown',
-        offsetSeconds: offsetSeconds,
-        targetAudioTime: targetAudioTime,
-        audioDuration: audioRef.current.duration
-      });
+      // Removed expensive console.log with timestamp conversions for performance
       
       // Ensure we don't set time beyond audio duration
       if (audioRef.current.duration && targetAudioTime >= audioRef.current.duration) {
@@ -419,7 +412,7 @@ export const VideoViewer: React.FC<VideoViewerProps> = ({
             <div className="flex justify-between items-center">
               <div>
                 <strong>{currentVideo.name}</strong>
-                <div>{new Date(currentVideo.timestamp).toLocaleString()}</div>
+                <div>{currentVideo.formattedTime || formatTimestampFast(currentVideo.timestamp)}</div>
                 {isAudioSyncedWithVideo && currentAudio && (
                   <div className="text-green-600 text-sm">
                     Synced with audio: {currentAudio.name}

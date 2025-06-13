@@ -781,22 +781,16 @@ export async function readArtifacts(filePath: string): Promise<Artifacts | undef
 const dateCache = {}
 
 export function formatDate(date: Date): string {
-    const cacheResult = dateCache[date.getTime()]
+    const timestamp = date.getTime();
+    const cacheResult = dateCache[timestamp];
     if (cacheResult) {
-        //console.log('[formatDate] cache hit', cacheResult);
-        return cacheResult
+        return cacheResult;
     }
 
-    const out = date.toLocaleString('en-GB', {
-        timeZone: 'Europe/London',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        hour12: false
-    });
-    dateCache[date.getTime()] = out
-    //console.log('[formatDate] out', out);
-    return out
+    // Use the fast formatter for better performance
+    const out = formatDateFastButBad(date);
+    dateCache[timestamp] = out;
+    return out;
 }
 
 export function formatDateFastButBad(date: Date): string {

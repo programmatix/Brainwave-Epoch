@@ -1,4 +1,5 @@
 import { Temporal } from '@js-temporal/polyfill';
+import { formatTimestampFast } from '../Viewer/ChartUtils';
 
 export type AudioSegment = {
     start_sample: number;
@@ -24,6 +25,8 @@ export type AudioFile = {
     metadata?: {
         audio?: AudioSegment[];
     };
+    // Pre-computed formatted timestamp for performance
+    formattedTime?: string;
 };
 
 export type AudioFiles = AudioFile[];
@@ -59,6 +62,7 @@ export async function loadAudio(startDate: Temporal.ZonedDateTime, duration: num
         const audioFiles = files.map((file: any) => ({
             name: file.filename,
             timestamp: file.filename_as_epoch_millis,
+            formattedTime: formatTimestampFast(file.filename_as_epoch_millis),
             ...file
         }));
         

@@ -4,6 +4,7 @@ import { AudioFilmstrip } from './AudioFilmstrip';
 import { AudioFile } from './Audio';
 import { AllData } from '../Loader/LoaderTypes';
 import { useStore, StoreState } from '../Store/Store';
+import { formatTimestampFast } from '../Viewer/ChartUtils';
 
 interface AudioViewerProps {
   allData: AllData;
@@ -188,7 +189,7 @@ export const AudioViewer: React.FC<AudioViewerProps> = ({
         <div className="audio-player">
           <div className="audio-info">
             <div><strong>{currentAudio.name}</strong></div>
-            <div>Start: {new Date(currentAudio.timestamp).toLocaleString()}</div>
+            <div>Start: {currentAudio.formattedTime || formatTimestampFast(currentAudio.timestamp)}</div>
             <div>Duration: {(currentAudio.duration_ms / 1000).toFixed(1)}s</div>
             <div className="text-sm text-gray-600">Independent playback mode</div>
             <div className="gain-control">

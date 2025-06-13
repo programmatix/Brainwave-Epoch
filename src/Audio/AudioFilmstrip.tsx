@@ -8,6 +8,7 @@ import { merge } from 'lodash';
 import { AllData } from '../Loader/LoaderTypes';
 import { formatDate } from '../Loader/Loader';
 import 'chartjs-adapter-date-fns';
+import { formatTimestampFast } from '../Viewer/ChartUtils';
 
 Chart.register(...registerables, annotationPlugin);
 
@@ -317,7 +318,7 @@ export const AudioFilmstrip: React.FC<AudioFilmstripChartProps> = ({
                                 if (!audio) return '';
                                 
                                 const labels = [
-                                    `Time: ${new Date(audio.timestamp).toLocaleString()}`,
+                                    `Time: ${audio.formattedTime || formatTimestampFast(audio.timestamp)}`,
                                     `Duration: ${(audio.duration_ms / 1000).toFixed(1)}s`,
                                     `Size: ${(audio.file_size_in_bytes / 1024 / 1024).toFixed(2)} MB`
                                 ];

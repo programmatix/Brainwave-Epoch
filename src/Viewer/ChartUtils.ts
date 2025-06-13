@@ -230,3 +230,44 @@ export function eegChartOptions(title: string, allData: AllData, scrollPosition:
     }
 }
 
+// Fast timestamp formatter - avoids expensive toLocaleString()
+const timestampCache = new Map<number, string>();
+
+export function formatTimestampFast(timestamp: number): string {
+    // Check cache first
+    const cached = timestampCache.get(timestamp);
+    if (cached) return cached;
+    
+    // Create date and format quickly
+    const date = new Date(timestamp);
+    const hours = date.getHours().toString().padStart(2, '0');
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    const seconds = date.getSeconds().toString().padStart(2, '0');
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear();
+    const result = `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
+    
+    // Cache the result
+    timestampCache.set(timestamp, result);
+    
+    // Limit cache size to prevent memory issues
+    if (timestampCache.size > 10000) {
+        // Remove oldest entries
+        const entriesToRemove = Array.from(timestampCache.keys()).slice(0, 5000);
+        entriesToRemove.forEach(key => timestampCache.delete(key));
+    }
+    
+    return result;
+}
+
+// Pre-compute formatted strings for video/audio files
+export function precomputeFormattedTimestamps<T extends { timestamp: number; formattedTime?: string }>(
+    items: T[]
+): T[] {
+    return items.map(item => ({
+        ...item,
+        formattedTime: formatTimestampFast(item.timestamp)
+    }));
+}
+

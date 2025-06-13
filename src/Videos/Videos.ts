@@ -1,4 +1,5 @@
 import { Temporal } from '@js-temporal/polyfill';
+import { formatTimestampFast } from '../Viewer/ChartUtils';
 
 export type VideoFile = {
     name: string;
@@ -23,6 +24,8 @@ export type VideoFile = {
     last_frame_time?: string;
     motion_start_time?: string;
     frame_count?: number;
+    // Pre-computed formatted timestamp for performance
+    formattedTime?: string;
 };
 
 export type VideoFiles = VideoFile[];
@@ -62,6 +65,7 @@ export async function loadVideos(startDate: Temporal.ZonedDateTime, duration: nu
                 name: file.filename,
                 timestamp: file.filename_as_epoch_millis,
                 real_start_timestamp: real_start_timestamp,
+                formattedTime: formatTimestampFast(file.filename_as_epoch_millis),
                 ...file
             }
         });
