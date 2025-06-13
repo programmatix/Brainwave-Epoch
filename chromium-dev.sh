@@ -7,9 +7,20 @@ REACT_PID=$!
 # Wait for the React server to be ready
 npx wait-on http://127.0.0.1:3042
 
-# Launch Chromium with app-like flags
-chromium-browser --app=http://127.0.0.1:3042 --disable-web-security --allow-running-insecure-content --user-data-dir=/tmp/chromium-dev &
+# Launch Chromium with DevTools auto-opened
+# --auto-open-devtools-for-tabs automatically opens DevTools
+# --load-extension loads the React DevTools if installed
+chromium-browser \
+    --new-window \
+    --auto-open-devtools-for-tabs \
+    --disable-web-security \
+    --allow-running-insecure-content \
+    --user-data-dir=/tmp/chromium-dev \
+    http://127.0.0.1:3042 &
 CHROMIUM_PID=$!
+
+echo "Chrome DevTools should open automatically"
+echo "Look for the ⚛️ Components and ⚛️ Profiler tabs"
 
 # Function to cleanup on exit
 cleanup() {

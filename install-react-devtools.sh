@@ -1,0 +1,15 @@
+#!/bin/bash
+
+echo "This script will help you install React DevTools Chrome extension"
+echo ""
+echo "Option 1: Install from Chrome Web Store (Recommended)"
+echo "1. Open this URL in Chrome/Chromium:"
+echo "   https://chrome.google.com/webstore/detail/react-developer-tools/fmkadmapgofadopljbjfkapdkoienihi"
+echo "2. Click 'Add to Chrome'"
+echo ""
+echo "Option 2: Install standalone for development"
+echo "Run: npm install -g react-devtools"
+echo "Then run: react-devtools"
+echo ""
+echo "After installing, run: npm run dev-chrome"
+echo "DevTools will open automatically with the ⚛️ Profiler tab available"

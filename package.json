@@ -46,6 +46,7 @@
     "dev": "concurrently -k \"npm start\" \"wait-on http://127.0.0.1:3042 && cross-env NWJS_START_URL=http://127.0.0.1:3042 nw --no-sandbox --disable-gpu .\"",
     "dev-chrome": "./chromium-dev.sh",
     "dev-chrome-profiler": "./chromium-dev-profiler.sh",
+    "dev-chrome-ext": "./chromium-dev-with-extension.sh",
     "dev2": "concurrently -k \"cross-env NWJS_START_URL=http://127.0.0.1:3043 nw --enable-logging=stderr --remote-debugging-port=9222 .\"",
     "dev-tools": "concurrently -k \"react-devtools\" \"cross-env REACT_APP_DEVTOOLS=enabled npm start\" \"wait-on http://127.0.0.1:3042 && cross-env NWJS_START_URL=http://127.0.0.1:3042 nw --enable-logging=stderr --remote-debugging-port=9222 .\"",
     "start": "react-app-rewired start",
