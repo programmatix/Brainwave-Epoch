@@ -59,22 +59,32 @@ export function getOrderedKeys(channelData: any): string[] {
         return [];
     }
 
-    const orderedKeys = ["eeg_sdelta", "eeg_fdelta", "eeg_theta", "eeg_alpha", "eeg_sigma", "eeg_beta",
+    const preferredOrder = [
+        "eeg_sdelta", "eeg_fdelta", "eeg_theta", "eeg_alpha", "eeg_sigma", "eeg_beta",
         "eeg_sdeltaabs", "eeg_fdeltaabs", "eeg_thetaabs", "eeg_alphaabs", "eeg_sigmaabs", "eeg_betaabs",
-        "eeg_sdeltaabs_s", "eeg_fdeltaabs_s", "eeg_thetaabs_s", "eeg_alphaabs_s", "eeg_sigmaabs_s", "eeg_betaabs_s",
-        "eeg_sdelta_s", "eeg_fdelta_s", "eeg_theta_s", "eeg_alpha_s", "eeg_sigma_s", "eeg_beta_s",
-        "eeg_sdelta_s", "eeg_fdelta_s", "eeg_theta_s", "eeg_alpha_s", "eeg_sigma_s", "eeg_beta_s",
         "eeg_fdeltaab", "eeg_thetaab", "eeg_alphaab", "eeg_betaab", "eeg_fdeltaaa", "eeg_thetaaa", "eeg_alphaaa", "eeg_sigmaaa", "eeg_betaaa",
-        "eeg_fdeltaab_s", "eeg_thetaab_s", "eeg_alphaab_s", "eeg_betaab_s", "eeg_fdeltaaa_s", "eeg_thetaaa_s", "eeg_alphaaa_s", "eeg_sigmaaa_s", "eeg_betaaa_s"
+        "slowwave_count",
+        "slowwave_ptp_mean",
+        "slowwave_ptp_max",
+        "slowwave_duration_mean",
+        "slowwave_duration_max",
+        "slowwave_slope_mean",
+        "slowwave_slope_max",
+        "slowwave_frequency_mean",
+        "slowwave_frequency_max"
     ];
-    const allKeys = new Set([...orderedKeys, ...Object.keys(channelData).filter(key => key.includes('eeg_'))]);
 
-    const out = Array.from(allKeys).filter(key =>
+    const actualKeys = Object.keys(channelData).filter(key =>
+        (key.includes('eeg_') || key.startsWith('slowwave_')) &&
         !key.includes('p2') &&
-        !key.includes('c7')
+        !key.includes('c7') &&
+        !key.endsWith('_s')
     );
 
-    return out;
+    const orderedExistingKeys = preferredOrder.filter(key => actualKeys.includes(key));
+    const remainingKeys = actualKeys.filter(key => !orderedExistingKeys.includes(key));
+
+    return [...orderedExistingKeys, ...remainingKeys];
 }
 
 export function generateAnnotationsForLeft(
@@ -99,65 +109,66 @@ export function generateAnnotationsForLeft(
 
     const orderedKeys = getOrderedKeys(channelData);
 
-    console.log("Ordered keys:", orderedKeys, allData);
+    orderedKeys
+        .filter(key => key.startsWith('eeg_') || key.startsWith('slowwave_'))
+        .forEach(key => {
+            const scaledKey = key.endsWith("_s") ? key : key + "_s";
 
-    orderedKeys.filter(key => key.includes('eeg_')).forEach(key => {
-        const scaledKey = key.endsWith("_s") ? key : key + "_s";
+            const value = channelData?.[key as keyof ProcessedSleepStageEntryFeatures];
+            const scaledValue = channelData?.[scaledKey as keyof ProcessedSleepStageEntryFeatures];
 
-        const value = channelData[key as keyof ProcessedSleepStageEntryFeatures];
-        const scaledValue = channelData[scaledKey as keyof ProcessedSleepStageEntryFeatures];
+            if (typeof value === 'number') {
+                const minMax = allData.sleepStageFeatureMinMax?.[signal.label]?.[key as keyof ProcessedSleepStageEntryFeatures];
+                if (!minMax) {
+                    return;
+                }
 
-        if (typeof value === 'number') {
-            const minMax = allData.sleepStageFeatureMinMax[signal.label][key as keyof ProcessedSleepStageEntryFeatures];
+                const compValue = compareEpoch !== null ? allData.sleepStages[compareEpoch]?.Channels[signal.label]?.[key as keyof ProcessedSleepStageEntryFeatures] : undefined;
+                const compColor = compValue !== undefined ? getColorForValueFromMinMax(compValue as number, minMax.forAllStats.All) : undefined;
+                const diffPercent = compValue !== undefined && compValue !== 0 ? (((value - compValue) / compValue) * 100) : undefined;
+                const diffPercentColor = diffPercent !== undefined ? getColorForValue(diffPercent, -100, 100) : undefined;
+                const compV = compValue !== undefined ? (key.includes("petrosian") ? (compValue as number).toFixed(4) : key.includes("nzc") ? (compValue as number).toFixed(0) : (compValue as number).toFixed(2)) : undefined;
+                const group = groupKey(key);
 
-            const compValue = compareEpoch !== null ? allData.sleepStages[compareEpoch]?.Channels[signal.label][key as keyof ProcessedSleepStageEntryFeatures] : undefined;
-            const compColor = compValue !== undefined ? getColorForValueFromMinMax(compValue as number, minMax.forAllStats.All) : undefined;
-            const diffPercent = compValue !== undefined ? (((value - compValue) / compValue) * 100) : undefined;
-            const diffPercentColor = diffPercent !== undefined ? getColorForValue(diffPercent, -100, 100) : undefined;
-            const compV = compValue !== undefined ? (key.includes("petrosian") ? (compValue as number).toFixed(4) : key.includes("nzc") ? (compValue as number).toFixed(0) : (compValue as number).toFixed(2)) : undefined;
-            const group = groupKey(key);
-
-            content.push({
-                channel: signal.label,
-                currentEpoch: epochIndex,
-                currentEpochStage: sleepStage?.Stage,
-                key,
-                value: value,
-                scaledValue: scaledValue,
-                normalizedAgainst: {
-                    forLocalFile: {
-                        All: createNormalizedValue(value, minMax.forLocalFile.All),
-                        Sleep: createNormalizedValue(value, minMax.forLocalFile.Sleep),
-                        NonDeepSleep: createNormalizedValue(value, minMax.forLocalFile.NonDeepSleep),
-                        W: createNormalizedValue(value, minMax.forLocalFile.W),
-                        N1: createNormalizedValue(value, minMax.forLocalFile.N1), 
-                        N2: createNormalizedValue(value, minMax.forLocalFile.N2),
-                        N3: createNormalizedValue(value, minMax.forLocalFile.N3),
-                        R: createNormalizedValue(value, minMax.forLocalFile.R)
+                content.push({
+                    channel: signal.label,
+                    currentEpoch: epochIndex,
+                    currentEpochStage: sleepStage?.Stage,
+                    key,
+                    value: value,
+                    scaledValue: scaledValue,
+                    normalizedAgainst: {
+                        forLocalFile: {
+                            All: createNormalizedValue(value, minMax.forLocalFile.All),
+                            Sleep: createNormalizedValue(value, minMax.forLocalFile.Sleep),
+                            NonDeepSleep: createNormalizedValue(value, minMax.forLocalFile.NonDeepSleep),
+                            W: createNormalizedValue(value, minMax.forLocalFile.W),
+                            N1: createNormalizedValue(value, minMax.forLocalFile.N1), 
+                            N2: createNormalizedValue(value, minMax.forLocalFile.N2),
+                            N3: createNormalizedValue(value, minMax.forLocalFile.N3),
+                            R: createNormalizedValue(value, minMax.forLocalFile.R)
+                        },
+                        forAllStats: {
+                            All: createNormalizedValue(value, minMax.forAllStats.All),
+                            Sleep: createNormalizedValue(value, minMax.forAllStats.Sleep),
+                            NonDeepSleep: createNormalizedValue(value, minMax.forAllStats.NonDeepSleep),
+                            W: createNormalizedValue(value, minMax.forAllStats.W),
+                            N1: createNormalizedValue(value, minMax.forAllStats.N1),
+                            N2: createNormalizedValue(value, minMax.forAllStats.N2), 
+                            N3: createNormalizedValue(value, minMax.forAllStats.N3),
+                            R: createNormalizedValue(value, minMax.forAllStats.R)
+                        }
                     },
-                    forAllStats: {
-                        All: createNormalizedValue(value, minMax.forAllStats.All),
-                        Sleep: createNormalizedValue(value, minMax.forAllStats.Sleep),
-                        NonDeepSleep: createNormalizedValue(value, minMax.forAllStats.NonDeepSleep),
-                        W: createNormalizedValue(value, minMax.forAllStats.W),
-                        N1: createNormalizedValue(value, minMax.forAllStats.N1),
-                        N2: createNormalizedValue(value, minMax.forAllStats.N2), 
-                        N3: createNormalizedValue(value, minMax.forAllStats.N3),
-                        R: createNormalizedValue(value, minMax.forAllStats.R)
-                    }
-                },
-                compValue: compV,
-                compColor,
-                diffPercent,
-                diffPercentColor,
-                keyGroup: group.keyGroup,
-                scaled: group.scaled,
-                mostUseful: group.mostUseful
-            });
-        }
-    });
-
-    console.log("Left chart table:", content);
+                    compValue: compV,
+                    compColor,
+                    diffPercent,
+                    diffPercentColor,
+                    keyGroup: group.keyGroup,
+                    scaled: group.scaled,
+                    mostUseful: group.mostUseful
+                });
+            }
+        });
 
     return content;
 }
@@ -177,9 +188,10 @@ function createNormalizedValue(value: number, minMax: FeatureMinMax): Normalized
     }
     const usefulMin = minMax.p10 - (minMax.p90 - minMax.p10) * 1;
     const usefulMax = minMax.p90 + (minMax.p90 - minMax.p10) * 1;
+    const range = minMax.p90 - minMax.p10 || 1;
 
     return {
-        normalizedValue: ((value - minMax.p10) / (minMax.p90 - minMax.p10)),
+        normalizedValue: (value - minMax.p10) / range,
         minUsed: minMax.p10,
         minUsedLabel: '10%',
         maxUsed: minMax.p90, 

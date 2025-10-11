@@ -80,7 +80,7 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = React.memo(
     const [isAutoScrolling, setIsAutoScrolling] = useState(false);
     const [mousePosition, setMousePosition] = useState<number>(0);
     const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
-    const [activeTooltip, setActiveTooltip] = useState<{ type: string; channel?: string } | null>(null);
+    const [activeTooltip, setActiveTooltip] = useState<{ type: string; channel?: string; feature?: string } | null>(null);
 
     const handleKeyDown = useCallback((e: KeyboardEvent) => {
         if (e.key === 'ArrowLeft') {
@@ -343,7 +343,7 @@ From epoch ${currentEpoch} to ${targetEpoch}`, {
         findArtifactVideoMovement('prev');
     }, [findArtifactVideoMovement]);
 
-    const handleMouseMove = useCallback((e: React.MouseEvent<HTMLElement>, width: number, duration: number, type: string, channel?: string) => {
+    const handleMouseMove = useCallback((e: React.MouseEvent<HTMLElement>, width: number, duration: number, type: string, channel?: string, feature?: string) => {
         e.preventDefault(); // Prevent any default behavior
         const rect = e.currentTarget.getBoundingClientRect();
         const x = e.clientX - rect.left;
@@ -352,7 +352,7 @@ From epoch ${currentEpoch} to ${targetEpoch}`, {
         
         // Immediately update tooltip position for responsive feel
         setTooltipPosition({ x: e.clientX, y: e.clientY });
-        setActiveTooltip({ type, channel });
+        setActiveTooltip({ type, channel, feature });
         
         // Batch these updates for performance
         setMousePosition(mouseTimeSamples);
@@ -510,7 +510,7 @@ From epoch ${currentEpoch} to ${targetEpoch}`, {
                                     {selectedFeature && (
                                         <div 
                                             className="w-full cursor-pointer"
-                                            onMouseMove={(e) => handleMouseMove(e, window.innerWidth - 200, totalSamples / samplesPerSecond, 'feature', channel)}
+                                            onMouseMove={(e) => handleMouseMove(e, window.innerWidth - 200, totalSamples / samplesPerSecond, 'feature', channel, selectedFeature)}
                                             onMouseLeave={handleMouseLeave}
                                         >
                                             <FeatureTimeline
@@ -733,6 +733,7 @@ From epoch ${currentEpoch} to ${targetEpoch}`, {
                     type={activeTooltip.type}
                     channel={activeTooltip.channel}
                     position={tooltipPosition}
+                    feature={activeTooltip.feature}
                 />
             )}
         </div>

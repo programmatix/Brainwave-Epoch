@@ -4,6 +4,7 @@ import { EEGCharts, SECONDS_PER_EPOCH } from './EEGCharts';
 import { TimelineNavigation } from './Navigation';
 import { ScoringComponent } from './ScoringComponent';
 import { DisturbancesComponent } from '../Disturbances/Disturbances';
+import { FeatureAvailabilityPanel } from './FeatureAvailabilityPanel';
 
 interface EEGViewerProps {
   allData: AllData;
@@ -32,6 +33,8 @@ const EEGViewer: React.FC<EEGViewerProps> = ({ allData }) => {
         totalSamples={totalSamples}
         samplesPerSecond={samplesPerSecond}
       />
+
+      <FeatureAvailabilityPanel allData={allData} />
 
       <div className="bg-base-200 mb-2">
         <button

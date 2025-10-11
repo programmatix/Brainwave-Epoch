@@ -1,5 +1,5 @@
 import React from 'react';
-import { AllData } from '../Loader/LoaderTypes';
+import { AllData, ProcessedSleepStageEntryFeatures, StageFeatureMinMax } from '../Loader/LoaderTypes';
 import { sampleIndexToTime, millisecondsToSamples, sampleToEpoch } from './ChartUtils';
 import { SECONDS_PER_EPOCH } from './EEGCharts';
 import { StoreState, useStore } from '../Store/Store';
@@ -18,15 +18,39 @@ const tooltipAnimationStyle = `
 }
 `;
 
+type StageBucket = keyof StageFeatureMinMax['forAllStats'];
+const stageBuckets: StageBucket[] = ['All', 'Sleep', 'NonDeepSleep', 'W', 'N1', 'N2', 'N3', 'R'];
+const isStageBucket = (value: string | undefined): value is StageBucket =>
+    !!value && stageBuckets.includes(value as StageBucket);
+
+const formatNumber = (num?: number): string => {
+    if (typeof num !== 'number' || Number.isNaN(num)) {
+        return 'N/A';
+    }
+    return num.toLocaleString('en-GB', {
+        minimumFractionDigits: 4,
+        maximumFractionDigits: 4,
+        useGrouping: false
+    });
+};
+
+const formatRawNumber = (num?: number): string => {
+    if (typeof num !== 'number' || Number.isNaN(num)) {
+        return 'N/A';
+    }
+    return num.toPrecision(8);
+};
+
 interface TimelineTooltipProps {
     allData: AllData;
     mousePosition: number;
     type: string;
     channel?: string;
     position: { x: number; y: number };
+    feature?: string;
 }
 
-export const TimelineTooltip: React.FC<TimelineTooltipProps> = ({ allData, mousePosition, type, channel, position }) => {
+export const TimelineTooltip: React.FC<TimelineTooltipProps> = ({ allData, mousePosition, type, channel, position, feature }) => {
     const time = sampleIndexToTime(allData, mousePosition);
     const sample = mousePosition
     const epoch = sampleToEpoch(allData, mousePosition);
@@ -153,20 +177,57 @@ export const TimelineTooltip: React.FC<TimelineTooltipProps> = ({ allData, mouse
                 break;
 
             case 'feature':
-                // if (channel) {
-                //     const featureData = allData.sleepStages?.[epoch]?.Channels?.[channel];
-                //     if (featureData) {
-                //         content = (
-                //             <div className="p-2">
-                //                 <div className="font-medium">Time: {time.toLocaleString()}</div>
-                //                 <div>Epoch: {epoch}</div>
-                //                 <div>Channel: {channel}</div>
-                //                 <div>Feature: {selectedFeature}</div>
-                //                 <div>Value: {featureData[selectedFeature]?.toFixed(2)}</div>
-                //             </div>
-                //         );
-                //     }
-                // }
+                if (channel && feature) {
+                    const featureKey = feature as keyof ProcessedSleepStageEntryFeatures;
+                    const sleepStageEntry = allData.sleepStages?.[epoch];
+                    const channelData = sleepStageEntry?.Channels?.[channel];
+                    const featureValue = channelData?.[featureKey];
+                    const stageLabel = sleepStageEntry?.Stage;
+                    const featureMinMax = allData.sleepStageFeatureMinMax?.[channel]?.[featureKey];
+                    const stageSpecificMinMax = featureMinMax && isStageBucket(stageLabel)
+                        ? featureMinMax.forAllStats[stageLabel]
+                        : undefined;
+                    const colorMinMax = stageSpecificMinMax && stageSpecificMinMax.p90 !== stageSpecificMinMax.p10
+                        ? stageSpecificMinMax
+                        : featureMinMax?.forAllStats.All;
+                    const allStagesMinMax = featureMinMax?.forAllStats.All;
+                    const normalized = colorMinMax && typeof featureValue === 'number' && colorMinMax.p90 !== colorMinMax.p10
+                        ? (featureValue - colorMinMax.p10) / (colorMinMax.p90 - colorMinMax.p10)
+                        : undefined;
+
+                    content = (
+                        <div>
+                            <div className="font-bold text-gray-800 text-sm">Time: {time.withTimeZone('Europe/London').toLocaleString('en-GB')}</div>
+                            <div className="text-gray-600 mt-1">Epoch: {epoch}</div>
+                            <div className="text-indigo-600 mt-1">Channel: {channel}</div>
+                            <div className="text-gray-600 mt-1">Stage: {stageLabel ?? 'N/A'}</div>
+                            <div className="text-gray-700 mt-1">Feature: {feature}</div>
+                            <div className="text-gray-600 mt-1">Value: {formatNumber(typeof featureValue === 'number' ? featureValue : undefined)}</div>
+                            <div className="text-gray-500 text-xs">Actual: {formatRawNumber(typeof featureValue === 'number' ? featureValue : undefined)}</div>
+                            {colorMinMax && (
+                                <div className="text-gray-600 mt-2 text-xs">
+                                    <div className="font-semibold uppercase tracking-wide text-gray-500 mb-1">
+                                        Colour range (all files {stageSpecificMinMax && isStageBucket(stageLabel) && stageLabel !== 'All' ? `stage ${stageLabel}` : 'all stages'})
+                                    </div>
+                                    <div>P10: {formatNumber(colorMinMax.p10)}</div>
+                                    <div>P90: {formatNumber(colorMinMax.p90)}</div>
+                                    {typeof normalized === 'number' && isFinite(normalized) && (
+                                        <div>Normalized position: {(normalized * 100).toFixed(1)}%</div>
+                                    )}
+                                </div>
+                            )}
+                            {allStagesMinMax && stageSpecificMinMax && isStageBucket(stageLabel) && stageLabel !== 'All' && (
+                                <div className="text-gray-500 mt-2 text-xs">
+                                    <div className="font-semibold uppercase tracking-wide text-gray-500 mb-1">
+                                        All files (all stages) reference
+                                    </div>
+                                    <div>P10: {formatNumber(allStagesMinMax.p10)}</div>
+                                    <div>P90: {formatNumber(allStagesMinMax.p90)}</div>
+                                </div>
+                            )}
+                        </div>
+                    );
+                }
                 break;
 
             case 'combined':

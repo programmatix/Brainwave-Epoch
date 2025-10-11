@@ -163,6 +163,67 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition, s
                 return eventStartSample < scrollPosition + samplesToShow && eventEndSample > scrollPosition;
             }) : [];
 
+            const slowWavePeakPoints = showSlowWaveEvents ? visibleSlowWaveEvents.flatMap(event => {
+                const ptp = event.PTP;
+                const createPoint = (peakSeconds: number | undefined, amplitude: number | undefined, peakType: 'neg' | 'pos') => {
+                    if (typeof peakSeconds !== 'number' || typeof amplitude !== 'number') {
+                        return null;
+                    }
+
+                    const absoluteSampleIndex = secondsToSamples(peakSeconds);
+                    const relativeSampleIndex = absoluteSampleIndex - scrollPosition;
+
+                    if (relativeSampleIndex < 0 || relativeSampleIndex >= samplesToShow) {
+                        return null;
+                    }
+
+                    const radius = ptp && isFinite(ptp) ? Math.max(3, Math.min(8, ptp / 35)) : 4;
+                    const color = peakType === 'neg' ? 'rgba(59, 130, 246, 0.9)' : 'rgba(249, 115, 22, 0.9)';
+
+                    return {
+                        x: relativeSampleIndex,
+                        y: amplitude,
+                        ptp,
+                        peakSeconds,
+                        amplitude,
+                        peakType,
+                        color,
+                        radius
+                    };
+                };
+
+                return [
+                    createPoint(event.NegPeak, event.ValNegPeak, 'neg'),
+                    createPoint(event.PosPeak, event.ValPosPeak, 'pos')
+                ].filter(Boolean) as {
+                    x: number;
+                    y: number;
+                    ptp?: number;
+                    peakSeconds?: number;
+                    amplitude?: number;
+                    peakType: 'neg' | 'pos';
+                    color: string;
+                    radius: number;
+                }[];
+            }) : [];
+
+            if (slowWavePeakPoints.length > 0) {
+                datasets.push({
+                    label: 'Slow-wave peaks',
+                    type: 'scatter',
+                    data: slowWavePeakPoints,
+                    parsing: false,
+                    showLine: false,
+                    pointRadius: (ctx: any) => ctx.raw?.radius ?? 4,
+                    pointHoverRadius: (ctx: any) => (ctx.raw?.radius ?? 4) + 2,
+                    pointBackgroundColor: (ctx: any) => ctx.raw?.color ?? 'rgba(54, 162, 235, 0.85)',
+                    pointBorderColor: (ctx: any) => ctx.raw?.color ?? 'rgba(54, 162, 235, 1)',
+                    pointBorderWidth: 1.5,
+                    hitRadius: 6,
+                    hoverBorderWidth: 2,
+                } as any);
+            }
+
             const spindleEvents = allData.spindleEvents?.[signal.label] || [];
             const visibleSpindleEvents = showSpindleEvents ? spindleEvents.filter(event => {
                 const eventStartSample = secondsToSamples(event.Start);
@@ -390,6 +451,33 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition, s
                                 //         }
                                 //     }
                                 // }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: (context: any) => {
+                                        if ((context.dataset as any)?.type === 'scatter') {
+                                            const raw = context.raw;
+                                            if (raw?.peakType) {
+                                                const prefix = raw.peakType === 'neg' ? 'Neg peak' : 'Pos peak';
+                                                const amplitude = typeof raw.amplitude === 'number' ? `${raw.amplitude.toFixed(1)}µV` : 'N/A';
+                                                const timeSeconds = typeof raw.peakSeconds === 'number' ? `${raw.peakSeconds.toFixed(2)}s` : 'N/A';
+                                                const ptpLabel = typeof raw.ptp === 'number' ? `PTP ${raw.ptp.toFixed(1)}µV` : undefined;
+                                                return ptpLabel ? `${prefix}: ${amplitude} @ ${timeSeconds} (${ptpLabel})` : `${prefix}: ${amplitude} @ ${timeSeconds}`;
+                                            }
+                                        }
+
+                                        const value = context.parsed?.y;
+                                        if (typeof value !== 'number' || Number.isNaN(value)) {
+                                            return context.dataset?.label || signal.label;
+                                        }
+
+                                        const absoluteSampleIndex = scrollPosition + context.dataIndex;
+                                        const formattedTime = allData.processedEDF.signals[0].timeLabels[absoluteSampleIndex]?.formatted;
+                                        const label = context.dataset?.label || signal.label;
+
+                                        return formattedTime ? `${label}: ${value.toFixed(1)}µV @ ${formattedTime}` : `${label}: ${value.toFixed(1)}µV`;
+                                    }
+                                }
                             }
                         },
                         onClick: (event: any, elements: any[], chart: Chart) => {

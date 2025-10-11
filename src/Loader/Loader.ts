@@ -9,6 +9,8 @@ import { loadVideos } from '../Videos/Videos';
 import { loadAudio } from '../Audio/Audio';
 import { queryMovementData, processMovementData } from '../Movement/Movement';
 
+const SECONDS_PER_EPOCH = 30;
+
 export const loaderEvents = new EventEmitter();
 
 export async function readEDFPlus(filePath: string): Promise<EDFData> {
@@ -624,6 +626,10 @@ export async function loadFiles(edfPath: string): Promise<AllData> {
     const end = performance.now();
     loaderEvents.emit('log', `${new Date().toISOString()}: All files loaded and processed in ${(end - start).toFixed(2)}ms`);
 
+    if (processedStages && slowWaveEvents) {
+        injectSlowWaveMetrics(processedStages, slowWaveEvents);
+    }
+
     const sleepStageFeatureMinMax = await calculateSleepStageFeatureMinMax(stats, processedStages);
 
     const allData: AllData = {
@@ -672,6 +678,114 @@ export async function readSlowWaveEvents(filePath: string): Promise<GroupedSlowW
         console.error(`Error reading SlowWaveEvents file: ${error.message}`);
         return undefined;
     }
+}
+
+type SlowWaveMetricField = 'PTP' | 'Duration' | 'Slope' | 'Frequency';
+
+const SLOW_WAVE_METRIC_FIELDS: SlowWaveMetricField[] = ['PTP', 'Duration', 'Slope', 'Frequency'];
+
+const SLOW_WAVE_METRIC_KEY_MAP: Record<SlowWaveMetricField, string> = {
+    PTP: 'ptp',
+    Duration: 'duration',
+    Slope: 'slope',
+    Frequency: 'frequency'
+};
+
+type SlowWaveEpochAggregate = {
+    count: number;
+    sums: Record<SlowWaveMetricField, number>;
+    max: Record<SlowWaveMetricField, number>;
+};
+
+function createEmptyAggregate(): SlowWaveEpochAggregate {
+    const sums = {} as Record<SlowWaveMetricField, number>;
+    const max = {} as Record<SlowWaveMetricField, number>;
+    SLOW_WAVE_METRIC_FIELDS.forEach(field => {
+        sums[field] = 0;
+        max[field] = Number.NEGATIVE_INFINITY;
+    });
+    return {
+        count: 0,
+        sums,
+        max
+    };
+}
+
+function injectSlowWaveMetrics(
+    sleepStages: ProcessedSleepStages,
+    slowWaveEvents: GroupedSlowWaveEvents
+) {
+    if (!sleepStages?.length || !slowWaveEvents) {
+        return;
+    }
+
+    const totalEpochs = sleepStages.length;
+    const epsilon = 1e-6;
+
+    Object.entries(slowWaveEvents).forEach(([channel, events]) => {
+        if (!events || !events.length) {
+            return;
+        }
+
+        // If the channel is not available in the sleep stages, skip
+        if (!sleepStages[0]?.Channels?.[channel]) {
+            return;
+        }
+
+        const aggregates = Array.from({ length: totalEpochs }, () => createEmptyAggregate());
+
+        events.forEach(event => {
+            if (typeof event.Start !== 'number' || typeof event.End !== 'number') {
+                return;
+            }
+
+            const startEpoch = Math.max(0, Math.floor(event.Start / SECONDS_PER_EPOCH));
+            const endEpoch = Math.max(
+                startEpoch,
+                Math.floor(Math.max(event.Start, event.End - epsilon) / SECONDS_PER_EPOCH)
+            );
+
+            for (let epoch = startEpoch; epoch <= endEpoch && epoch < totalEpochs; epoch++) {
+                if (epoch < 0) {
+                    continue;
+                }
+
+                const aggregate = aggregates[epoch];
+                aggregate.count += 1;
+
+                SLOW_WAVE_METRIC_FIELDS.forEach(field => {
+                    const value = event[field];
+                    if (typeof value === 'number' && Number.isFinite(value)) {
+                        aggregate.sums[field] += value;
+                        aggregate.max[field] = Math.max(aggregate.max[field], value);
+                    }
+                });
+            }
+        });
+
+        aggregates.forEach((aggregate, epochIndex) => {
+            const channelData = sleepStages[epochIndex]?.Channels?.[channel];
+            if (!channelData) {
+                return;
+            }
+
+            channelData.slowwave_count = aggregate.count;
+
+            SLOW_WAVE_METRIC_FIELDS.forEach(field => {
+                const keyBase = SLOW_WAVE_METRIC_KEY_MAP[field];
+                const meanKey = `slowwave_${keyBase}_mean`;
+                const maxKey = `slowwave_${keyBase}_max`;
+
+                if (aggregate.count > 0) {
+                    channelData[meanKey] = aggregate.sums[field] / aggregate.count;
+                    channelData[maxKey] = aggregate.max[field];
+                } else {
+                    channelData[meanKey] = 0;
+                    channelData[maxKey] = 0;
+                }
+            });
+        });
+    });
 }
 
 export async function readNightEvents(filePath: string): Promise<NightEvents | undefined> {
@@ -987,9 +1101,12 @@ async function calculateSleepStageFeatureMinMax(stats: { [key: string]: StatsCSV
     const result: SleepStageFeatureMinMax = {};
 
     channels.forEach(channel => {
-        const featureKeys = Object.keys(sleepStages[0].Channels[channel]).filter(key =>
-            key.startsWith('eeg_') && typeof sleepStages[0].Channels[channel][key] === 'number'
-        ) as (keyof ProcessedSleepStageEntryFeatures)[];
+        const featureKeys = Object.keys(sleepStages[0].Channels[channel]).filter(key => {
+            const value = sleepStages[0].Channels[channel][key];
+            const isNumeric = typeof value === 'number' && Number.isFinite(value);
+            const isSupportedKey = key.startsWith('eeg_') || key.startsWith('slowwave_');
+            return isNumeric && isSupportedKey;
+        }) as (keyof ProcessedSleepStageEntryFeatures)[];
 
         result[channel] = {} as { [K in keyof ProcessedSleepStageEntryFeatures]: StageFeatureMinMax };
 
@@ -1042,6 +1159,8 @@ async function calculateSleepStageFeatureMinMax(stats: { [key: string]: StatsCSV
                         p90: sortedValues[Math.floor(len * 0.9)],
                         stdDev: Math.sqrt(sortedValues.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / len)
                     };
+                } else {
+                    result[channel][key].forLocalFile[stage] = { min: 0, max: 0, p10: 0, p90: 0, stdDev: 0 };
                 }
             });
 
@@ -1054,9 +1173,9 @@ async function calculateSleepStageFeatureMinMax(stats: { [key: string]: StatsCSV
                     result[channel][key].forAllStats[stage] = createFeatureMinMaxFromStats(statsRow, prefix);
                 });
             } else {
-                // Set default values if stats are not available for this key
+                // Fall back to the local file statistics when global stats are unavailable
                 stages.forEach(stage => {
-                    result[channel][key].forAllStats[stage] = { min: 0, max: 0, stdDev: 0, p10: 0, p90: 0 };
+                    result[channel][key].forAllStats[stage] = result[channel][key].forLocalFile[stage] ?? { min: 0, max: 0, stdDev: 0, p10: 0, p90: 0 };
                 });
             }
         });

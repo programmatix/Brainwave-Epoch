@@ -1,6 +1,6 @@
 import React from 'react';
-import { AllData, ProcessedSleepStages } from '../Loader/LoaderTypes';
-import { getColorForValue, getColorForValueFromMinMax } from './ChartUtils';
+import { AllData, ProcessedSleepStageEntryFeatures, StageFeatureMinMax } from '../Loader/LoaderTypes';
+import { getColorForValueFromMinMax } from './ChartUtils';
 
 interface FeatureTimelineProps {
     allData: AllData;
@@ -13,6 +13,11 @@ interface FeatureTimelineProps {
     onMouseMove: (e: React.MouseEvent<SVGSVGElement>, width: number, duration: number) => void;
 }
 
+type StageBucket = keyof StageFeatureMinMax['forAllStats'];
+const stageBuckets: StageBucket[] = ['All', 'Sleep', 'NonDeepSleep', 'W', 'N1', 'N2', 'N3', 'R'];
+const isStageBucket = (value: string | undefined): value is StageBucket =>
+    !!value && stageBuckets.includes(value as StageBucket);
+
 export const FeatureTimeline: React.FC<FeatureTimelineProps> = ({
     allData,
     scrollPosition,
@@ -23,6 +28,8 @@ export const FeatureTimeline: React.FC<FeatureTimelineProps> = ({
     channel,
     onMouseMove,
 }) => {
+    const selectedFeatureKey = selectedFeature as keyof ProcessedSleepStageEntryFeatures;
+
     const handleClick = (e: React.MouseEvent<SVGSVGElement>) => {
         const rect = e.currentTarget.getBoundingClientRect();
         const x = e.clientX - rect.left;
@@ -40,9 +47,17 @@ export const FeatureTimeline: React.FC<FeatureTimelineProps> = ({
         <div>
             <svg width={width} height="15" onClick={handleClick} onMouseMove={handleMouseMove}>
                 {allData.sleepStages?.map((stage, index) => {
-                    const featureValue = stage.Channels[channel]?.[selectedFeature];
-                    const minMax = allData.sleepStageFeatureMinMax?.[channel][selectedFeature].forLocalFile.All;
-                    const color = minMax ? getColorForValueFromMinMax(featureValue, minMax) : 'gray';
+                    const featureValue = stage.Channels[channel]?.[selectedFeatureKey];
+                    const featureMinMax = allData.sleepStageFeatureMinMax?.[channel]?.[selectedFeatureKey];
+                    const stageMinMax = featureMinMax && isStageBucket(stage.Stage)
+                        ? featureMinMax.forAllStats[stage.Stage]
+                        : undefined;
+                    const colorMinMax = stageMinMax && stageMinMax.p90 !== stageMinMax.p10
+                        ? stageMinMax
+                        : featureMinMax?.forAllStats.All;
+                    const color = colorMinMax && typeof featureValue === 'number'
+                        ? getColorForValueFromMinMax(featureValue, colorMinMax)
+                        : 'gray';
                     return (
                         <rect
                             key={index}
