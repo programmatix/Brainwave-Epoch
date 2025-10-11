@@ -219,7 +219,7 @@ function groupKey(key: string): { keyGroup: KeyGroup, scaled: boolean, mostUsefu
         return { keyGroup: 'Symmetry', scaled, mostUseful: false };
     }
     if (key.includes('iqr') || key.includes('auc') || key.includes('abspow')) {
-        const mostUseful = key.includes("iqr")
+        const mostUseful = key.includes("abspow")
         return { keyGroup: 'Power', scaled, mostUseful };
     }
     if (key.includes('at')) {

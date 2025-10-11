@@ -31,6 +31,31 @@ type ValueSelector =
   'currentBroadStage.forLocalFile' |
   'currentBroadStage.forAllStats';
 
+const VALUE_SELECTOR_LABELS: Record<ValueSelector, string> = {
+    'currentStage.forLocalFile': 'This file: Current Stage',
+    'currentStage.forAllStats': 'All files: Current Stage',
+    'currentBroadStage.forLocalFile': 'This file: Current Broad Stage',
+    'currentBroadStage.forAllStats': 'All files: Current Broad Stage',
+    'normalizedAgainst.forLocalFile.All': 'This file: All Stages',
+    'normalizedAgainst.forLocalFile.Sleep': 'This file: Sleep',
+    'normalizedAgainst.forLocalFile.NonDeepSleep': 'This file: Non Deep Sleep',
+    'normalizedAgainst.forLocalFile.W': 'This file: Wake',
+    'normalizedAgainst.forLocalFile.N1': 'This file: N1',
+    'normalizedAgainst.forLocalFile.N2': 'This file: N2',
+    'normalizedAgainst.forLocalFile.N3': 'This file: N3',
+    'normalizedAgainst.forLocalFile.R': 'This file: REM',
+    'normalizedAgainst.forAllStats.All': 'All files: All Stages',
+    'normalizedAgainst.forAllStats.Sleep': 'All files: Sleep',
+    'normalizedAgainst.forAllStats.NonDeepSleep': 'All files: Non Deep Sleep',
+    'normalizedAgainst.forAllStats.W': 'All files: Wake',
+    'normalizedAgainst.forAllStats.N1': 'All files: N1',
+    'normalizedAgainst.forAllStats.N2': 'All files: N2',
+    'normalizedAgainst.forAllStats.N3': 'All files: N3',
+    'normalizedAgainst.forAllStats.R': 'All files: REM'
+};
+
+const getSelectorLabel = (selector: ValueSelector): string => VALUE_SELECTOR_LABELS[selector] ?? selector;
+
 const ValueTooltip: React.FC<{ 
     annotation: LabelContentItem, 
     selector: ValueSelector,
@@ -269,9 +294,9 @@ const MetricRow: React.FC<{
 
     return (
         <tr style={{ fontSize: '12px', backgroundColor: 'black', color: 'white' }}>
-            <td className="w-1/8">{regular.key}</td>
-            <td className="w-1/8">
-                <div className="flex space-x-1">
+            <td className="w-1/6 px-2">{regular.key}</td>
+            <td className="w-1/3">
+                <div className="flex justify-center space-x-1">
                     <Tippy content={<ValueTooltip annotation={regular} selector={leftSelector} />}
                            maxWidth={1000}
                            interactive={true}>
@@ -297,10 +322,10 @@ const MetricRow: React.FC<{
                     </Tippy>
                 </div>
             </td>
-            <td className="w-1/8 text-center">
+            <td className="w-1/6 text-center">
                 {regular.value < regular.normalizedAgainst.forAllStats.All.minUsed && '-'}
             </td>
-            <td className="w-1/8">
+            <td className="w-1/6">
                 <div className="flex space-x-1">
                     {regular.compValue && (
                         <Tippy content={<CompareTooltip annotation={regular} />}>
@@ -316,10 +341,10 @@ const MetricRow: React.FC<{
                     )}
                 </div>
             </td>
-            <td className="w-1/8 text-center">
+            <td className="w-1/12 text-center">
                 {regular.compValue && Number(regular.compValue) > regular.normalizedAgainst.forAllStats.All.maxUsed && '+'}
             </td>
-            <td className="w-1/8">
+            <td className="w-1/12">
                 {regular.diffPercent && <p style={{ color: regular.diffPercentColor }}>{formatNumber(regular.diffPercent)}%</p>}
             </td>
         </tr>
@@ -338,7 +363,7 @@ const MetricGroup: React.FC<{
     return (
         <React.Fragment>
             <tr>
-                <td colSpan={8} className="font-semibold bg-base-200 p-1">{groupName}</td>
+                <td colSpan={6} className="font-semibold bg-base-200 p-1">{groupName}</td>
             </tr>
             {Object.entries(pairs).map(([key, pair]) => (
                 <MetricRow 
@@ -400,29 +425,29 @@ const ValueSelectorDropdown: React.FC<{
         value={value}
         onChange={e => onChange(e.target.value as ValueSelector)}
     >
-        <option value="currentStage.forLocalFile">This file: Current Stage</option>
-        <option value="currentStage.forAllStats">All files: Current Stage</option>
-        <option value="currentBroadStage.forLocalFile">This file: Current Broad Stage</option>
-        <option value="currentBroadStage.forAllStats">All files: Current Broad Stage</option>
+        <option value="currentStage.forLocalFile">{VALUE_SELECTOR_LABELS['currentStage.forLocalFile']}</option>
+        <option value="currentStage.forAllStats">{VALUE_SELECTOR_LABELS['currentStage.forAllStats']}</option>
+        <option value="currentBroadStage.forLocalFile">{VALUE_SELECTOR_LABELS['currentBroadStage.forLocalFile']}</option>
+        <option value="currentBroadStage.forAllStats">{VALUE_SELECTOR_LABELS['currentBroadStage.forAllStats']}</option>
         <optgroup label="This File">
-            <option value="normalizedAgainst.forLocalFile.All">This file: All Stages</option>
-            <option value="normalizedAgainst.forLocalFile.Sleep">This file: Sleep</option>
-            <option value="normalizedAgainst.forLocalFile.NonDeepSleep">This file: Non Deep Sleep</option>
-            <option value="normalizedAgainst.forLocalFile.W">This file: Wake</option>
-            <option value="normalizedAgainst.forLocalFile.N1">This file: N1</option>
-            <option value="normalizedAgainst.forLocalFile.N2">This file: N2</option>
-            <option value="normalizedAgainst.forLocalFile.N3">This file: N3</option>
-            <option value="normalizedAgainst.forLocalFile.R">This file: REM</option>
+            <option value="normalizedAgainst.forLocalFile.All">{VALUE_SELECTOR_LABELS['normalizedAgainst.forLocalFile.All']}</option>
+            <option value="normalizedAgainst.forLocalFile.Sleep">{VALUE_SELECTOR_LABELS['normalizedAgainst.forLocalFile.Sleep']}</option>
+            <option value="normalizedAgainst.forLocalFile.NonDeepSleep">{VALUE_SELECTOR_LABELS['normalizedAgainst.forLocalFile.NonDeepSleep']}</option>
+            <option value="normalizedAgainst.forLocalFile.W">{VALUE_SELECTOR_LABELS['normalizedAgainst.forLocalFile.W']}</option>
+            <option value="normalizedAgainst.forLocalFile.N1">{VALUE_SELECTOR_LABELS['normalizedAgainst.forLocalFile.N1']}</option>
+            <option value="normalizedAgainst.forLocalFile.N2">{VALUE_SELECTOR_LABELS['normalizedAgainst.forLocalFile.N2']}</option>
+            <option value="normalizedAgainst.forLocalFile.N3">{VALUE_SELECTOR_LABELS['normalizedAgainst.forLocalFile.N3']}</option>
+            <option value="normalizedAgainst.forLocalFile.R">{VALUE_SELECTOR_LABELS['normalizedAgainst.forLocalFile.R']}</option>
         </optgroup>
         <optgroup label="All Files">
-            <option value="normalizedAgainst.forAllStats.All">All files: All Stages</option>
-            <option value="normalizedAgainst.forAllStats.Sleep">All files: Sleep</option>
-            <option value="normalizedAgainst.forAllStats.NonDeepSleep">All files: Non Deep Sleep</option>
-            <option value="normalizedAgainst.forAllStats.W">All files: Wake</option>
-            <option value="normalizedAgainst.forAllStats.N1">All files: N1</option>
-            <option value="normalizedAgainst.forAllStats.N2">All files: N2</option>
-            <option value="normalizedAgainst.forAllStats.N3">All files: N3</option>
-            <option value="normalizedAgainst.forAllStats.R">All files: REM</option>
+            <option value="normalizedAgainst.forAllStats.All">{VALUE_SELECTOR_LABELS['normalizedAgainst.forAllStats.All']}</option>
+            <option value="normalizedAgainst.forAllStats.Sleep">{VALUE_SELECTOR_LABELS['normalizedAgainst.forAllStats.Sleep']}</option>
+            <option value="normalizedAgainst.forAllStats.NonDeepSleep">{VALUE_SELECTOR_LABELS['normalizedAgainst.forAllStats.NonDeepSleep']}</option>
+            <option value="normalizedAgainst.forAllStats.W">{VALUE_SELECTOR_LABELS['normalizedAgainst.forAllStats.W']}</option>
+            <option value="normalizedAgainst.forAllStats.N1">{VALUE_SELECTOR_LABELS['normalizedAgainst.forAllStats.N1']}</option>
+            <option value="normalizedAgainst.forAllStats.N2">{VALUE_SELECTOR_LABELS['normalizedAgainst.forAllStats.N2']}</option>
+            <option value="normalizedAgainst.forAllStats.N3">{VALUE_SELECTOR_LABELS['normalizedAgainst.forAllStats.N3']}</option>
+            <option value="normalizedAgainst.forAllStats.R">{VALUE_SELECTOR_LABELS['normalizedAgainst.forAllStats.R']}</option>
         </optgroup>
     </select>
 );
@@ -457,24 +482,17 @@ export const MetricsTable: React.FC<MetricsTableProps> = ({ annotations }) => {
             <table className="w-full">
                 <thead>
                     <tr className="text-xs">
-                        <th className="w-1/8">Key</th>
-                        <th className="w-1/8">Min</th>
-                        <th className="w-1/8">
-                            <div className="flex space-x-1">
-                                <div className="w-24 text-center">Value</div>
-                                <div className="w-24 text-center">Scaled</div>
+                        <th className="w-1/6 text-left">Key</th>
+                        <th className="w-1/3">
+                            <div className="flex justify-center space-x-2">
+                                <div className="w-24 text-center">{getSelectorLabel(leftSelector)}</div>
+                                <div className="w-24 text-center">{getSelectorLabel(rightSelector)}</div>
                             </div>
                         </th>
-                        <th className="w-1/8">Max</th>
-                        <th className="w-1/8">Min</th>
-                        <th className="w-1/8">
-                            <div className="flex space-x-1">
-                                <div className="w-24 text-center">Compare</div>
-                                <div className="w-24 text-center">Scaled</div>
-                            </div>
-                        </th>
-                        <th className="w-1/8">Max</th>
-                        <th className="w-1/8">Diff%</th>
+                        <th className="w-1/6 text-center">Below Range</th>
+                        <th className="w-1/6 text-center">Compare</th>
+                        <th className="w-1/12 text-center">Above Range</th>
+                        <th className="w-1/12 text-center">Diff%</th>
                     </tr>
                 </thead>
                 <tbody>

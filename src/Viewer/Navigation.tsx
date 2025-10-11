@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { AllData, Scorings } from '../Loader/LoaderTypes';
 import { SleepStageTimeline } from './SleepStageTimeline';
 import { SlowWaveTimeline } from './SlowWaveTimeline';
@@ -51,6 +51,25 @@ export const TimelineNavigation: React.FC<TimelineNavigationProps> = React.memo(
 
     const [epochInput, setEpochInput] = useState('');
     const [selectedFeature, setSelectedFeature] = useState<string>('');
+    const hasInitializedFeature = useRef(false);
+    
+    // Default to abspow
+    useEffect(() => {
+        if (hasInitializedFeature.current) {
+            return;
+        }
+        const firstChannel = getFirstNonAggregatedChannel(allData);
+        if (!firstChannel) {
+            return;
+        }
+        const orderedKeys = getOrderedKeys(firstChannel);
+        if (!orderedKeys.length) {
+            return;
+        }
+        setSelectedFeature(orderedKeys.includes('eeg_abspow') ? 'eeg_abspow' : orderedKeys[0]);
+        hasInitializedFeature.current = true;
+    }, [allData]);
+
     const { scorings, marks, setCurrentVideo, currentVideo } = useStore((state: StoreState) => ({
         scorings: state.scorings,
         marks: state.marks,

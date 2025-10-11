@@ -134,11 +134,18 @@ export async function readSleepStages(filePath: string, postHumansStagesPath: st
                 .filter(key => key.startsWith(channel))
                 .reduce((data, key) => {
                     const feature = key.replace(`${channel}_`, '');
+
+                    // No longer interested in these scaled features
+                    if (feature.endsWith('_s')) {
+                        return data;
+                    }
+
                     if (feature === 'Stage') {
                         data[feature] = stage[key];
                     } else {
                         data[feature] = parseFloat(stage[key]);
                     }
+
                     return data;
                 }, {} as ChannelData);
         };
