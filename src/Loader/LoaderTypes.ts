@@ -69,6 +69,7 @@ export type SlowWaveEvent = {
     Frequency: number;
     Channel: string;
     IdxChannel: number;
+    CsvIndex?: number;
 };
 
 export type NightEvent = {
@@ -365,4 +366,3 @@ export type BinaryEEGData = {
     metadata: BinaryEEGMetadata;
     records: number[][];
 };
-

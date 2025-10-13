@@ -1,7 +1,7 @@
 import { Temporal } from '@js-temporal/polyfill';
 import { parse } from 'csv-parse/sync';
 import { promises as fs } from 'fs';
-import { AllData, EDFData, EDFHeader, EDFSignal, FitbitHypnogram, GroupedSlowWaveEvents, GroupedSpindleEvents, NightEvents, ProcessedEDFData, ProcessedSleepStageEntry, ProcessedSleepStages, SignalData, SlowWaveEvents, SpindleEvents, TimeLabel, SleepStageFeatureMinMax, ProcessedSleepStageEntryFeatures, ChannelData, Scorings, ScoringEntry, ScoringTag, Mark, Microwaking, Microwakings, StageFeatureMinMax, StatsCSVRow, FeatureMinMax, Artifacts, RawPhysicalFeatures, BinaryEEGMetadata, BinaryEEGData } from './LoaderTypes';
+import { AllData, EDFData, EDFHeader, EDFSignal, FitbitHypnogram, GroupedSlowWaveEvents, GroupedSpindleEvents, NightEvents, ProcessedEDFData, ProcessedSleepStageEntry, ProcessedSleepStages, SignalData, SlowWaveEvents, SlowWaveEvent, SpindleEvents, TimeLabel, SleepStageFeatureMinMax, ProcessedSleepStageEntryFeatures, ChannelData, Scorings, ScoringEntry, ScoringTag, Mark, Microwaking, Microwakings, StageFeatureMinMax, StatsCSVRow, FeatureMinMax, Artifacts, RawPhysicalFeatures, BinaryEEGMetadata, BinaryEEGData } from './LoaderTypes';
 
 
 import { EventEmitter } from 'events';
@@ -665,11 +665,14 @@ export async function readSlowWaveEvents(filePath: string): Promise<GroupedSlowW
             skip_empty_lines: true,
             cast: true
         });
-        const groupedEvents = parsedData.reduce((acc, event) => {
+        const groupedEvents = parsedData.reduce((acc, event, csvIndex) => {
+            const eventWithIndex: SlowWaveEvent = { ...event, CsvIndex: csvIndex };
+
             if (!acc[event.Channel]) {
                 acc[event.Channel] = [];
             }
-            acc[event.Channel].push(event);
+
+            acc[event.Channel].push(eventWithIndex);
             return acc;
         }, {} as GroupedSlowWaveEvents);
         console.timeEnd('readSlowWaveEvents');

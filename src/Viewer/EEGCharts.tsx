@@ -8,7 +8,6 @@ import { ComparisonControls } from './ComparisonControls';
 import { generateAnnotations, generateAnnotationsForLeft } from './EEGChartAnnotations';
 import { eegChartOptions, LabelContent, millisecondsToSamples, sampleIndexToTime } from './ChartUtils';
 import { useStore, StoreState } from '../Store/Store';
-import { Temporal } from '@js-temporal/polyfill';
 import { parseDateString } from '../Loader/Loader';
 import { Slider } from './Slider';
 import { MetricsTable } from './MetricsTable';
@@ -24,6 +23,153 @@ Chart.register(...registerables, annotationPlugin);
 
 export const SECONDS_PER_EPOCH = 30;
 export const SECONDS_TO_SHOW = 30;
+const BANDPASS_LOW_CUTOFF_HZ = 0.3;
+const BANDPASS_HIGH_CUTOFF_HZ = 1.5;
+const BANDPASS_TRANSITION_HZ = 0.2;
+
+const bandpassCoefficientCache = new Map<number, Float64Array>();
+
+const blackmanWindow = (length: number): Float64Array => {
+    const window = new Float64Array(length);
+    const denom = length - 1;
+    for (let n = 0; n < length; n++) {
+        window[n] = 0.42 - 0.5 * Math.cos((2 * Math.PI * n) / denom) + 0.08 * Math.cos((4 * Math.PI * n) / denom);
+    }
+    return window;
+};
+
+// Design a long Blackman-windowed FIR with ~0.2 Hz transition bands on each side.
+const calculateFirCoefficients = (sampleRate: number): Float64Array => {
+    const transition = BANDPASS_TRANSITION_HZ;
+    let numTaps = Math.max(3, Math.ceil((3.3 * sampleRate) / transition));
+    if (numTaps % 2 === 0) {
+        numTaps += 1;
+    }
+    const nyquist = sampleRate / 2;
+
+    const lowerEdge = Math.max(0, (BANDPASS_LOW_CUTOFF_HZ - transition) / sampleRate);
+    const upperEdge = Math.min(nyquist / sampleRate, (BANDPASS_HIGH_CUTOFF_HZ + transition) / sampleRate);
+
+    if (lowerEdge >= upperEdge) {
+        return Float64Array.of(1);
+    }
+
+    const coeffs = new Float64Array(numTaps);
+    const m = numTaps - 1;
+    const center = m / 2;
+    const window = blackmanWindow(numTaps);
+
+    for (let n = 0; n < numTaps; n++) {
+        const k = n - center;
+        if (k === 0) {
+            coeffs[n] = 2 * (upperEdge - lowerEdge);
+        } else {
+            coeffs[n] = (Math.sin(2 * Math.PI * upperEdge * k) - Math.sin(2 * Math.PI * lowerEdge * k)) / (Math.PI * k);
+        }
+        coeffs[n] *= window[n];
+    }
+
+    return coeffs;
+};
+
+const getBandpassCoefficients = (sampleRate: number): Float64Array => {
+    if (!bandpassCoefficientCache.has(sampleRate)) {
+        bandpassCoefficientCache.set(sampleRate, calculateFirCoefficients(sampleRate));
+    }
+    return bandpassCoefficientCache.get(sampleRate)!;
+};
+
+const applyFIR = (input: Float64Array, coeffs: Float64Array): Float64Array => {
+    const output = new Float64Array(input.length);
+    for (let i = 0; i < input.length; i++) {
+        let acc = 0;
+        const limit = Math.min(i, coeffs.length - 1);
+        for (let j = 0; j <= limit; j++) {
+            acc += coeffs[j] * input[i - j];
+        }
+        output[i] = acc;
+    }
+    return output;
+};
+
+const filtfilt = (data: number[], coeffs: Float64Array): number[] => {
+    if (!data.length) {
+        return new Array(data.length).fill(NaN);
+    }
+
+    if (coeffs.length === 1) {
+        return data.slice();
+    }
+
+    if (coeffs.length < 3) {
+        return data.map(() => NaN);
+    }
+
+    const order = coeffs.length - 1;
+    const padLength = Math.min(data.length - 1, 3 * order);
+
+    if (padLength < 1) {
+        return data.slice();
+    }
+
+    const front: number[] = [];
+    for (let i = padLength; i >= 1; i--) {
+        const idx = Math.min(i, data.length - 1);
+        front.push(2 * data[0] - data[idx]);
+    }
+
+    const back: number[] = [];
+    for (let i = data.length - 2; i > data.length - padLength - 2; i--) {
+        const idx = Math.max(i, 0);
+        back.push(2 * data[data.length - 1] - data[idx]);
+    }
+
+    const extended = Float64Array.from([...front, ...data, ...back]);
+    const forward = applyFIR(extended, coeffs);
+    const reversedForward = Float64Array.from(forward).reverse();
+    const backward = applyFIR(reversedForward, coeffs);
+    const result = Array.from(backward.reverse().slice(padLength, padLength + data.length));
+
+    return result;
+};
+
+// Approximate YASA's slow-wave preprocessing (MNE FIR bandpass with filtfilt) so the overlay
+// matches the signal YASA inspects before marking SWS peaks.
+const applyYasaLikeBandpass = (input: number[], sampleRate: number): number[] => {
+    if (!input.length) {
+        return input;
+    }
+
+    if (!sampleRate || sampleRate <= 0) {
+        return input.map(() => NaN);
+    }
+
+    const mask = input.map(value => Number.isFinite(value));
+    if (!mask.some(Boolean)) {
+        return input.map(() => NaN);
+    }
+
+    const clean = new Array<number>(input.length);
+    let lastValid = input.find(value => Number.isFinite(value));
+    if (lastValid === undefined) {
+        return input.map(() => NaN);
+    }
+
+    for (let i = 0; i < input.length; i++) {
+        const value = input[i];
+        if (Number.isFinite(value)) {
+            lastValid = value;
+            clean[i] = value;
+        } else {
+            clean[i] = lastValid;
+        }
+    }
+
+    const coeffs = getBandpassCoefficients(sampleRate);
+    const filtered = filtfilt(clean, coeffs);
+
+    return filtered.map((value, index) => (mask[index] ? value : NaN));
+};
 
 interface EEGChartsProps {
     allData: AllData;
@@ -132,6 +278,20 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition, s
                 spanGaps: true,
             }];
 
+            if (showSlowWaveEvents) {
+                const filteredData = applyYasaLikeBandpass(data, samplesPerSecond);
+                if (filteredData.some(value => Number.isFinite(value))) {
+                    datasets.push({
+                        label: `${signal.label} (0.3-1.5 Hz)`,
+                        data: filteredData,
+                        borderColor: `hsla(${index * 360 / signalsToShow.length}, 100%, 50%, 0.35)`,
+                        pointRadius: 0,
+                        borderWidth: 1,
+                        spanGaps: true,
+                    });
+                }
+            }
+
             if (compareEpoch !== null) {
                 const compareStartSample = compareEpoch * SECONDS_PER_EPOCH * samplesPerSecond;
                 const compareData = artifactMode === 'remove' ?
@@ -152,6 +312,20 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition, s
                     borderWidth: 1.5,
                     spanGaps: true,
                 });
+
+                if (showSlowWaveEvents) {
+                    const compareFilteredData = applyYasaLikeBandpass(compareData, samplesPerSecond);
+                    if (compareFilteredData.some(value => Number.isFinite(value))) {
+                        datasets.push({
+                            label: `${signal.label} (Compare 0.3-1.5 Hz)`,
+                            data: compareFilteredData,
+                            borderColor: `hsla(${index * 360 / signalsToShow.length}, 100%, 50%, 0.25)`,
+                            pointRadius: 0,
+                            borderWidth: 1,
+                            spanGaps: true,
+                        });
+                    }
+                }
             }
 
             console.log(`signal.label`, signal.label)
@@ -163,9 +337,14 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition, s
                 return eventStartSample < scrollPosition + samplesToShow && eventEndSample > scrollPosition;
             }) : [];
 
-            const slowWavePeakPoints = showSlowWaveEvents ? visibleSlowWaveEvents.flatMap(event => {
+            const slowWavePeakPoints = showSlowWaveEvents ? visibleSlowWaveEvents.flatMap((event, eventIndex) => {
                 const ptp = event.PTP;
-                const createPoint = (peakSeconds: number | undefined, amplitude: number | undefined, peakType: 'neg' | 'pos') => {
+                const createPoint = (
+                    peakSeconds: number | undefined,
+                    amplitude: number | undefined,
+                    peakType: 'neg' | 'pos',
+                    csvIndex: number | undefined
+                ) => {
                     if (typeof peakSeconds !== 'number' || typeof amplitude !== 'number') {
                         return null;
                     }
@@ -188,13 +367,17 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition, s
                         amplitude,
                         peakType,
                         color,
-                        radius
+                        radius,
+                        csvIndex,
+                        absoluteSampleIndex
                     };
                 };
 
+                const csvIndex = typeof event.CsvIndex === 'number' ? event.CsvIndex : eventIndex;
+
                 return [
-                    createPoint(event.NegPeak, event.ValNegPeak, 'neg'),
-                    createPoint(event.PosPeak, event.ValPosPeak, 'pos')
+                    createPoint(event.NegPeak, event.ValNegPeak, 'neg', csvIndex),
+                    createPoint(event.PosPeak, event.ValPosPeak, 'pos', csvIndex)
                 ].filter(Boolean) as {
                     x: number;
                     y: number;
@@ -204,6 +387,8 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition, s
                     peakType: 'neg' | 'pos';
                     color: string;
                     radius: number;
+                    csvIndex?: number;
+                    absoluteSampleIndex?: number;
                 }[];
             }) : [];
 
@@ -462,7 +647,22 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition, s
                                                 const amplitude = typeof raw.amplitude === 'number' ? `${raw.amplitude.toFixed(1)}µV` : 'N/A';
                                                 const timeSeconds = typeof raw.peakSeconds === 'number' ? `${raw.peakSeconds.toFixed(2)}s` : 'N/A';
                                                 const ptpLabel = typeof raw.ptp === 'number' ? `PTP ${raw.ptp.toFixed(1)}µV` : undefined;
-                                                return ptpLabel ? `${prefix}: ${amplitude} @ ${timeSeconds} (${ptpLabel})` : `${prefix}: ${amplitude} @ ${timeSeconds}`;
+                                                const csvIndexLabel = typeof raw.csvIndex === 'number' ? `CSV index: ${raw.csvIndex}` : undefined;
+                                                const exactTimeLabel = typeof raw.peakSeconds === 'number' ? `Exact time: ${raw.peakSeconds.toFixed(5)}s` : undefined;
+
+                                                const lines = [
+                                                    ptpLabel ? `${prefix}: ${amplitude} @ ${timeSeconds} (${ptpLabel})` : `${prefix}: ${amplitude} @ ${timeSeconds}`
+                                                ];
+
+                                                if (csvIndexLabel) {
+                                                    lines.push(csvIndexLabel);
+                                                }
+
+                                                if (exactTimeLabel) {
+                                                    lines.push(exactTimeLabel);
+                                                }
+
+                                                return lines.join('\n');
                                             }
                                         }
 
@@ -474,8 +674,25 @@ export const EEGCharts: React.FC<EEGChartsProps> = ({ allData, scrollPosition, s
                                         const absoluteSampleIndex = scrollPosition + context.dataIndex;
                                         const formattedTime = allData.processedEDF.signals[0].timeLabels[absoluteSampleIndex]?.formatted;
                                         const label = context.dataset?.label || signal.label;
+                                        const timePoint = sampleIndexToTime(allData, absoluteSampleIndex);
+                                        const tooltipMillis = timePoint.toInstant().epochMilliseconds;
+                                        const hypnogramEntry = allData.fitbitHypnogram?.find(entry => {
+                                            const startMillis = entry.startTime.toInstant().epochMilliseconds;
+                                            const endMillis = entry.endTime.toInstant().epochMilliseconds;
+                                            return tooltipMillis >= startMillis && tooltipMillis < endMillis;
+                                        });
+                                        const stageInfo = hypnogramEntry ? `Stage: ${hypnogramEntry.state}` : undefined;
 
-                                        return formattedTime ? `${label}: ${value.toFixed(1)}µV @ ${formattedTime}` : `${label}: ${value.toFixed(1)}µV`;
+                                        const baseParts = [
+                                            formattedTime ? `${label}: ${value.toFixed(1)}µV @ ${formattedTime}` : `${label}: ${value.toFixed(1)}µV`,
+                                            stageInfo
+                                        ].filter(Boolean);
+                                        const base = baseParts.join('\n');
+                                        if (typeof context.dataset?.label === 'string' && context.dataset.label.includes('0.3-1.5 Hz')) {
+                                            return `${base}\nPlotted as an approximation of YASA's pre-SWS filtering; helps explain detection offsets. See projects/SlowWaves.md.`;
+                                        }
+
+                                        return base;
                                     }
                                 }
                             }
